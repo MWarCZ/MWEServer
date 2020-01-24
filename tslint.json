@@ -1,0 +1,50 @@
+{
+  "defaultSeverity": "error",
+  "extends": [
+  ],
+  "jsRules": {},
+  "rules": {
+    "space-before-function-paren": [true, "never"],
+    "whitespace": [
+      true,
+      "check-branch",
+      "check-operator",
+      "check-separator",
+      "check-typecast"
+    ],
+    "comment-format": [
+      true,
+      "check-space"
+    ],
+    "indent": [
+      true,
+      "spaces",
+      2
+    ],
+    "no-var-keyword": true,
+    "quotemark": [
+      true,
+      "single",
+      "avoid-escape"
+    ],
+    "semicolon": [
+      true,
+      "never"
+    ],
+    "one-line": [
+      true,
+      "check-open-brace",
+      "check-whitespace"
+    ],
+    "trailing-comma": [
+      true,
+      {
+        "multiline": "always",
+        "singleline": "never"
+      }
+    ],
+    "jsdoc-format": true,
+    "no-console": false
+  },
+  "rulesDirectory": []
+}

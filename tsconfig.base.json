@@ -1,0 +1,33 @@
+{
+  "compilerOptions": {
+    "outDir": "dist/",
+    "rootDir": "src/",
+
+    "target": "es6",
+    "module": "commonjs",
+    "lib": ["es6", "dom"],
+
+    "moduleResolution": "node",
+    "baseUrl": "src/",
+    "declaration": true,
+    // "declarationMap": true,
+    // "sourceMap": true,
+    // "composite": true,                     /* Enable project compilation */
+    "removeComments": true,
+
+    "strict": true,
+    "noImplicitAny": true,
+    "noImplicitReturns": true,
+    "noImplicitThis": true,
+    // "noUnusedParameters": true,
+    // "noUnusedLocals": true,
+    "strictFunctionTypes": true,
+    "strictNullChecks": true,
+    "strictPropertyInitialization": true,
+
+    "esModuleInterop": true,
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true
+  },
+  "compileOnSave": false
+}

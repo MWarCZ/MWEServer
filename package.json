@@ -1,0 +1,58 @@
+{
+  "name": "MWEServer",
+  "version": "1.0.0",
+  "devPlatform": "linux",
+  "description": "My Workflow Engine Server for node.js.",
+  "main": "dist/index.js",
+  "author": "MWarCZ",
+  "license": "MIT",
+  "env": {
+    "path": {
+      "dist": "dist",
+      "src": "src",
+      "doc": "doc",
+		"coverage":"coverageX",
+      "testin": "tests",
+      "testout": "coverage"
+    }
+  },
+  "scripts": {
+    "env": "env | sort | grep --color '^npm_'",
+    "start": "node $npm_package_env_path_dist/index.js",
+    "start:ts": "ts-node $npm_package_env_path_src/index.ts",
+
+    "build:clean": "rm -rf $npm_package_env_path_dist",
+    "prebuild": "$npm_execpath run build:clean",
+    "build": "tsc --outDir $npm_package_env_path_dist",
+	  "build:watch":"$npm_execpath run build -w",
+
+    "test:clean": "rm -rf $npm_package_env_path_testout",
+    "test": "jest --config jest.config.json --forceExit --verbose --detectOpenHandles",
+    "pretest:cov": "$npm_execpath run test:clean",
+    "test:cov": "jest --config jest.config.json --forceExit --coverage --verbose --detectOpenHandles --coverageDirectory $npm_package_env_path_testout",
+    "test:lint": "tslint -c tslint.json -p tsconfig.test.json --format codeFrame",
+    "test:watch": "$npm_execpath run test -- --watchAll",
+    "test:subdir":"$npm_execpath run test -- -i $npm_package_env_path_dist/",
+
+    "doc:clean": "rm -rf $npm_package_env_path_doc",
+    "predoc": "$npm_execpath run doc:clean",
+    "doc": "typedoc --options typedoc.json --out $npm_package_env_path_doc",
+
+    "lint": "tslint -c tslint.json -p tsconfig.json --format codeFrame",
+    "lint:fix": "$npm_execpath run lint --fix",
+
+    "clean": "$npm_execpath run build:clean; $npm_execpath run test:clean; ",
+	  "clean:node": "rm -rf node_modules;",
+	  "clean:all": "$npm_execpath run clean; $npm_execpath run clean:node;"
+  },
+  "devDependencies": {
+    "@types/jest": "^24.0.18",
+    "@types/node": "^12.7.12",
+    "jest": "^24.9.0",
+    "ts-jest": "^24.1.0",
+    "ts-node": "^8.4.1",
+    "tslint": "^5.20.0",
+    "typedoc": "^0.15.0",
+    "typescript": "^3.6.4"
+  }
+}

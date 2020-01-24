@@ -1,0 +1,15 @@
+{
+  "name": "MWEngine",
+  "readme": "none",
+  "includes": "src/",
+  "exclude": [
+    "tests/**/*",
+    "node_modules/**"
+  ],
+  "target": "ES6",
+  "mode": "modules",
+  "excludeExternals": "true",
+  "excludeNoExported:": "true",
+  "excludePrivate": "true",
+  "skipLibCheck": "true"
+}
