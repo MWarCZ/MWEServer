@@ -1,12 +1,12 @@
-import { ChildEntity, Column, Entity, JoinTable, ManyToMany, ManyToOne, OneToMany } from 'typeorm'
+import { Column, Entity, JoinTable, ManyToMany, ManyToOne, OneToMany, TableInheritance } from 'typeorm'
 
-import { ActivityStatus, BaseElementInstance } from './baseElement'
+import { ActivityStatus, BaseElementInstance, BaseElementTemplate } from './baseElement'
 import { DataObjectTemplate } from './dataObject'
-import { FlowNodeTemplate } from './flowNodeTemplate'
+import { NodeToSequenceFlow, SequenceFlowToNode } from './sequenceFlowToNode'
 
-// @Entity()
-@ChildEntity()
-export class TaskTemplate extends FlowNodeTemplate {
+@Entity()
+@TableInheritance({ column: { type: "varchar", name: "class" } })
+export class TaskTemplate extends BaseElementTemplate {
 
   @ManyToMany(type => DataObjectTemplate)
   @JoinTable()
@@ -15,6 +15,14 @@ export class TaskTemplate extends FlowNodeTemplate {
   @ManyToMany(type => DataObjectTemplate)
   @JoinTable()
   outputs?: DataObjectTemplate[]
+
+
+  @OneToMany(type => SequenceFlowToNode, entity => entity.task)
+  incoming?: SequenceFlowToNode[]
+
+  @OneToMany(type => NodeToSequenceFlow, entity => entity.task)
+  outgoing?: NodeToSequenceFlow[]
+
 
   @OneToMany(type => TaskInstance, entity => entity.template)
   instances?: TaskInstance[]

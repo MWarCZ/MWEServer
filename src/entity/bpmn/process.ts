@@ -1,6 +1,6 @@
-import { Column, Entity, ManyToOne, OneToMany, PrimaryGeneratedColumn } from 'typeorm'
+import { Column, Entity, ManyToOne, OneToMany } from 'typeorm'
 
-import { BaseElementTemplate } from './baseElement'
+import { BaseElementInstance, BaseElementTemplate } from './baseElement'
 
 export enum ProcessType {
   None = 'none',
@@ -25,17 +25,6 @@ export class ProcessTemplate extends BaseElementTemplate {
   })
   processType?: ProcessType
 
-  @OneToMany(type => ProcessVersionTemplate, version => version.processTemplate)
-  versions?: ProcessVersionTemplate[]
-
-}
-
-
-@Entity()
-export class ProcessVersionTemplate {
-  @PrimaryGeneratedColumn()
-  id?: number
-
   @Column('varchar', { length: 50, default: '1' })
   version?: string
 
@@ -45,21 +34,15 @@ export class ProcessVersionTemplate {
   })
   versionType?: VersionType
 
-  @ManyToOne(type => ProcessTemplate, processTemplate => processTemplate.versions)
-  processTemplate?: ProcessTemplate
-
-
   @OneToMany(type => ProcessInstance, processInstance => processInstance.processTemplate)
   processInstances?: ProcessInstance[]
 
 }
 
 @Entity()
-export class ProcessInstance {
-  @PrimaryGeneratedColumn()
-  id?: number
+export class ProcessInstance extends BaseElementInstance {
 
-  @ManyToOne(type => ProcessVersionTemplate, version => version.processInstances)
+  @ManyToOne(type => ProcessTemplate, version => version.processInstances)
   processTemplate?: ProcessTemplate
 
 }

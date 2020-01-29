@@ -214,10 +214,14 @@ Strom elementů:
 <startEvent id="id" name="string">
 	...
 </startEvent>
+
+<startEvent id="id" name="string" eventDefinitionRefs="Id_eventDefinitions">
+	...
+</startEvent>
 ```
 ### endEvent
 ```xml
-<endEvent id="id" name="string">
+<endEvent id="id" name="string" eventDefinitionRefs="Id_eventDefinitions">
 	...
 </endEvent>
 ```

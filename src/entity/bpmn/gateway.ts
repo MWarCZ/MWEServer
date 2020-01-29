@@ -1,8 +1,8 @@
-import { ChildEntity, Column, Entity, ManyToOne, OneToMany, OneToOne } from 'typeorm'
+import { Column, Entity, ManyToOne, OneToMany, OneToOne } from 'typeorm'
 
-import { BaseElementInstance } from './baseElement'
-import { FlowNodeTemplate } from './flowNodeTemplate'
+import { BaseElementInstance, BaseElementTemplate } from './baseElement'
 import { SequenceFlowTemplate } from './sequenceFlow'
+import { NodeToSequenceFlow, SequenceFlowToNode } from './sequenceFlowToNode'
 
 export enum GatewayType {
   Exclusive = 'exclusive',
@@ -16,9 +16,8 @@ export enum GatewayDirection {
   Mixed = 'mixed',
 }
 
-// @Entity()
-@ChildEntity()
-export class GatewayTemplate extends FlowNodeTemplate {
+@Entity()
+export class GatewayTemplate extends BaseElementTemplate {
 
   @Column('enum', {
     enum: GatewayType,
@@ -35,6 +34,14 @@ export class GatewayTemplate extends FlowNodeTemplate {
 
   @OneToOne(type => SequenceFlowTemplate)
   default?: SequenceFlowTemplate
+
+
+  @OneToMany(type => SequenceFlowToNode, entity => entity.gateway)
+  incoming?: SequenceFlowToNode[]
+
+  @OneToMany(type => NodeToSequenceFlow, entity => entity.gateway)
+  outgoing?: NodeToSequenceFlow[]
+
 
   @OneToMany(type => GatewayInstance, entity => entity.template)
   instances?: GatewayInstance[]

@@ -1,16 +1,16 @@
 import { Column, Entity, ManyToOne, OneToMany } from 'typeorm'
 
-import { BaseElementInstance } from './baseElement'
-import { FlowNodeTemplate } from './flowNodeTemplate'
+import { Json } from '../../types/json'
+import { BaseElementInstance, BaseElementTemplate } from './baseElement'
 
 @Entity()
-export class DataObjectTemplate extends FlowNodeTemplate {
+export class DataObjectTemplate extends BaseElementTemplate {
 
   @Column('boolean', { default: false })
   strict?: boolean
 
   @Column('simple-json')
-  json?: any
+  json?: Json = {}
 
   @OneToMany(type => DataObjectInstance, entity => entity.template)
   instances?: DataObjectInstance[]
@@ -21,7 +21,7 @@ export class DataObjectTemplate extends FlowNodeTemplate {
 export class DataObjectInstance extends BaseElementInstance {
 
   @Column('simple-json')
-  data?: any
+  data?: Json
 
   @ManyToOne(type => DataObjectTemplate, entity => entity.instances)
   template?: DataObjectTemplate
