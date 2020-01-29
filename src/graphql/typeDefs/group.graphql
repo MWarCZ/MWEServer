@@ -1,0 +1,7 @@
+# import * from './user.graphql'
+
+type Group {
+  id: Int!
+  name: String!
+  users: [User!]!
+}

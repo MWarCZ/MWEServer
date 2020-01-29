@@ -1,0 +1,13 @@
+[
+  {
+    "id":1,
+    "name":"AAA",
+    "protected": true
+  }, {
+    "id":2,
+    "name":"BBB"
+  }, {
+    "id": 3,
+    "name": "CCC"
+  }
+]

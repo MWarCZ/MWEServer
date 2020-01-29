@@ -1,0 +1,15 @@
+# import * from './group.graphql'
+
+extend type Query {
+  user(id:Int!):User
+  users:[User]!
+}
+
+type User {
+  id: Int!
+  login: String!
+  email: String
+  firstName: String
+  lastName: String
+  groups: [Group!]!
+}

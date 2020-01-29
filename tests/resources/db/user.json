@@ -1,0 +1,22 @@
+[
+  {
+    "login": "admin",
+    "firstName": "Firstname",
+    "lastName": "Lastname",
+    "protected": true,
+    "password": "$2a$10$Ka4fDHS9ZqM4JTCbnso6mOSlIRW/ehpheq7kAOlCNnpM06cG6TH5u",
+    "email": "admin@mwarcz.cz",
+    "salt": "$2a$10$Ka4fDHS9ZqM4JTCbnso6mO",
+    "id": 1
+  },
+  {
+    "login": "root",
+    "firstName": "Root",
+    "lastName": "Toor",
+    "protected": true,
+    "password": "$2a$10$gSSr3oOuy2QgUwgWw08bHu6L5pzDqzbLhFeRLPKAkJ7ukh4FLGAbm",
+    "email": "root@mwarcz.cz",
+    "salt": "$2a$10$gSSr3oOuy2QgUwgWw08bHu",
+    "id": 2
+  }
+]

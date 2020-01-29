@@ -10,8 +10,8 @@
     "path": {
       "dist": "dist",
       "src": "src",
-      "doc": "doc",
-		"coverage":"coverageX",
+      "doc": "doc/generated",
+      "coverage": "coverageX",
       "testin": "tests",
       "testout": "coverage"
     }
@@ -20,39 +20,52 @@
     "env": "env | sort | grep --color '^npm_'",
     "start": "node $npm_package_env_path_dist/index.js",
     "start:ts": "ts-node $npm_package_env_path_src/index.ts",
-
     "build:clean": "rm -rf $npm_package_env_path_dist",
     "prebuild": "$npm_execpath run build:clean",
     "build": "tsc --outDir $npm_package_env_path_dist",
-	  "build:watch":"$npm_execpath run build -w",
-
+    "build:watch": "$npm_execpath run build -w",
+    "postbuild": "$npm_execpath copy:gql",
     "test:clean": "rm -rf $npm_package_env_path_testout",
     "test": "jest --config jest.config.json --forceExit --verbose --detectOpenHandles",
     "pretest:cov": "$npm_execpath run test:clean",
     "test:cov": "jest --config jest.config.json --forceExit --coverage --verbose --detectOpenHandles --coverageDirectory $npm_package_env_path_testout",
     "test:lint": "tslint -c tslint.json -p tsconfig.test.json --format codeFrame",
     "test:watch": "$npm_execpath run test -- --watchAll",
-    "test:subdir":"$npm_execpath run test -- -i $npm_package_env_path_dist/",
-
+    "test:subdir": "$npm_execpath run test -- -i $npm_package_env_path_dist/",
     "doc:clean": "rm -rf $npm_package_env_path_doc",
     "predoc": "$npm_execpath run doc:clean",
     "doc": "typedoc --options typedoc.json --out $npm_package_env_path_doc",
-
     "lint": "tslint -c tslint.json -p tsconfig.json --format codeFrame",
     "lint:fix": "$npm_execpath run lint --fix",
-
+    "gen:gql": "graphql-codegen --config .graphqlconfig",
+    "copy:gql": "copyfiles -u 1 'src/**/*.css' 'src/**/*.html' 'src/**/*.gql' 'src/**/*.graphql' 'src/**/*.json' $npm_package_env_path_dist",
     "clean": "$npm_execpath run build:clean; $npm_execpath run test:clean; ",
-	  "clean:node": "rm -rf node_modules;",
-	  "clean:all": "$npm_execpath run clean; $npm_execpath run clean:node;"
+    "clean:node": "rm -rf node_modules;",
+    "clean:all": "$npm_execpath run clean; $npm_execpath run clean:node;"
   },
   "devDependencies": {
+    "@graphql-codegen/cli": "^1.11.2",
+    "@graphql-codegen/typescript": "^1.11.2",
+    "@graphql-codegen/typescript-resolvers": "^1.11.2",
+    "@types/bcryptjs": "^2.4.2",
     "@types/jest": "^24.0.18",
-    "@types/node": "^12.7.12",
+    "@types/node": "^13.5.0",
+    "@types/uuid": "^3.4.6",
+    "@types/ws": "^7.2.0",
+    "copyfiles": "^2.2.0",
     "jest": "^24.9.0",
     "ts-jest": "^24.1.0",
     "ts-node": "^8.4.1",
     "tslint": "^5.20.0",
     "typedoc": "^0.15.0",
     "typescript": "^3.6.4"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "graphql-import": "^0.7.1",
+    "graphql-yoga": "^1.18.3",
+    "mysql": "^2.18.1",
+    "typeorm": "^0.2.22",
+    "uuid": "^3.4.0"
   }
 }
