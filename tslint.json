@@ -3,6 +3,11 @@
   "extends": [
   ],
   "jsRules": {},
+  "linterOptions": {
+    "exclude": [
+      "src/graphql/generated/*"
+    ]
+  },
   "rules": {
     "space-before-function-paren": [true, "never"],
     "whitespace": [

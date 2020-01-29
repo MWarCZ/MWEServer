@@ -1,0 +1,19 @@
+
+#type CallableElement {}
+#type Auditing {}
+#type Monitoring {}
+#type ProcessRole {}
+#type Property {}
+#type LaneSet {}
+#type FlowElement {}
+#type Artifact {}
+#type ResourceRole {}
+#type Supports {}
+
+type Definitions {
+  process: Process
+}
+type Process {
+  id: String
+}
+

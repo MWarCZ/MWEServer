@@ -1,0 +1,9 @@
+# import * from './bpmn.graphql'
+# import *, Query.* from './user.graphql'
+# import *, Query.* from './group.graphql'
+
+type Query {
+  hello(name:String):String!
+  bpmn: Process
+}
+
