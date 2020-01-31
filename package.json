@@ -62,6 +62,7 @@
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
+    "fast-xml-parser": "^3.16.0",
     "graphql-import": "^0.7.1",
     "graphql-yoga": "^1.18.3",
     "mysql": "^2.18.1",

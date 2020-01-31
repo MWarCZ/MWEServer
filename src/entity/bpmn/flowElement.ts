@@ -14,7 +14,7 @@ export interface OptionsFlowElement {
  * pro vsechny dcerinne elementy sablony procesu BPMN.
  */
 export abstract class FlowElementTemplate extends BaseElementTemplate {
-  @ManyToOne(type=>ProcessTemplate)
+  @ManyToOne(type => ProcessTemplate, {onDelete: 'CASCADE'})
   processTemplate?: ProcessTemplate
 }
 

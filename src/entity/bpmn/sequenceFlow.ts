@@ -14,10 +14,10 @@ export class SequenceFlowTemplate extends FlowElementTemplate {
   // @OneToMany(type => FlowNodeTemplate, entity => entity.incoming)
   // target?: FlowNodeTemplate
 
-  @OneToOne(type => NodeToSequenceFlow, entity => entity.sequenceFlow)
+  @OneToOne(type => NodeToSequenceFlow, entity => entity.sequenceFlow, { cascade: true })
   source?: NodeToSequenceFlow
 
-  @OneToOne(type => SequenceFlowToNode, entity => entity.sequenceFlow)
+  @OneToOne(type => SequenceFlowToNode, entity => entity.sequenceFlow, { cascade: true })
   target?: SequenceFlowToNode
 
   @Column('text')
