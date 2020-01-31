@@ -1,0 +1,25 @@
+[
+  {
+    "json": {},
+    "id": 5,
+    "bpmnId": "3bde46c2-d5a8-473c-95eb-288f68f2fe79",
+    "name": "",
+    "strict": false
+  }, {
+    "json": {
+      "data": true
+    },
+    "id": 13,
+    "bpmnId": "f70cdc9d-c864-4b4e-a4d1-7e1adf6bd7f8",
+    "name": "taskInput",
+    "strict": false
+  }, {
+    "json": {
+      "data": false
+    },
+    "id": 14,
+    "bpmnId": "97cbce53-afe6-42ff-a767-1be5e81ecb24",
+    "name": "taskOutput",
+    "strict": false
+  }
+]
