@@ -1,12 +1,13 @@
 import { Column, Entity, JoinTable, ManyToMany, ManyToOne, OneToMany, TableInheritance } from 'typeorm'
 
-import { ActivityStatus, BaseElementInstance, BaseElementTemplate } from './baseElement'
+import { ActivityStatus, BaseElementInstance } from './baseElement'
 import { DataObjectTemplate } from './dataObject'
+import { FlowElementTemplate } from './flowElement'
 import { NodeToSequenceFlow, SequenceFlowToNode } from './sequenceFlowToNode'
 
 @Entity()
-@TableInheritance({ column: { type: "varchar", name: "class" } })
-export class TaskTemplate extends BaseElementTemplate {
+@TableInheritance({ column: { type: 'varchar', name: 'class' } })
+export class TaskTemplate extends FlowElementTemplate {
 
   @ManyToMany(type => DataObjectTemplate)
   @JoinTable()

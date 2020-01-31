@@ -1,10 +1,11 @@
 import { Column, Entity, ManyToOne, OneToMany } from 'typeorm'
 
 import { Json } from '../../types/json'
-import { BaseElementInstance, BaseElementTemplate } from './baseElement'
+import { BaseElementInstance } from './baseElement'
+import { FlowElementTemplate } from './flowElement'
 
 @Entity()
-export class DataObjectTemplate extends BaseElementTemplate {
+export class DataObjectTemplate extends FlowElementTemplate {
 
   @Column('boolean', { default: false })
   strict?: boolean

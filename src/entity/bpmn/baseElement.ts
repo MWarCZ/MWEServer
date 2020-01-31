@@ -1,6 +1,12 @@
 import { BeforeInsert, Column, PrimaryGeneratedColumn } from 'typeorm'
 import { v4 as uuid } from 'uuid'
 
+
+export interface OptionsBaseElement {
+  bpmnId: string,
+  name: string,
+}
+
 /**
  * Zakladni entita obsahujici spolecne vlstnosti pro vsechny elementy sablony BPMN.
  */
@@ -18,6 +24,14 @@ export abstract class BaseElementTemplate {
   genBpmnId() {
     if (!this.bpmnId)
       this.bpmnId = uuid()
+  }
+
+  constructor(options?: {[key: string]: any}) {
+    if (!!options) {
+      Object.keys(options).forEach(key => {
+        (this as any)[key] = (options as any)[key]
+      })
+    }
   }
 }
 
