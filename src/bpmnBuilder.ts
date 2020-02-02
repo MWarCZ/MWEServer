@@ -47,7 +47,14 @@ type BpmnLevel2SequenceFlow = {
 type BpmnLevel2DataObject = {
   entity: DataObjectTemplate, data: XmlDataObject, type: 'dataObject',
 }
-type BpmnLevel2 = BpmnLevel2Task | BpmnLevel2SequenceFlow | BpmnLevel2DataObject
+type BpmnLevel2DataObjectReference = {
+  entity: DataObjectTemplate | undefined, data: XmlDataObjectReference, type: 'dataObjectReference',
+  refObject: { bpmnId: string, dataObjectRef: string },
+}
+type BpmnLevel2 = BpmnLevel2Task
+                | BpmnLevel2SequenceFlow
+                | BpmnLevel2DataObject
+                | BpmnLevel2DataObjectReference
 
 /** BPMN Builder */
 export class BpmnBuilder {
@@ -111,7 +118,7 @@ export class BpmnBuilder {
 
   }
 
-  parseBpmnProcess(ns: BpmnNamespace, process: XmlProcess): BpmnLevel1Process {
+  parseBpmnLevel1Process(ns: BpmnNamespace, process: XmlProcess): BpmnLevel1Process {
     let entity = new ProcessTemplate()
     entity.bpmnId = process['#attr'].id
     entity.name = process['#attr'].name
@@ -130,13 +137,13 @@ export class BpmnBuilder {
     let processes = definitions[`${ns.bpmn2}process` as 'process']
     if (!!processes) {
       processes.forEach(process => {
-        queueL1.push(this.parseBpmnProcess(ns, process))
+        queueL1.push(this.parseBpmnLevel1Process(ns, process))
       })
     }
     return queueL1
   }
 
-  parseBpmnDataObject(ns: BpmnNamespace, dataObject: XmlDataObject): BpmnLevel2DataObject {
+  parseBpmnLevel2DataObject(ns: BpmnNamespace, dataObject: XmlDataObject): BpmnLevel2DataObject {
     let entity = new DataObjectTemplate()
     entity.bpmnId = dataObject['#attr'].id
     entity.name = dataObject['#attr'].name
@@ -147,7 +154,18 @@ export class BpmnBuilder {
       type: 'dataObject',
     }
   }
-  parseBpmnTask(ns: BpmnNamespace, task: XmlTask): BpmnLevel2Task {
+  parseBpmnLevel2DataObjectReference(ns: BpmnNamespace, dataObjectReference: XmlDataObjectReference): BpmnLevel2DataObjectReference {
+    return {
+      entity: undefined,
+      refObject: {
+        bpmnId: dataObjectReference['#attr'].id || '',
+        dataObjectRef: dataObjectReference['#attr'].dataObjectRef,
+      },
+      data: dataObjectReference,
+      type: 'dataObjectReference',
+    }
+  }
+  parseBpmnLevel2Task(ns: BpmnNamespace, task: XmlTask): BpmnLevel2Task {
     let entity = new TaskTemplate()
     entity.bpmnId = task['#attr'].id
     entity.name = task['#attr'].name
@@ -157,7 +175,7 @@ export class BpmnBuilder {
       type: 'task',
     }
   }
-  parseBpmnSequenceFlow(ns: BpmnNamespace, seq: XmlSequenceFlow): BpmnLevel2SequenceFlow {
+  parseBpmnLevel2SequenceFlow(ns: BpmnNamespace, seq: XmlSequenceFlow): BpmnLevel2SequenceFlow {
     let entity = new SequenceFlowTemplate()
     entity.bpmnId = seq['#attr'].id
     entity.name = seq['#attr'].name
@@ -170,7 +188,7 @@ export class BpmnBuilder {
   parseBpmnLevel2(ns: BpmnNamespace, process: BpmnLevel1Process): BpmnLevel2[] {
     const queueL2: BpmnLevel2[] = []
 
-    /* NUTNE ZACHOVAT PORADI!
+    /* NUTNE ZACHOVAT PORADI ZPRACOVANI!
       DataObject
       Task
       Event
@@ -179,16 +197,32 @@ export class BpmnBuilder {
     */
     let dataObjects = process.data[`${ns.bpmn2}dataObject` as 'dataObject']
     if (!!dataObjects) {
-      let tmpQ = dataObjects.map(d => this.parseBpmnDataObject(ns, d))
+      let tmpQ = dataObjects.map(d => this.parseBpmnLevel2DataObject(ns, d))
       tmpQ.forEach(dataObject => {
         dataObject.entity.processTemplate = process.entity
       })
       queueL2.push(...tmpQ)
     }
 
+    let dataObjectReference = process.data[`${ns.bpmn2}dataObjectReference` as 'dataObjectReference']
+    if (!!dataObjectReference) {
+      let tmpQ = dataObjectReference.map(d => this.parseBpmnLevel2DataObjectReference(ns, d))
+      tmpQ.forEach(dataObjectReference => {
+        // Pripojit entitu dataObjectTemplate k referenci na dataObject
+        let dataObject = queueL2.find(d => {
+          return d.type === 'dataObject'
+              && d.entity.bpmnId === dataObjectReference.refObject.dataObjectRef
+        })
+        if (dataObject) {
+          dataObjectReference.entity = dataObject.entity
+        }
+      })
+      queueL2.push(...tmpQ)
+    }
+
     let tasks = process.data[`${ns.bpmn2}task` as 'task']
     if (!!tasks) {
-      let tmpQ = tasks.map(t => this.parseBpmnTask(ns, t))
+      let tmpQ = tasks.map(t => this.parseBpmnLevel2Task(ns, t))
       tmpQ.forEach(task => {
         task.entity.processTemplate = process.entity
       })
@@ -200,29 +234,29 @@ export class BpmnBuilder {
     // sequenceFlow MUSI BYT POSLEDNI VE FRONTE!!!
     let sequenceFlows = process.data[`${ns.bpmn2}sequenceFlow` as 'sequenceFlow']
     if (!!sequenceFlows) {
-      let tmpQ = sequenceFlows.map(s => this.parseBpmnSequenceFlow(ns, s))
+      let tmpQ = sequenceFlows.map(s => this.parseBpmnLevel2SequenceFlow(ns, s))
       tmpQ.forEach(seq => {
-        let source = queueL2.find(x => x.entity.bpmnId === seq.data['#attr'].sourceRef)
+        let source = queueL2.find(x => x.entity && x.entity.bpmnId === seq.data['#attr'].sourceRef)
         if (source) {
           let n2s = new NodeToSequenceFlow()
           if (source.type === 'task') {
             n2s.task = source.entity
           } else {
             throw new Error(
-              `SequenceFlow has not element '${source.type}' with id '${source.entity.bpmnId}'`)
+              `SequenceFlow has not element '${source.type}' with id '${source.entity && source.entity.bpmnId}'`)
           }
           // TODO: Event, Gateway
           seq.entity.source = n2s
         }
 
-        let target = queueL2.find(x => x.entity.bpmnId === seq.data['#attr'].targetRef)
+        let target = queueL2.find(x => x.entity && x.entity.bpmnId === seq.data['#attr'].targetRef)
         if (target) {
           let s2n = new SequenceFlowToNode()
           if (target.type === 'task') {
             s2n.task = target.entity
           } else {
             throw new Error(
-              `SequenceFlow has not element '${target.type}' with id '${target.entity.bpmnId}'`)
+              `SequenceFlow has not element '${target.type}' with id '${target.entity && target.entity.bpmnId}'`)
           }
           // TODO: Event, Gateway
           seq.entity.target = s2n
@@ -263,40 +297,92 @@ export class BpmnBuilder {
 
     // let keys = Object.keys(data)
     // let definitions: TDefinitions[] = (keys.length === 1)? data[keys[0]]:undefined
-
     // let nsKeys = Object.keys(definitions['#attr'])
 
     const definitions = this.parseXmlDefinitions(data)
     let ns = this.parseXmlNamespaces(definitions)
 
+    // Nalzeni procesu a vyvoreni instanci
     let queueL1 = this.parseBpmnLevel1(ns, definitions)
     let queueL2: BpmnLevel2[] = []
 
     console.log({ queueL1 })
 
-    queueL1.forEach(x => {
-      if (x.type === 'process') {
-        let tmpQ = this.parseBpmnLevel2(ns, x)
+    // Zpracovani L2
+    queueL1.forEach(elementL1 => {
+      if (elementL1.type === 'process') {
+        let tmpQ = this.parseBpmnLevel2(ns, elementL1)
+        // Doplneni sekundarnich vztahu mezi elementy L2 a L1
         tmpQ.forEach(node => {
-          node.entity.processTemplate = x.entity
+          if (node.entity) {
+            node.entity.processTemplate = elementL1.entity
+          }
         })
         queueL2.push(...tmpQ)
         console.log({ tmpQ })
       }
     })
-    queueL2.forEach(x => {
-      if (x.type === 'task') {
+    // Zpracovani L3
+    queueL2.forEach(elementL2 => {
+      // Doplneni sekundarnich vztahu mezi elementy L3 a L2
 
-      } else if (x.type === 'dataObject') {
+      if (elementL2.type === 'task') {
+        // console.log(`====task ${elementL2.entity.bpmnId}`)
 
-      } else if (x.type === 'sequenceFlow') {
+        console.log(JSON.stringify(elementL2.data, null, 2))
+        let xmlDataInputAssociations = elementL2.data[ `${ns.bpmn2}dataInputAssociation` as 'dataInputAssociation']
+
+        // Existuje vstup dat?
+        if (xmlDataInputAssociations) {
+          // console.log(`=====dataInputAssociation`)
+          xmlDataInputAssociations.forEach(inputAssociation => {
+            // Vyfiltrovani datovych objektu a referenci
+            let dataObjects = queueL2.filter(d=>{
+              return (d.type === 'dataObject' || d.type === 'dataObjectReference')
+            }) as (BpmnLevel2DataObject | BpmnLevel2DataObjectReference)[]
+            // Pole s entitamy dataObject
+            let inputDataObjects: DataObjectTemplate[] = []
+            // console.log(`=====sourceRef `, JSON.stringify(inputAssociation, null, 2))
+            let sourceRefs = inputAssociation[`${ns.bpmn2}sourceRef` as 'sourceRef']
+            // Existuje odkaz zdroj dat
+            if (typeof sourceRefs === 'object') {
+              sourceRefs.forEach(sourceRef => {
+                let dataObject = dataObjects.find(d=>{
+                  return d.entity && d.entity.bpmnId === sourceRef["#text"]
+                })
+                if (dataObject && dataObject.entity) {
+                  inputDataObjects.push(dataObject.entity)
+                }
+              })
+            } else if (typeof sourceRefs === 'string') {
+              let dataObject = dataObjects.find(d => {
+                if (d.type === 'dataObjectReference') {
+                  return d.refObject.bpmnId === sourceRefs
+                }
+                return d.entity && d.entity.bpmnId === sourceRefs
+              })
+              if (dataObject && dataObject.entity) {
+                inputDataObjects.push(dataObject.entity)
+              }
+              console.log('====xxxxxxx ', dataObject)
+            }
+            elementL2.entity.inputs = [...new Set(inputDataObjects)]
+            console.log('====inputDataObjects ', inputDataObjects)
+            console.log(JSON.stringify(elementL2, null, 2))
+          })
+        }
+      } else if (elementL2.type === 'dataObject') {
+
+      } else if (elementL2.type === 'sequenceFlow') {
 
       }
     })
 
-    let entityL1 = queueL1.map(e => e.entity).filter(e => !!e)
+    // Vyfiltrovani entit pro ulozeni do DB
+    // Vyloucit undefined a duplicity
+    let entityL1 = new Set(queueL1.map(e => e.entity).filter(e => !!e))
     await this.connection.manager.save([...entityL1])
-    let entityL2 = queueL2.map(e => e.entity).filter(e => !!e)
+    let entityL2 = new Set(queueL2.map(e => e.entity).filter(e => !!e))
     await this.connection.manager.save([...entityL2])
     // let proc = queueL1.shift()
 
@@ -335,6 +421,7 @@ type XmlProcess = {
   task?: XmlTask[],
   sequenceFlow?: XmlSequenceFlow[],
   dataObject?: XmlDataObject[],
+  dataObjectReference?: XmlDataObjectReference[],
   startEvent?: XmlStartEvent[],
   endEvent?: XmlEndEvent[],
 }
@@ -344,7 +431,9 @@ type XmlDataObjectAttr = {
 } & XmlBaseElementAttr
 type XmlDataObject = {
   '#attr': XmlDataObjectAttr,
-  json?: XmlJson[],
+  extensionElements: {
+    json?: XmlJson[],
+  }[],
 }
 
 type XmlJsonAttr = {}
@@ -352,6 +441,14 @@ type XmlJson = {
   '#attr': XmlJsonAttr,
   '#text': string,
 }
+
+type XmlDataObjectReferenceAttr = {
+  dataObjectRef: string,
+} & XmlBaseElementAttr
+type XmlDataObjectReference = {
+  '#attr': XmlDataObjectReferenceAttr,
+}
+
 
 type XmlTaskAttr = {} & XmlBaseElementAttr
 type XmlTask = {
@@ -363,14 +460,14 @@ type XmlTask = {
 type XmlDataOutputAssociationAttr = {} & XmlBaseElementAttr
 type XmlDataOutputAssociation = {
   '#attr': XmlDataOutputAssociationAttr,
-  sourceRef?: XmlSourceRef[],
-  targetRef?: XmlTargetRef[],
+  sourceRef?: string | XmlSourceRef[],
+  targetRef?: string | XmlTargetRef[],
 }
 type XmlDataInputAssociationAttr = XmlDataOutputAssociationAttr
 type XmlDataInputAssociation = {
   '#attr': XmlDataInputAssociationAttr,
-  sourceRef?: XmlSourceRef[],
-  targetRef?: XmlTargetRef[],
+  sourceRef?: string | XmlSourceRef[],
+  targetRef?: string | XmlTargetRef[],
 }
 type XmlSourceRefAttr = {}
 type XmlSourceRef = {

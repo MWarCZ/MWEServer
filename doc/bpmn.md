@@ -126,9 +126,11 @@ Strom elementů:
 <dataObject id="id" name="string"/>
 
 <dataObject id="id" name="string" mwe:strict="bool">
-	<mwe:json>
-	{ "json": "with", "data": 1 }
-	</mwe:json>
+	<extensionElements>
+		<mwe:json>
+		{ "json": "with", "data": 1 }
+		</mwe:json>
+	</extensionElements>
 </dataObject>
 ```
 ### dataObjectReference 

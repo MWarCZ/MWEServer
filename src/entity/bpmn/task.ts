@@ -18,7 +18,7 @@ export class TaskTemplate extends FlowElementTemplate {
   outputs?: DataObjectTemplate[]
 
 
-  @OneToMany(type => SequenceFlowToNode, entity => entity.task)
+  @OneToMany(type => SequenceFlowToNode, entity => entity.task, {cascade: true})
   incoming?: SequenceFlowToNode[]
 
   @OneToMany(type => NodeToSequenceFlow, entity => entity.task)
