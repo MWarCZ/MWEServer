@@ -1,11 +1,13 @@
-import { BaseElementTemplate } from 'entity/bpmn/baseElement'
 import { parse, validate, X2jOptionsOptional } from 'fast-xml-parser'
 import { Connection } from 'typeorm'
 
+import { BaseElementTemplate } from './entity/bpmn/baseElement'
 import { DataObjectTemplate } from './entity/bpmn/dataObject'
+import { EndEventTemplate } from './entity/bpmn/endEvent'
 import { ProcessTemplate, ProcessType } from './entity/bpmn/process'
 import { SequenceFlowTemplate } from './entity/bpmn/sequenceFlow'
 import { NodeToSequenceFlow, SequenceFlowToNode } from './entity/bpmn/sequenceFlowToNode'
+import { StartEventTemplate } from './entity/bpmn/startEvent'
 import { TaskTemplate } from './entity/bpmn/task'
 
 /** BPMN NAMESPACE */
@@ -51,10 +53,18 @@ type BpmnLevel2DataObjectReference = {
   entity: DataObjectTemplate | undefined, data: XmlDataObjectReference, type: 'dataObjectReference',
   refObject: { bpmnId: string, dataObjectRef: string },
 }
+type BpmnLevel2StartEvent = {
+  entity: StartEventTemplate, data: XmlStartEvent, type: 'startEvent',
+}
+type BpmnLevel2EndEvent = {
+  entity: EndEventTemplate, data: XmlEndEvent, type: 'endEvent',
+}
 type BpmnLevel2 = BpmnLevel2Task
                 | BpmnLevel2SequenceFlow
                 | BpmnLevel2DataObject
                 | BpmnLevel2DataObjectReference
+                | BpmnLevel2StartEvent
+                | BpmnLevel2EndEvent
 
 /** BPMN Builder */
 export class BpmnBuilder {
@@ -114,9 +124,6 @@ export class BpmnBuilder {
     return ns
   }
 
-  parseBpmnLevel0() {
-
-  }
 
   parseBpmnLevel1Process(ns: BpmnNamespace, process: XmlProcess): BpmnLevel1Process {
     let entity = new ProcessTemplate()
@@ -175,6 +182,26 @@ export class BpmnBuilder {
       type: 'task',
     }
   }
+  parseBpmnLevel2StartEvent(ns: BpmnNamespace, event: XmlStartEvent): BpmnLevel2StartEvent{
+    let entity = new StartEventTemplate()
+    entity.bpmnId = event['#attr'].id
+    entity.name = event['#attr'].name
+    return {
+      entity,
+      data: event,
+      type: 'startEvent',
+    }
+  }
+  parseBpmnLevel2EndEvent(ns: BpmnNamespace, event: XmlTask): BpmnLevel2EndEvent {
+    let entity = new EndEventTemplate()
+    entity.bpmnId = event['#attr'].id
+    entity.name = event['#attr'].name
+    return {
+      entity,
+      data: event,
+      type: 'endEvent',
+    }
+  }
   parseBpmnLevel2SequenceFlow(ns: BpmnNamespace, seq: XmlSequenceFlow): BpmnLevel2SequenceFlow {
     let entity = new SequenceFlowTemplate()
     entity.bpmnId = seq['#attr'].id
@@ -185,6 +212,8 @@ export class BpmnBuilder {
       type: 'sequenceFlow',
     }
   }
+
+
   parseBpmnLevel3TaskDataAssociation(
     bpmnReference: string | XmlSourceRef[] | XmlTargetRef[] | undefined,
     queueDataObjectReference: BpmnLevel2DataObjectReference[],
@@ -224,6 +253,8 @@ export class BpmnBuilder {
     let queueDataObjects: BpmnLevel2DataObject[] = []
     let queueDataObjectReference: BpmnLevel2DataObjectReference[] = []
     let queueTasks: BpmnLevel2Task[] = []
+    let queueStartEvent: BpmnLevel2StartEvent[] = []
+    let queueEndEvent: BpmnLevel2EndEvent[] = []
     let queueSequenceFlows: BpmnLevel2SequenceFlow[] = []
     /* NUTNE ZACHOVAT PORADI ZPRACOVANI!
       DataObject
@@ -232,6 +263,8 @@ export class BpmnBuilder {
       Gateway
       SequenceFlow
     */
+
+    // Datas
     let dataObjects = process.data[`${ns.bpmn2}dataObject` as 'dataObject']
     if (!!dataObjects) {
       queueDataObjects = dataObjects.map(d => this.parseBpmnLevel2DataObject(ns, d))
@@ -254,6 +287,7 @@ export class BpmnBuilder {
       })
     }
 
+    // Tasks
     let tasks = process.data[`${ns.bpmn2}task` as 'task']
     if (!!tasks) {
       queueTasks = tasks.map(t => this.parseBpmnLevel2Task(ns, t))
@@ -288,6 +322,21 @@ export class BpmnBuilder {
       })
     }
 
+    // Events
+    let startEvents = process.data[`${ns.bpmn2}startEvent` as 'startEvent']
+    if(!!startEvents) {
+      queueStartEvent = startEvents.map(e => this.parseBpmnLevel2StartEvent(ns, e))
+      queueStartEvent.forEach(event => {
+        event.entity.processTemplate = process.entity
+      })
+    }
+    let endEvents = process.data[`${ns.bpmn2}endEvent` as 'endEvent']
+    if (!!endEvents) {
+      queueEndEvent = endEvents.map(e => this.parseBpmnLevel2EndEvent(ns, e))
+      queueEndEvent.forEach(event => {
+        event.entity.processTemplate = process.entity
+      })
+    }
     // ... Event, Gateway, ...
 
     // sequenceFlow MUSI BYT POSLEDNI VE FRONTE!!!
@@ -295,7 +344,7 @@ export class BpmnBuilder {
     if (!!sequenceFlows) {
       queueSequenceFlows = sequenceFlows.map(s => this.parseBpmnLevel2SequenceFlow(ns, s))
       queueSequenceFlows.forEach(seq => {
-        // Source = Propojeni Uzlu a odchoziho spoje
+        // Source = Outgoing Propojeni Uzlu a odchoziho spoje
         let sourceRef = seq.data['#attr'].sourceRef
         let sourceOK = queueTasks.find(task => {
           if (task.entity.bpmnId === sourceRef) {
@@ -305,10 +354,19 @@ export class BpmnBuilder {
             return true
           }
           return false
-        }) // || queueEvents.find(...) || queueGateways.find(...)
+        }) || queueStartEvent.find(event => {
+          if (event.entity.bpmnId === sourceRef) {
+            let n2s = new NodeToSequenceFlow()
+            n2s.event = event.entity
+            seq.entity.source = n2s
+            return true
+          }
+          return false
+        })
+        // || queueEvents.find(...) || queueGateways.find(...)
         // TODO
 
-        // Target = Propojeni Uzlu a prichoziho spoje
+        // Target = Incoming Propojeni Uzlu a prichoziho spoje
         let targetRef = seq.data['#attr'].targetRef
         let targetOK = queueTasks.find(task => {
           if (task.entity.bpmnId === targetRef) {
@@ -318,7 +376,16 @@ export class BpmnBuilder {
             return true
           }
           return false
-        })// || queueEvents.find(...) || queueGateways.find(...)
+        }) || queueEndEvent.find(event => {
+          if (event.entity.bpmnId === targetRef) {
+            let s2n = new SequenceFlowToNode()
+            s2n.event = event.entity
+            seq.entity.target = s2n
+            return true
+          }
+          return false
+        })
+        // || queueEvents.find(...) || queueGateways.find(...)
         // TODO
       })
     }
@@ -327,6 +394,8 @@ export class BpmnBuilder {
       ...queueDataObjects,
       ...queueDataObjectReference,
       ...queueTasks,
+      ...queueStartEvent,
+      ...queueEndEvent,
       ...queueSequenceFlows,
     ]
   }
@@ -369,7 +438,7 @@ export class BpmnBuilder {
     let queueL1 = this.parseBpmnLevel1(ns, definitions)
     let queueL2: BpmnLevel2[] = []
 
-    console.log({ queueL1 })
+    // console.log({ queueL1 })
 
     // Zpracovani L2
     queueL1.forEach(elementL1 => {
@@ -382,7 +451,7 @@ export class BpmnBuilder {
           }
         })
         queueL2.push(...tmpQ)
-        console.log({ tmpQ })
+        // console.log({ tmpQ })
       }
     })
     // Zpracovani L3
@@ -392,7 +461,7 @@ export class BpmnBuilder {
       if (elementL2.type === 'task') {
         // console.log(`====task ${elementL2.entity.bpmnId}`)
 
-        console.log(JSON.stringify(elementL2.data, null, 2))
+        // console.log(JSON.stringify(elementL2.data, null, 2))
         let xmlDataInputAssociations = elementL2.data[ `${ns.bpmn2}dataInputAssociation` as 'dataInputAssociation']
 
         // Existuje vstup dat?
@@ -427,11 +496,11 @@ export class BpmnBuilder {
               if (dataObject && dataObject.entity) {
                 inputDataObjects.push(dataObject.entity)
               }
-              console.log('====xxxxxxx ', dataObject)
+              // console.log('====xxxxxxx ', dataObject)
             }
             elementL2.entity.inputs = [...new Set(inputDataObjects)]
-            console.log('====inputDataObjects ', inputDataObjects)
-            console.log(JSON.stringify(elementL2, null, 2))
+            // console.log('====inputDataObjects ', inputDataObjects)
+            // console.log(JSON.stringify(elementL2, null, 2))
           })
         }
       } else if (elementL2.type === 'dataObject') {
