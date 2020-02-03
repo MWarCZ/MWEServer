@@ -22,9 +22,9 @@
 Strom elementů:
 - extensionElements
   - > Může býti kdekoliv a obsahuje custom elementy.
-- definitions
-  - process
-    - task
+- definitions (xmlns:, ...)
+  - process (id, name, isExecutable, processType, mwe:versionType, mwe:version)
+    - task (id, name)
       - incoming
       - outgoing
       - property
@@ -34,17 +34,17 @@ Strom elementů:
       - dataInputAssociation
         - sourceRef
         - targetRef
-    - scriptTask
+    - scriptTask (id, name, scriptFormat)
       - script
     - manualTask
       - ...
-    - serviceTask
+    - serviceTask (id, name, mwe:implementation)
       - ...
     - userTask
       - ...
     - sendTask
       - ...
-    - startEvent
+    - startEvent (id, name, eventDefinitionRefs)
       - outgoing
       - conditionalEventDefinition
         - condition
@@ -59,13 +59,15 @@ Strom elementů:
   	- intermediateCatchEvent
       - incoming
     	- ...
-    - endEvent
+    - endEvent (id, name, eventDefinitionRefs)
       - incoming
       - linkEventDefinition
       - messageEventDefinition
       - errorEventDefinition
       - signalEventDefinition
-    - sequenceFlow
+    - sequenceFlow (id, name, sourceRef, targetRef)
+      - Expression (id, name)
+      - FormalExpression (id, name, language)
     - parallelGateway
       - incoming
       - outgoing
@@ -75,8 +77,9 @@ Strom elementů:
 	- inclusiveGateway
       - incoming
       - outgoing
-    - dataObject
-    - dataObjectReference
+    - dataObject  (id, name, mwe:strict)
+      - mwe:json
+    - dataObjectReference (id, name, dataObjectRef)
     - laneSet
       - lane
         - flowNodeRef
@@ -95,7 +98,7 @@ Strom elementů:
 </definitions>
 ```
 
-### process
+### process 
 - `mwe:versionType`
   - Formát verze.
   - Platné: `number` (Celé číslo), `semver` (Dle definice semver. Major.Minor.Path )
@@ -123,17 +126,19 @@ Strom elementů:
 <dataObject id="id" name="string"/>
 
 <dataObject id="id" name="string" mwe:strict="bool">
-	<mwe:json>
-	{ "json": "with", "data": 1 }
-	</mwe:json>
+	<extensionElements>
+		<mwe:json>
+		{ "json": "with", "data": 1 }
+		</mwe:json>
+	</extensionElements>
 </dataObject>
 ```
-### dataObjectReference
+### dataObjectReference 
 ```xml
-<dataObjectReference id="id" dataObjectRef="id_dataObject"/>
+<dataObjectReference id="id" name="string" dataObjectRef="id_dataObject"/>
 ```
 
-### task
+### task 
 - Abstraktní úloha sloužící pro ladění.
 - Ve výchozím stavu se chová jako `scriptTask` bez skriptu.
 ```xml
@@ -153,7 +158,7 @@ Strom elementů:
 	...
 </serviceTask>
 ```
-### scriptTask  
+### scriptTask 
 - Úloha spouštící v ní definovaný skript.
 - Výchozí chování je dobře dělat nic.
 - Skript může přijímat data (Obdrží jen kopii dat z dataObject.).
@@ -209,7 +214,7 @@ Strom elementů:
 </targetRef>
 ```
 
-### startEvent
+### startEvent 
 ```xml
 <startEvent id="id" name="string">
 	...
@@ -219,7 +224,7 @@ Strom elementů:
 	...
 </startEvent>
 ```
-### endEvent
+### endEvent 
 ```xml
 <endEvent id="id" name="string" eventDefinitionRefs="Id_eventDefinitions">
 	...

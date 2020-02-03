@@ -1,10 +1,10 @@
 import { Entity, TableInheritance } from 'typeorm'
 
-import { BaseElementTemplate } from './baseElement'
+import { FlowElementTemplate } from './flowElement'
 
 @Entity()
-@TableInheritance({ column: { type: "varchar", name: "class" } })
-export abstract class EventTemplate extends BaseElementTemplate {
+@TableInheritance({ column: { type: 'varchar', name: 'class' } })
+export abstract class EventTemplate extends FlowElementTemplate {
   eventDefinition?: any
 }
 
