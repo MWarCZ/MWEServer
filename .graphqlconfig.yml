@@ -1,0 +1,17 @@
+
+schema: ./src/graphql/typeDefs/schema.graphql
+generates:
+  ./src/graphql/generated/types.ts:
+    config:
+      contextType: ../context#MyContext
+    plugins:
+      - add:
+          content:
+            - ''
+            - 'export declare namespace GQLTypes {'
+            - ''
+      - add:
+          placement: append
+          content: '} // end namespace'
+      - typescript
+      - typescript-resolvers

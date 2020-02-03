@@ -1,8 +1,20 @@
 # import * from './group.graphql'
 
-extend type Query {
-  user(id:Int!):User
-  users:[User]!
+type Query {
+  user(id:Int!): User
+  users: [User]!
+  allUsers: [User]!
+}
+type Mutation {
+  createNewUser(input: NewUserInput!):User
+
+  changeUserPassword(input: ChangePasswordInput, id: Int): Boolean
+  updateUserInfo(input: UpdateUserInfoInput!, id: Int): User
+  deleteUser(id: Int!): Boolean
+
+  lockUser(id: Int!): User
+  unlockUser(id: Int!): User
+
 }
 
 type User {
@@ -12,4 +24,26 @@ type User {
   firstName: String
   lastName: String
   groups: [Group!]!
+  protected: Boolean!
+  locked: Boolean!
+}
+
+input NewUserInput {
+  password: String!
+  login: String!
+
+  email: String
+  firstName: String
+  lastName: String
+}
+
+input UpdateUserInfoInput {
+  email: String
+  firstName: String
+  lastName: String
+}
+
+input ChangePasswordInput {
+  oldPassword: String!
+  newPassword: String!
 }

@@ -182,7 +182,7 @@ export class BpmnBuilder {
       type: 'task',
     }
   }
-  parseBpmnLevel2StartEvent(ns: BpmnNamespace, event: XmlStartEvent): BpmnLevel2StartEvent{
+  parseBpmnLevel2StartEvent(ns: BpmnNamespace, event: XmlStartEvent): BpmnLevel2StartEvent {
     let entity = new StartEventTemplate()
     entity.bpmnId = event['#attr'].id
     entity.name = event['#attr'].name
@@ -224,12 +224,12 @@ export class BpmnBuilder {
       let dataObj = this.parseBpmnLevel3TaskDataAssociationReference(
         bpmnReference, queueDataObjectReference, queueDataObjects,
       )
-      return (dataObj)? [dataObj] : []
+      return (dataObj) ? [dataObj] : []
     }
     // Tag s textem a atributem
     if (typeof bpmnReference === 'object') {
       let dataObjs = bpmnReference.map(ref => this.parseBpmnLevel3TaskDataAssociationReference(
-        ref["#text"], queueDataObjectReference, queueDataObjects
+        ref['#text'], queueDataObjectReference, queueDataObjects,
       )).filter(d => typeof d !== 'undefined') as DataObjectTemplate[]
       return [...dataObjs]
     }
@@ -245,7 +245,7 @@ export class BpmnBuilder {
     }) || queueDataObjects.find(d => {
       return (d.entity.bpmnId === bpmnReference)
     })
-    return (obj)? obj.entity : undefined
+    return (obj) ? obj.entity : undefined
   }
 
   parseBpmnLevel2(ns: BpmnNamespace, process: BpmnLevel1Process): BpmnLevel2[] {
@@ -298,10 +298,10 @@ export class BpmnBuilder {
         // Prirazeni vstupnich dat
         let xmlDataInputAssociations = task.data[`${ns.bpmn2}dataInputAssociation` as 'dataInputAssociation']
         if (!!xmlDataInputAssociations) {
-          let inputsDataObjectTemplate = xmlDataInputAssociations.reduce((acc: DataObjectTemplate[], inputAssociation)=>{
+          let inputsDataObjectTemplate = xmlDataInputAssociations.reduce((acc: DataObjectTemplate[], inputAssociation) => {
             let sourceRefs = inputAssociation[`${ns.bpmn2}sourceRef` as 'sourceRef']
             acc.push(...this.parseBpmnLevel3TaskDataAssociation(
-              sourceRefs, queueDataObjectReference, queueDataObjects
+              sourceRefs, queueDataObjectReference, queueDataObjects,
             ))
             return acc
           }, [])
@@ -313,7 +313,7 @@ export class BpmnBuilder {
           let outputsDataObjectTemplate = xmlDataOutputAssociations.reduce((acc: DataObjectTemplate[], inputAssociation) => {
             let targetRefs = inputAssociation[`${ns.bpmn2}targetRef` as 'targetRef']
             acc.push(...this.parseBpmnLevel3TaskDataAssociation(
-              targetRefs, queueDataObjectReference, queueDataObjects
+              targetRefs, queueDataObjectReference, queueDataObjects,
             ))
             return acc
           }, [])
@@ -324,7 +324,7 @@ export class BpmnBuilder {
 
     // Events
     let startEvents = process.data[`${ns.bpmn2}startEvent` as 'startEvent']
-    if(!!startEvents) {
+    if (!!startEvents) {
       queueStartEvent = startEvents.map(e => this.parseBpmnLevel2StartEvent(ns, e))
       queueStartEvent.forEach(event => {
         event.entity.processTemplate = process.entity
@@ -469,7 +469,7 @@ export class BpmnBuilder {
           // console.log(`=====dataInputAssociation`)
           xmlDataInputAssociations.forEach(inputAssociation => {
             // Vyfiltrovani datovych objektu a referenci
-            let dataObjects = queueL2.filter(d=>{
+            let dataObjects = queueL2.filter(d => {
               return (d.type === 'dataObject' || d.type === 'dataObjectReference')
             }) as (BpmnLevel2DataObject | BpmnLevel2DataObjectReference)[]
             // Pole s entitamy dataObject
@@ -479,8 +479,8 @@ export class BpmnBuilder {
             // Existuje odkaz zdroj dat
             if (typeof sourceRefs === 'object') {
               sourceRefs.forEach(sourceRef => {
-                let dataObject = dataObjects.find(d=>{
-                  return d.entity && d.entity.bpmnId === sourceRef["#text"]
+                let dataObject = dataObjects.find(d => {
+                  return d.entity && d.entity.bpmnId === sourceRef['#text']
                 })
                 if (dataObject && dataObject.entity) {
                   inputDataObjects.push(dataObject.entity)

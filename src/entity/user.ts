@@ -39,6 +39,9 @@ export class User {
   @Column('boolean', { default: false })
   protected?: boolean
 
+  @Column('boolean', { default: false })
+  locked?: boolean
+
   @BeforeRemove()
   async canBeRemoved() {
     if (this.protected)
