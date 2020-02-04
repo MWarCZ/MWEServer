@@ -65,7 +65,7 @@ export class BpmnBuilder {
       Object.keys(definitionsAttr).forEach(attr => {
         const splitedAttr = attr.split(':')
         if (splitedAttr[0] === 'xmlns' && splitedAttr.length === 2) {
-          const uri = (definitionsAttr)? definitionsAttr[attr] : ''
+          const uri = (definitionsAttr) ? definitionsAttr[attr] : ''
           const nsTmp = `${splitedAttr[1]}:`
           if (uri === BpmnNamespaceUri.bpmn2)
             ns.bpmn2 = nsTmp
@@ -102,9 +102,9 @@ export class BpmnBuilder {
   private parseProcess(process: BpmnFxm.Process): BpmnLevel.Process {
     let entity = new ProcessTemplate()
     this.loadBaseElement(entity, process['#attr'])
-    if(process['#attr']) {
+    if (process['#attr']) {
       entity.isExecutable = process['#attr'].isExecutable
-      entity.processType = <ProcessType>process['#attr'][`${this.ns.mwe}versionType` as 'versionType']
+      entity.processType = <ProcessType> process['#attr'][`${this.ns.mwe}versionType` as 'versionType']
       entity.version = process['#attr'][`${this.ns.mwe}version` as 'version']
     }
     return {
@@ -309,8 +309,8 @@ export class BpmnBuilder {
       seq.entity.processTemplate = process.entity
 
       // Source = Outgoing Propojeni Uzlu a odchoziho spoje
-      if (seq.data && seq.data["#attr"] && seq.data["#attr"].sourceRef) {
-        let sourceRef = seq.data["#attr"].sourceRef
+      if (seq.data && seq.data['#attr'] && seq.data['#attr'].sourceRef) {
+        let sourceRef = seq.data['#attr'].sourceRef
         let okSource = queues.Task.find(task => {
           this.connectNode2SequenceFlow(seq.entity, task.entity, sourceRef)
         }) || queues.StartEvent.find(event => {
@@ -321,7 +321,7 @@ export class BpmnBuilder {
       }
 
       // Target = Incoming Propojeni Uzlu a prichoziho spoje
-      if (seq.data && seq.data["#attr"] && seq.data["#attr"].targetRef) {
+      if (seq.data && seq.data['#attr'] && seq.data['#attr'].targetRef) {
         let targetRef = seq.data['#attr'].targetRef
         let okTarget = queues.Task.find(task => {
           this.connectSequenceFlow2Node(seq.entity, task.entity, targetRef)
@@ -337,7 +337,7 @@ export class BpmnBuilder {
   }
 
   private connectNode2SequenceFlow<T extends BaseElementTemplate>(
-    sequenceFlowEntity: SequenceFlowTemplate, nodeEntity: T, referenceBpmnId: string
+    sequenceFlowEntity: SequenceFlowTemplate, nodeEntity: T, referenceBpmnId: string,
   ): boolean {
     if (nodeEntity.bpmnId === referenceBpmnId) {
       let n2s = new NodeToSequenceFlow()
@@ -357,7 +357,7 @@ export class BpmnBuilder {
   }
 
   private connectSequenceFlow2Node<T extends BaseElementTemplate>(
-    sequenceFlowEntity: SequenceFlowTemplate, nodeEntity: T, referenceBpmnId: string
+    sequenceFlowEntity: SequenceFlowTemplate, nodeEntity: T, referenceBpmnId: string,
   ): boolean {
     if (nodeEntity.bpmnId === referenceBpmnId) {
       let s2n = new SequenceFlowToNode()
@@ -391,7 +391,7 @@ export class BpmnBuilder {
     // Tag s textem a atributem
     else if (typeof bpmnReference === 'object') {
       let dataObjs = bpmnReference
-        .reduce((acc: string[], ref) => (!!ref["#text"]) ? [...acc, ref["#text"]] : acc, [])
+        .reduce((acc: string[], ref) => (!!ref['#text']) ? [...acc, ref['#text']] : acc, [])
         .map(refId => this.parseTaskDataAssociationReference(
           queueDataObjectReference, queueDataObjects, refId,
         ))
@@ -415,7 +415,7 @@ export class BpmnBuilder {
   }
 
 
-  async loadFromFxp(dataFxp: any, ) {
+  async loadFromFxp(dataFxp: any ) {
     const definitions = this.parseDefinitions(dataFxp)
     this.loadNamespaces(definitions)
     const level1 = this.parseLevel1(definitions)
@@ -425,7 +425,7 @@ export class BpmnBuilder {
     await this.connection.manager.save([...process])
 
     await Promise.all(
-      level2.map(async (level) => {
+      level2.map(async(level) => {
         // NUTNE zachovat porad!
         let dataObjects = new Set(level.DataObject.map(e => e.entity).filter(e => !!e))
         await this.connection.manager.save([...dataObjects])
@@ -441,7 +441,7 @@ export class BpmnBuilder {
 
         let sequenceFlows = new Set(level.SequenceFlow.map(e => e.entity).filter(e => !!e))
         await this.connection.manager.save([...sequenceFlows])
-      })
+      }),
     )
     // level2.forEach(async (level) => {
     //   // NUTNE zachovat porad!
