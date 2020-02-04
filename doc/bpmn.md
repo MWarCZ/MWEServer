@@ -68,17 +68,19 @@ Strom elementů:
     - sequenceFlow (id, name, sourceRef, targetRef)
       - Expression (id, name)
       - FormalExpression (id, name, language)
-    - parallelGateway
+      - conditionExpression (id, name, xsi:type)
+    - parallelGateway (id, name, gatewayDirections)
+      - incoming 
+      - outgoing 
+	- exclusiveGateway (id, name, gatewayDirections)
       - incoming
       - outgoing
-	- exclusiveGateway
-      - incoming
-      - outgoing
-	- inclusiveGateway
+	- inclusiveGateway (id, name, gatewayDirections)
       - incoming
       - outgoing
     - dataObject  (id, name, mwe:strict)
-      - mwe:json
+      - extensionElements
+        - mwe:json
     - dataObjectReference (id, name, dataObjectRef)
     - laneSet
       - lane
@@ -233,4 +235,8 @@ Strom elementů:
 ### sequenceFlow
 ```xml
 <sequenceFlow id="id" name="string" sourceRef="id_taks | id_gateway | id_event" targetRef="id_taks | id_gateway | id_event" />
+
+<sequenceFlow id="id" name="string" sourceRef="id_taks | id_gateway | id_event" targetRef="id_taks | id_gateway | id_event">
+	<conditionExpression xsi:type="bpmn2:tFormalExpression">O===Z</conditionExpression>
+</sequenceFlow>
 ```
