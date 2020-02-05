@@ -1,3 +1,5 @@
+import 'jest-extended'
+
 import { readFileSync } from 'fs'
 import { join as joinPath } from 'path'
 import { Connection } from 'typeorm'
@@ -113,12 +115,12 @@ describe('Testy prevodu XML na interni entity DB', () => {
     const startEvent = await connection.getRepository(StartEventTemplate).findOneOrFail({
       relations: ['outgoing'],
     })
-    expect(startEvent.outgoing && startEvent.outgoing.length).toBe(1)
+    expect(startEvent.outgoing).toBeArrayOfSize(1)
 
     const endEvent = await connection.getRepository(EndEventTemplate).findOneOrFail({
       relations: ['incoming'],
     })
-    expect(endEvent.incoming && endEvent.incoming.length).toBe(1)
+    expect(endEvent.incoming).toBeArrayOfSize(1)
 
     const dataObject = await connection.getRepository(DataObjectTemplate).findOneOrFail()
     expect(dataObject.name).toBe('DATA')
@@ -128,20 +130,19 @@ describe('Testy prevodu XML na interni entity DB', () => {
     const task = await connection.getRepository(TaskTemplate).findOneOrFail({
       relations: ['incoming', 'outgoing', 'inputs', 'outputs'],
     })
-    expect(task.incoming && task.incoming.length).toBe(1)
-    expect(task.outgoing && task.outgoing.length).toBe(1)
-    expect(task.inputs && task.inputs.length).toBe(1)
-    expect(task.outputs && task.outputs.length).toBe(1)
+    expect(task.incoming).toBeArrayOfSize(1)
+    expect(task.outgoing).toBeArrayOfSize(1)
+    expect(task.inputs).toBeArrayOfSize(1)
+    expect(task.outputs).toBeArrayOfSize(1)
 
     const sequences = await connection.getRepository(SequenceFlowTemplate).find({
       relations: ['source', 'target'],
     })
-    expect(sequences.length).toBe(2)
+    expect(sequences).toBeArrayOfSize(2)
     sequences.forEach(sequence => {
       expect(sequence.source).toBeDefined()
       expect(sequence.target).toBeDefined()
     })
-
 
   })
 
@@ -161,23 +162,23 @@ describe('Testy prevodu XML na interni entity DB', () => {
       const startEvent = await connection.getRepository(StartEventTemplate).findOneOrFail({
         relations: ['outgoing'],
       })
-      expect(startEvent.outgoing && startEvent.outgoing.length).toBe(1)
+      expect(startEvent.outgoing).toBeArrayOfSize(1)
 
       const endEvent = await connection.getRepository(EndEventTemplate).findOneOrFail({
         relations: ['incoming'],
       })
-      expect(endEvent.incoming && endEvent.incoming.length).toBe(1)
+      expect(endEvent.incoming).toBeArrayOfSize(1)
 
       const task = await connection.getRepository(TaskTemplate).findOneOrFail({
         relations: ['incoming', 'outgoing'],
       })
-      expect(task.incoming && task.incoming.length).toBe(1)
-      expect(task.outgoing && task.outgoing.length).toBe(1)
+      expect(task.incoming).toBeArrayOfSize(1)
+      expect(task.outgoing).toBeArrayOfSize(1)
 
       const sequences = await connection.getRepository(SequenceFlowTemplate).find({
         relations: ['source', 'target'],
       })
-      expect(sequences.length).toBe(2)
+      expect(sequences).toBeArrayOfSize(2)
       sequences.forEach(sequence => {
         expect(sequence.source).toBeDefined()
         expect(sequence.target).toBeDefined()
@@ -208,27 +209,27 @@ describe('Testy prevodu XML na interni entity DB', () => {
       const tasks = await connection.getRepository(TaskTemplate).find({
         relations: ['incoming', 'outgoing'],
       })
-      expect(tasks.length).toBe(3)
+      expect(tasks).toBeArrayOfSize(3)
       tasks.forEach(task => {
-        expect(task.incoming && task.incoming.length).toBe(1)
-        expect(task.outgoing && task.outgoing.length).toBe(1)
+        expect(task.incoming).toBeArrayOfSize(1)
+        expect(task.outgoing).toBeArrayOfSize(1)
       })
 
       const gateways = await connection.getRepository(GatewayTemplate).find({
         relations: ['incoming', 'outgoing'],
       })
-      expect(gateways.length).toBe(2)
+      expect(gateways).toBeArrayOfSize(2)
       expect(gateways[0].type).toBe(GatewayType.Parallel)
-      expect(gateways[0].incoming && gateways[0].incoming.length).toBe(1)
-      expect(gateways[0].outgoing && gateways[0].outgoing.length).toBe(2)
+      expect(gateways[0].incoming).toBeArrayOfSize(1)
+      expect(gateways[0].outgoing).toBeArrayOfSize(2)
       expect(gateways[1].type).toBe(GatewayType.Parallel)
-      expect(gateways[1].incoming && gateways[1].incoming.length).toBe(2)
-      expect(gateways[1].outgoing && gateways[1].outgoing.length).toBe(1)
+      expect(gateways[1].incoming).toBeArrayOfSize(2)
+      expect(gateways[1].outgoing).toBeArrayOfSize(1)
 
       const sequences = await connection.getRepository(SequenceFlowTemplate).find({
         relations: ['source', 'target'],
       })
-      expect(sequences.length).toBe(7)
+      expect(sequences).toBeArrayOfSize(7)
       sequences.forEach(sequence => {
         expect(sequence.source).toBeDefined()
         expect(sequence.target).toBeDefined()
@@ -249,14 +250,14 @@ describe('Testy prevodu XML na interni entity DB', () => {
       const startEvent = await connection.getRepository(StartEventTemplate).findOneOrFail({
         relations: ['outgoing'],
       })
-      expect(startEvent.outgoing && startEvent.outgoing.length).toBe(1)
+      expect(startEvent.outgoing).toBeArrayOfSize(1)
 
       const endEvents = await connection.getRepository(EndEventTemplate).find({
         relations: ['incoming'],
       })
-      expect(endEvents.length).toBe(7)
+      expect(endEvents).toBeArrayOfSize(7)
       endEvents.forEach(event => {
-        expect(event.incoming && event.incoming.length).toBe(1)
+        expect(event.incoming).toBeArrayOfSize(1)
       })
 
       const gateways = await connection.getRepository(GatewayTemplate).find({
@@ -277,8 +278,8 @@ describe('Testy prevodu XML na interni entity DB', () => {
         else {
           throw new Error(`Nelze urcit dle nazvu '${name}'.`)
         }
-        expect(gateway.incoming && gateway.incoming.length).toBe(1)
-        expect(gateway.outgoing && gateway.outgoing.length).toBe(3)
+        expect(gateway.incoming).toBeArrayOfSize(1)
+        expect(gateway.outgoing).toBeArrayOfSize(3)
       })
 
     })

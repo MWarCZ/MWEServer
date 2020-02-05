@@ -14,5 +14,6 @@
   "testMatch": [
     "<rootDir>/tests/**/*.test.(ts|js)"
   ],
-  "testEnvironment": "node"
+  "testEnvironment": "node",
+  "setupFilesAfterEnv": ["jest-extended"]
 }
