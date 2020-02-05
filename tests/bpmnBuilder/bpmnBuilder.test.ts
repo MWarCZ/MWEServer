@@ -67,6 +67,7 @@ describe('Testy prevodu XML na interni entity DB', () => {
         xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
         xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"
         xmlns:di="http://www.omg.org/spec/DD/20100524/DI"
+        xmlns:mwe="http://www.mwarcz.cz/mwe/bpmn/"
         id="Definitions_0zzkwuq"
         targetNamespace="http://bpmn.io/schema/bpmn"
         exporter="bpmn-js (https://demo.bpmn.io)"
@@ -90,7 +91,13 @@ describe('Testy prevodu XML na interni entity DB', () => {
           </bpmn:task>
 
           <bpmn:dataObjectReference id="DataObjectReference_1" dataObjectRef="DataObject_1" />
-          <bpmn:dataObject name='DATA' id="DataObject_1" />
+          <bpmn:dataObject name='DATA' id="DataObject_1">
+            <bpmn:extensionElements>
+            <mwe:json>
+            {"pozdrav":"ahoj", "cislo": 10, "existuji": true}
+            </mwe:json>
+            </bpmn:extensionElements>
+          </bpmn:dataObject>
 
           <bpmn:sequenceFlow id="${test.sequences[0].id}" sourceRef="${test.sequences[0].source}" targetRef="${test.sequences[0].target}" />
           <bpmn:sequenceFlow id="${test.sequences[1].id}" sourceRef="${test.sequences[1].source}" targetRef="${test.sequences[1].target}" />

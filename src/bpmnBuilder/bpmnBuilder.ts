@@ -6,7 +6,7 @@ import { DataObjectTemplate } from '../entity/bpmn/dataObject'
 import { EndEventTemplate } from '../entity/bpmn/endEvent'
 import { EventTemplate } from '../entity/bpmn/event'
 import { GatewayDirection, GatewayTemplate, GatewayType } from '../entity/bpmn/gateway'
-import { ProcessTemplate, ProcessType } from '../entity/bpmn/process'
+import { ProcessTemplate, ProcessType, VersionType } from '../entity/bpmn/process'
 import { SequenceFlowTemplate } from '../entity/bpmn/sequenceFlow'
 import { NodeToSequenceFlow, SequenceFlowToNode } from '../entity/bpmn/sequenceFlowToNode'
 import { StartEventTemplate } from '../entity/bpmn/startEvent'
@@ -104,7 +104,9 @@ export class BpmnBuilder {
     this.loadBaseElement(entity, process['#attr'])
     if (process['#attr']) {
       entity.isExecutable = process['#attr'].isExecutable
-      entity.processType = <ProcessType> process['#attr'][`${this.ns.mwe}versionType` as 'versionType']
+      // TODO Osetrit enum
+      entity.processType = <ProcessType> process['#attr'].processType
+      entity.versionType = <VersionType> process['#attr'][`${this.ns.mwe}versionType` as 'versionType']
       entity.version = process['#attr'][`${this.ns.mwe}version` as 'version']
     }
     return {
@@ -294,6 +296,24 @@ export class BpmnBuilder {
     // DataObject
     queues.DataObject.forEach(dataObject => {
       dataObject.entity.processTemplate = process.entity
+      let extensionElements = dataObject.data[`${this.ns.bpmn2}extensionElements` as 'extensionElements']
+      if (typeof extensionElements === 'object') {
+        extensionElements.find(ex => {
+          let json = ex[`${this.ns.mwe}json` as 'json']
+          if (typeof json === 'string') {
+            dataObject.entity.json = JSON.parse(json)
+            return true
+          } else if (typeof json === 'object') {
+            if (json[0]['#text']) {
+              dataObject.entity.json = JSON.parse(json[0]["#text"])
+              return true
+            }
+          }
+          return false
+        })
+      }
+
+
     })
     // DataObjectReference
     queues.DataObjectReference.forEach(dataObjectReference => {
