@@ -181,7 +181,6 @@ export declare namespace BpmnFxm {
   } & BaseElementAttr
   type Gateway = {
     '#attr'?: GatewayAttr,
-    '#text'?: string,
     outgoing?: string | string[], /** */
     incoming?: string | string[], /** */
   }
@@ -189,19 +188,16 @@ export declare namespace BpmnFxm {
   type ParallelGatewayAttr = {} & GatewayAttr
   type ParallelGateway = {
     '#attr'?: ParallelGatewayAttr,
-    '#text'?: string,
   } & Gateway
 
   type ExclusiveGatewayAttr = {} & GatewayAttr
   type ExclusiveGateway = {
     '#attr'?: ExclusiveGatewayAttr,
-    '#text'?: string,
   } & Gateway
 
   type InclusiveGatewayAttr = {} & GatewayAttr
   type InclusiveGateway = {
     '#attr'?: InclusiveGatewayAttr,
-    '#text'?: string,
   } & Gateway
 
 

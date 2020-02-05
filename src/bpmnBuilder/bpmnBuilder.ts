@@ -5,7 +5,7 @@ import { BaseElementTemplate } from '../entity/bpmn/baseElement'
 import { DataObjectTemplate } from '../entity/bpmn/dataObject'
 import { EndEventTemplate } from '../entity/bpmn/endEvent'
 import { EventTemplate } from '../entity/bpmn/event'
-import { GatewayTemplate } from '../entity/bpmn/gateway'
+import { GatewayDirection, GatewayTemplate, GatewayType } from '../entity/bpmn/gateway'
 import { ProcessTemplate, ProcessType } from '../entity/bpmn/process'
 import { SequenceFlowTemplate } from '../entity/bpmn/sequenceFlow'
 import { NodeToSequenceFlow, SequenceFlowToNode } from '../entity/bpmn/sequenceFlowToNode'
@@ -198,6 +198,20 @@ export class BpmnBuilder {
     }
   }
 
+  private parseGateway(gateway: BpmnFxm.Gateway, gatewayType: GatewayType): BpmnLevel.Gateway {
+    let entity = new GatewayTemplate()
+    this.loadBaseElement(entity, gateway['#attr'])
+    if (gateway['#attr']) {
+      entity.direction = gateway['#attr'].gatewayDirections as GatewayDirection
+      entity.type = gatewayType
+    }
+    return {
+      entity,
+      data: gateway,
+      tag: 'gateway',
+    }
+  }
+
   // Level 2
   private parseLevel2(process: BpmnLevel.Process) {
     let queues: {
@@ -207,6 +221,7 @@ export class BpmnBuilder {
       StartEvent: BpmnLevel.StartEvent[],
       EndEvent: BpmnLevel.EndEvent[],
       SequenceFlow: BpmnLevel.SequenceFlow[],
+      Gateway: BpmnLevel.Gateway[],
     } = {
       DataObject: [],
       DataObjectReference: [],
@@ -214,6 +229,8 @@ export class BpmnBuilder {
       StartEvent: [],
       EndEvent: [],
       SequenceFlow: [],
+      Gateway: [],
+    // TODO ScriptTask, Gateway, ....
     }
 
     // GET OBJECTS
@@ -233,6 +250,28 @@ export class BpmnBuilder {
     if (typeof tasks === 'object') {
       queues.Task = tasks.map(t => this.parseTask(t))
     }
+    // TODO ScriptTask, ....
+
+    // Gateway
+    let exclusiveGateways = process.data[`${this.ns.bpmn2}exclusiveGateway` as 'exclusiveGateway']
+    if (typeof exclusiveGateways === 'object') {
+      queues.Gateway.push(...exclusiveGateways.map(
+        g => this.parseGateway(g, GatewayType.Exclusive),
+      ))
+    }
+    let parallelGateways = process.data[`${this.ns.bpmn2}parallelGateway` as 'parallelGateway']
+    if (typeof parallelGateways === 'object') {
+      queues.Gateway.push(...parallelGateways.map(g =>
+        this.parseGateway(g, GatewayType.Parallel),
+      ))
+    }
+    let inclusiveGateways = process.data[`${this.ns.bpmn2}inclusiveGateway` as 'inclusiveGateway']
+    if (typeof inclusiveGateways === 'object') {
+      queues.Gateway.push(...inclusiveGateways.map(g =>
+        this.parseGateway(g, GatewayType.Inclusive),
+      ))
+    }
+
     // StartEvent
     let startEvents = process.data[`${this.ns.bpmn2}startEvent` as 'startEvent']
     if (typeof startEvents === 'object') {
@@ -296,6 +335,8 @@ export class BpmnBuilder {
         task.entity.outputs = [...new Set(outputsDataObjectTemplate)]
       }
     })
+    // TODO ScriptTask, ....
+
     // StartEvent
     queues.StartEvent.forEach(event => {
       event.entity.processTemplate = process.entity
@@ -315,6 +356,8 @@ export class BpmnBuilder {
           this.connectNode2SequenceFlow(seq.entity, task.entity, sourceRef)
         }) || queues.StartEvent.find(event => {
           this.connectNode2SequenceFlow(seq.entity, event.entity, sourceRef)
+        }) || queues.Gateway.find(event => {
+          this.connectNode2SequenceFlow(seq.entity, event.entity, sourceRef)
         })
         // || queueEvents.find(...) || queueGateways.find(...)
         // TODO
@@ -327,10 +370,30 @@ export class BpmnBuilder {
           this.connectSequenceFlow2Node(seq.entity, task.entity, targetRef)
         }) || queues.EndEvent.find(event => {
           this.connectSequenceFlow2Node(seq.entity, event.entity, targetRef)
+        }) || queues.Gateway.find(event => {
+          this.connectSequenceFlow2Node(seq.entity, event.entity, targetRef)
         })
         // || queueEvents.find(...) || queueGateways.find(...)
         // TODO
       }
+    })
+    // Gateway
+    queues.Gateway.forEach(gateway => {
+      gateway.entity.processTemplate = process.entity
+
+      if (gateway.data['#attr']) {
+        let bpmnIdDefault = gateway.data['#attr'].default
+        queues.SequenceFlow.find(seqence => {
+          if (bpmnIdDefault === seqence.entity.bpmnId) {
+            // NEPROHAZOVAT! Gateway bude ukladan drive nez sekvence
+            // V dobe ukladani gateway neexistuji sekvence!
+            seqence.entity.default = gateway.entity
+            return true
+          }
+          return false
+        })
+      }
+
     })
 
     return queues
@@ -433,34 +496,18 @@ export class BpmnBuilder {
         let tasks = new Set(level.Task.map(e => e.entity).filter(e => !!e))
         let startEvents = new Set(level.StartEvent.map(e => e.entity).filter(e => !!e))
         let endEvents = new Set(level.EndEvent.map(e => e.entity).filter(e => !!e))
+        let gateways = new Set(level.Gateway.map(e => e.entity).filter(e => !!e))
         await this.connection.manager.save([
           ...tasks,
           ...startEvents,
           ...endEvents,
+          ...gateways,
         ])
 
         let sequenceFlows = new Set(level.SequenceFlow.map(e => e.entity).filter(e => !!e))
         await this.connection.manager.save([...sequenceFlows])
       }),
     )
-    // level2.forEach(async (level) => {
-    //   // NUTNE zachovat porad!
-
-    //   let dataObjects = new Set(level1.Process.map(e => e.entity))
-    //   await this.connection.manager.save([...dataObjects])
-
-    //   let tasks = new Set(level.Task.map(e => e.entity))
-    //   let startEvents = new Set(level.StartEvent.map(e => e.entity))
-    //   let endEvents = new Set(level.EndEvent.map(e => e.entity))
-    //   await this.connection.manager.save([
-    //     ...tasks,
-    //     ...startEvents,
-    //     ...endEvents,
-    //   ])
-
-    //   let sequenceFlows = new Set(level.SequenceFlow.map(e => e.entity))
-    //   await this.connection.manager.save([...sequenceFlows])
-    // })
 
   }
 

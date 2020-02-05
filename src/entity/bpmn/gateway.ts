@@ -1,6 +1,7 @@
-import { Column, Entity, ManyToOne, OneToMany, OneToOne } from 'typeorm'
+import { Column, Entity, JoinColumn, ManyToOne, OneToMany, OneToOne } from 'typeorm'
 
-import { BaseElementInstance, BaseElementTemplate } from './baseElement'
+import { BaseElementInstance } from './baseElement'
+import { FlowElementTemplate } from './flowElement'
 import { SequenceFlowTemplate } from './sequenceFlow'
 import { NodeToSequenceFlow, SequenceFlowToNode } from './sequenceFlowToNode'
 
@@ -17,7 +18,7 @@ export enum GatewayDirection {
 }
 
 @Entity()
-export class GatewayTemplate extends BaseElementTemplate {
+export class GatewayTemplate extends FlowElementTemplate {
 
   @Column('enum', {
     enum: GatewayType,
@@ -33,6 +34,7 @@ export class GatewayTemplate extends BaseElementTemplate {
   direction?: GatewayDirection
 
   @OneToOne(type => SequenceFlowTemplate)
+  @JoinColumn()
   default?: SequenceFlowTemplate
 
 

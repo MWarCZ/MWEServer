@@ -1,8 +1,11 @@
+import { readFileSync } from 'fs'
+import { join as joinPath } from 'path'
 import { Connection } from 'typeorm'
 
 import { BpmnBuilder } from '../../src/bpmnBuilder'
 import { DataObjectTemplate } from '../../src/entity/bpmn/dataObject'
 import { EndEventTemplate } from '../../src/entity/bpmn/endEvent'
+import { GatewayTemplate, GatewayType } from '../../src/entity/bpmn/gateway'
 import { ProcessTemplate, ProcessType } from '../../src/entity/bpmn/process'
 import { SequenceFlowTemplate } from '../../src/entity/bpmn/sequenceFlow'
 import { StartEventTemplate } from '../../src/entity/bpmn/startEvent'
@@ -12,15 +15,15 @@ import { cleanDataInTables, closeConn, createConn } from '../../src/utils/db'
 let connection: Connection
 
 describe('Testy prevodu XML na interni entity DB', () => {
-  beforeEach(async () => {
+  beforeEach(async() => {
     connection = await createConn()
     await cleanDataInTables(connection, connection.entityMetadatas)
   })
-  afterEach(async () => {
+  afterEach(async() => {
     await closeConn(connection)
   })
 
-  it('Jednoduchy diagram', async ()=>{
+  it('Jednoduchy diagram', async() => {
     const test = {
       process: {
         id: 'ID_PROC_1',
@@ -45,14 +48,14 @@ describe('Testy prevodu XML na interni entity DB', () => {
         {
           id: 'ID_SF_1',
           target: 'ID_TASK_1',
-          source: 'ID_SE_1'
+          source: 'ID_SE_1',
         },
         {
           id: 'ID_SF_2',
           target: 'ID_EE_1',
-          source: 'ID_TASK_1'
+          source: 'ID_TASK_1',
         },
-      ]
+      ],
     }
     const builder = new BpmnBuilder(connection)
     await builder.loadFromXml(`<?xml version="1.0" encoding="UTF-8"?>
@@ -108,12 +111,12 @@ describe('Testy prevodu XML na interni entity DB', () => {
     expect(process.processType).toBe(ProcessType.None)
 
     const startEvent = await connection.getRepository(StartEventTemplate).findOneOrFail({
-      relations: ['outgoing']
+      relations: ['outgoing'],
     })
     expect(startEvent.outgoing && startEvent.outgoing.length).toBe(1)
 
     const endEvent = await connection.getRepository(EndEventTemplate).findOneOrFail({
-      relations: ['incoming']
+      relations: ['incoming'],
     })
     expect(endEvent.incoming && endEvent.incoming.length).toBe(1)
 
@@ -123,7 +126,7 @@ describe('Testy prevodu XML na interni entity DB', () => {
     expect(dataObject.json).toMatchObject({})
 
     const task = await connection.getRepository(TaskTemplate).findOneOrFail({
-      relations: ['incoming', 'outgoing', 'inputs', 'outputs']
+      relations: ['incoming', 'outgoing', 'inputs', 'outputs'],
     })
     expect(task.incoming && task.incoming.length).toBe(1)
     expect(task.outgoing && task.outgoing.length).toBe(1)
@@ -131,7 +134,7 @@ describe('Testy prevodu XML na interni entity DB', () => {
     expect(task.outputs && task.outputs.length).toBe(1)
 
     const sequences = await connection.getRepository(SequenceFlowTemplate).find({
-      relations: ['source', 'target']
+      relations: ['source', 'target'],
     })
     expect(sequences.length).toBe(2)
     sequences.forEach(sequence => {
@@ -139,6 +142,146 @@ describe('Testy prevodu XML na interni entity DB', () => {
       expect(sequence.target).toBeDefined()
     })
 
+
+  })
+
+  describe('Testy nacteni diagramu bpmn ze souboru.', () => {
+
+    it('Diagram simple.bpmn', async() => {
+      let xml = readFileSync(joinPath(
+        __dirname,
+        '../resources/bpmn/simple.bpmn',
+      ), 'utf8').toString()
+
+      let builder = new BpmnBuilder(connection)
+      await builder.loadFromXml(xml)
+
+      const process = await connection.getRepository(ProcessTemplate).findOneOrFail()
+
+      const startEvent = await connection.getRepository(StartEventTemplate).findOneOrFail({
+        relations: ['outgoing'],
+      })
+      expect(startEvent.outgoing && startEvent.outgoing.length).toBe(1)
+
+      const endEvent = await connection.getRepository(EndEventTemplate).findOneOrFail({
+        relations: ['incoming'],
+      })
+      expect(endEvent.incoming && endEvent.incoming.length).toBe(1)
+
+      const task = await connection.getRepository(TaskTemplate).findOneOrFail({
+        relations: ['incoming', 'outgoing'],
+      })
+      expect(task.incoming && task.incoming.length).toBe(1)
+      expect(task.outgoing && task.outgoing.length).toBe(1)
+
+      const sequences = await connection.getRepository(SequenceFlowTemplate).find({
+        relations: ['source', 'target'],
+      })
+      expect(sequences.length).toBe(2)
+      sequences.forEach(sequence => {
+        expect(sequence.source).toBeDefined()
+        expect(sequence.target).toBeDefined()
+      })
+    })
+
+    it('Diagram simple2.bpmn', async() => {
+      let xml = readFileSync(joinPath(
+        __dirname,
+        '../resources/bpmn/simple2.bpmn',
+      ), 'utf8').toString()
+
+      let builder = new BpmnBuilder(connection)
+      await builder.loadFromXml(xml)
+
+      const process = await connection.getRepository(ProcessTemplate).findOneOrFail()
+
+      const startEvent = await connection.getRepository(StartEventTemplate).findOneOrFail({
+        relations: ['outgoing'],
+      })
+      expect(startEvent.outgoing && startEvent.outgoing.length).toBe(1)
+
+      const endEvent = await connection.getRepository(EndEventTemplate).findOneOrFail({
+        relations: ['incoming'],
+      })
+      expect(endEvent.incoming && endEvent.incoming.length).toBe(1)
+
+      const tasks = await connection.getRepository(TaskTemplate).find({
+        relations: ['incoming', 'outgoing'],
+      })
+      expect(tasks.length).toBe(3)
+      tasks.forEach(task => {
+        expect(task.incoming && task.incoming.length).toBe(1)
+        expect(task.outgoing && task.outgoing.length).toBe(1)
+      })
+
+      const gateways = await connection.getRepository(GatewayTemplate).find({
+        relations: ['incoming', 'outgoing'],
+      })
+      expect(gateways.length).toBe(2)
+      expect(gateways[0].type).toBe(GatewayType.Parallel)
+      expect(gateways[0].incoming && gateways[0].incoming.length).toBe(1)
+      expect(gateways[0].outgoing && gateways[0].outgoing.length).toBe(2)
+      expect(gateways[1].type).toBe(GatewayType.Parallel)
+      expect(gateways[1].incoming && gateways[1].incoming.length).toBe(2)
+      expect(gateways[1].outgoing && gateways[1].outgoing.length).toBe(1)
+
+      const sequences = await connection.getRepository(SequenceFlowTemplate).find({
+        relations: ['source', 'target'],
+      })
+      expect(sequences.length).toBe(7)
+      sequences.forEach(sequence => {
+        expect(sequence.source).toBeDefined()
+        expect(sequence.target).toBeDefined()
+      })
+    })
+
+    it('Diagram simple_gateways', async() => {
+      let xml = readFileSync(joinPath(
+        __dirname,
+        '../resources/bpmn/simple_gateways.bpmn',
+      ), 'utf8').toString()
+
+      let builder = new BpmnBuilder(connection)
+      await builder.loadFromXml(xml)
+
+      const process = await connection.getRepository(ProcessTemplate).findOneOrFail()
+
+      const startEvent = await connection.getRepository(StartEventTemplate).findOneOrFail({
+        relations: ['outgoing'],
+      })
+      expect(startEvent.outgoing && startEvent.outgoing.length).toBe(1)
+
+      const endEvents = await connection.getRepository(EndEventTemplate).find({
+        relations: ['incoming'],
+      })
+      expect(endEvents.length).toBe(7)
+      endEvents.forEach(event => {
+        expect(event.incoming && event.incoming.length).toBe(1)
+      })
+
+      const gateways = await connection.getRepository(GatewayTemplate).find({
+        relations: ['incoming', 'outgoing'],
+      })
+      expect(gateways.length).toBe(3)
+      gateways.forEach(gateway => {
+        let name = gateway.name
+        if (name === 'XOR') {
+          expect(gateway.type).toBe(GatewayType.Exclusive)
+        }
+        else if (name === 'AND') {
+          expect(gateway.type).toBe(GatewayType.Parallel)
+        }
+        else if (name === 'OR') {
+          expect(gateway.type).toBe(GatewayType.Inclusive)
+        }
+        else {
+          throw new Error(`Nelze urcit dle nazvu '${name}'.`)
+        }
+        expect(gateway.incoming && gateway.incoming.length).toBe(1)
+        expect(gateway.outgoing && gateway.outgoing.length).toBe(3)
+      })
+
+    })
 
   })
 })

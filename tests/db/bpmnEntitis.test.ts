@@ -13,16 +13,16 @@ const printJSON = false
 let connection: Connection
 
 describe('Testovani entit ', () => {
-  beforeEach(async () => {
+  beforeEach(async() => {
     connection = await createConn()
     await cleanDataInTables(connection, connection.entityMetadatas)
   })
-  afterEach(async () => {
+  afterEach(async() => {
     await closeConn(connection)
   })
   describe('Vytvareni novych zakladnich entit', () => {
 
-    it('ProcessTemplate vychozi', async () => {
+    it('ProcessTemplate vychozi', async() => {
       let process = new ProcessTemplate()
       await connection.manager.save(process)
 
@@ -38,7 +38,7 @@ describe('Testovani entit ', () => {
       expect(typeof res.bpmnId).toBe('string')
     })
 
-    it('ProcessTemplate N-krat', async () => {
+    it('ProcessTemplate N-krat', async() => {
       const count = 10
       for (let i = 0; i < count; i++) {
         let process = new ProcessTemplate()
@@ -48,7 +48,7 @@ describe('Testovani entit ', () => {
         await connection.manager.save(process)
       }
       const arr = await connection.getRepository(ProcessTemplate).find({
-        order: { name: 'ASC' }
+        order: { name: 'ASC' },
       })
       expect(arr.length).toBe(count)
       for (let i = 0; i < arr.length; i++) {
@@ -59,7 +59,7 @@ describe('Testovani entit ', () => {
     })
 
 
-    it('TaskTemplate vychozi', async () => {
+    it('TaskTemplate vychozi', async() => {
       let task = new TaskTemplate()
       await connection.manager.save(task)
 
@@ -71,7 +71,7 @@ describe('Testovani entit ', () => {
       expect(typeof res.bpmnId).toBe('string')
     })
 
-    it('GatewayTemplate vychozi', async () => {
+    it('GatewayTemplate vychozi', async() => {
       let gate = new GatewayTemplate()
       await connection.manager.save(gate)
 
@@ -85,7 +85,7 @@ describe('Testovani entit ', () => {
       expect(res.direction).toBe(GatewayDirection.Unspecified)
     })
 
-    it('SequenceFlowTemplate vychozi', async () => {
+    it('SequenceFlowTemplate vychozi', async() => {
       let seq = new SequenceFlowTemplate()
       await connection.manager.save(seq)
 
@@ -98,7 +98,7 @@ describe('Testovani entit ', () => {
       expect(res.expression).toBe('')
     })
 
-    it('DataObjectTemplate vychozi', async () => {
+    it('DataObjectTemplate vychozi', async() => {
       let data = new DataObjectTemplate()
       await connection.manager.save(data)
 
@@ -115,7 +115,7 @@ describe('Testovani entit ', () => {
   })
 
   describe('Testovani vztahu mezi entitami', () => {
-    it('Task s 1x vstupnimi daty a 1x vystupnimi daty',async()=>{
+    it('Task s 1x vstupnimi daty a 1x vystupnimi daty', async() => {
       const
         input = new DataObjectTemplate(),
         output = new DataObjectTemplate(),
@@ -157,7 +157,7 @@ describe('Testovani entit ', () => {
 
     })
 
-    it('2x Task spojene s 1x SequenceFlow',async()=>{
+    it('2x Task spojene s 1x SequenceFlow', async() => {
       const tasks = [new TaskTemplate(), new TaskTemplate()]
           , sequence = new SequenceFlowTemplate()
           // , target = new SequenceFlowToNode()
@@ -199,7 +199,7 @@ describe('Testovani entit ', () => {
         })
 
       expect(resSeq.name).toBe('sequence')
-      if(!resSeq || !resSeq.source || !resSeq.source.task)
+      if (!resSeq || !resSeq.source || !resSeq.source.task)
         throw new Error('undefined')
       expect(resSeq.source.task.name).toBe('task0')
 
@@ -213,7 +213,7 @@ describe('Testovani entit ', () => {
           relations: ['incoming', 'outgoing', 'incoming.sequenceFlow', 'outgoing.sequenceFlow'],
         })
 
-      if(!resTasks) throw new Error('undefined')
+      if (!resTasks) throw new Error('undefined')
       expect(resTasks.length).toBe(2)
       resTasks.forEach(task => {
         if (!task.outgoing || !task.incoming) throw new Error()

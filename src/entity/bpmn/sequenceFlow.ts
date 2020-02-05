@@ -1,6 +1,7 @@
 import { Column, Entity, OneToOne } from 'typeorm'
 
 import { FlowElementTemplate } from './flowElement'
+import { GatewayTemplate } from './gateway'
 import { NodeToSequenceFlow, SequenceFlowToNode } from './sequenceFlowToNode'
 
 /**
@@ -22,5 +23,9 @@ export class SequenceFlowTemplate extends FlowElementTemplate {
 
   @Column('text')
   expression?: string = ''
+
+  @OneToOne(type => GatewayTemplate, entity => entity.default, { cascade: true })
+  default?: GatewayTemplate
+
 }
 

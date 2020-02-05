@@ -1,3 +1,5 @@
+import { GatewayTemplate } from 'entity/bpmn/gateway'
+
 import { BaseElementTemplate } from '../entity/bpmn/baseElement'
 import { DataObjectTemplate } from '../entity/bpmn/dataObject'
 import { EndEventTemplate } from '../entity/bpmn/endEvent'
@@ -39,6 +41,9 @@ export declare namespace BpmnLevel {
   }
   type EndEvent = {
     entity: EndEventTemplate, data: BpmnFxm.EndEvent, tag: 'endEvent',
+  }
+  type Gateway = {
+    entity: GatewayTemplate, data: BpmnFxm.Gateway, tag: 'gateway',
   }
   type Level2 = Task
     | SequenceFlow
