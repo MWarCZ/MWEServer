@@ -22,67 +22,64 @@
 Strom elementů:
 - extensionElements
   - > Může býti kdekoliv a obsahuje custom elementy.
-- definitions (xmlns:, ...)
-  - process (id, name, isExecutable, processType, mwe:versionType, mwe:version)
-    - task (id, name)
-      - incoming
-      - outgoing
-      - property
-      - dataOutputAssociation
-        - sourceRef
-        - targetRef
-      - dataInputAssociation
-        - sourceRef
-        - targetRef
-    - scriptTask (id, name, scriptFormat)
+- [definitions](#definitions) (xmlns:, ...)
+  - [process](#process) (id, name, isExecutable, processType, mwe:versionType, mwe:version)
+    - [task](#task) (id, name)
+      - [incoming](#incoming)
+      - [outgoing](#outgoing)
+      - [property](#property)
+      - [dataOutputAssociation](#dataOutputAssociation)
+        - [sourceRef](#sourceRef)
+        - [targetRef](#targetRef)
+      - [dataInputAssociation](#dataInputAssociation)
+        - [sourceRef](#sourceRef)
+        - [targetRef](#targetRef)
+    - [scriptTask](#scriptTask) (id, name, scriptFormat)
       - script
     - manualTask
       - ...
-    - serviceTask (id, name, mwe:implementation)
+    - [serviceTask](#serviceTask) (id, name, mwe:implementation)
       - ...
     - userTask
       - ...
     - sendTask
       - ...
-    - startEvent (id, name, eventDefinitionRefs)
-      - outgoing
-      - conditionalEventDefinition
+    - [startEvent](#startEvent) (id, name, eventDefinitionRefs)
+      - [outgoing](#outgoing)
+      - [conditionalEventDefinition](#conditionalEventDefinition)
         - condition
-      - timerEventDefinition
-      - linkEventDefinition
-      - messageEventDefinition
-      - errorEventDefinition
-      - signalEventDefinition
+      - [timerEventDefinition](#timerEventDefinition)
+      - [messageEventDefinition](#messageEventDefinition)
+      - [signalEventDefinition](#signalEventDefinition)
 	- intermediateThrowEvent
       - outgoing
     	- ...
   	- intermediateCatchEvent
       - incoming
     	- ...
-    - endEvent (id, name, eventDefinitionRefs)
-      - incoming
-      - linkEventDefinition
-      - messageEventDefinition
-      - errorEventDefinition
-      - signalEventDefinition
-    - sequenceFlow (id, name, sourceRef, targetRef)
+    - [endEvent](#endEvent) (id, name, eventDefinitionRefs)
+      - [incoming](#incoming)
+      - [messageEventDefinition](#messageEventDefinition)
+      - [errorEventDefinition](#errorEventDefinition)
+      - [signalEventDefinition](#signalEventDefinition)
+    - [sequenceFlow](#sequenceflow) (id, name, sourceRef, targetRef)
       - Expression (id, name)
       - FormalExpression (id, name, language)
       - conditionExpression (id, name, xsi:type)
-    - parallelGateway (id, name, gatewayDirections)
-      - incoming 
-      - outgoing 
-	- exclusiveGateway (id, name, gatewayDirections)
-      - incoming
-      - outgoing
-	- inclusiveGateway (id, name, gatewayDirections)
-      - incoming
-      - outgoing
-    - dataObject  (id, name, mwe:strict)
+    - [parallelGateway](#parallelGateway) (id, name, gatewayDirections)
+      - [incoming](#incoming) 
+      - [outgoing](#outgoing) 
+	- [exclusiveGateway](#exclusiveGateway) (id, name, gatewayDirections, default)
+      - [incoming](#incoming) 
+      - [outgoing](#outgoing) 
+	- [inclusiveGateway](#inclusiveGateway) (id, name, gatewayDirections, default)
+      - [incoming](#incoming) 
+      - [outgoing](#outgoing) 
+    - [dataObject](#dataObject)  (id, name, mwe:strict)
       - extensionElements
         - mwe:json
-    - dataObjectReference (id, name, dataObjectRef)
-    - laneSet
+    - [dataObjectReference](#dataObjectReference) (id, name, dataObjectRef)
+    - [laneSet](#laneSet)
       - lane
         - flowNodeRef
     - textAnnotation
@@ -90,17 +87,29 @@ Strom elementů:
     - association
   - collaboration
     - participant
+    - messageFlow
+  - eventDefinition
+    - [timerEventDefinition](#timerEventDefinition)
+    - [signalEventDefinition](#signalEventDefinition)
+    - [messageEventDefinition](#messageEventDefinition)
+    - [errorEventDefinition](#errorEventDefinition)
+  - [signal](#signal)
+  - [message](#message)
+  - [error](#error)
+  - escalation
 
 ### definitions
 - __NS:__ bpmn
 - Slouží k definování jmenných prostorů a obalení diagramu BPM.
 ```xml
 <definitions xmlns:foo="uri" ...>
+	<collaboration>...</collaboration>
+	<process>...</procees>
 	...
 </definitions>
 ```
 
-### process 
+## process
 - `mwe:versionType`
   - Formát verze.
   - Platné: `number` (Celé číslo), `semver` (Dle definice semver. Major.Minor.Path )
@@ -145,7 +154,29 @@ Strom elementů:
 - Ve výchozím stavu se chová jako `scriptTask` bez skriptu.
 ```xml
 <task id="id" name="string" ...>
-	...
+	<incoming id="id">
+		id_sequenceFlow
+	</incoming>
+	<outgoing id="id">
+		id_sequenceFlow
+	</outgoing>
+	<property id="id" name="string" />
+	<dataInputAssociation id="id">
+		<sourceRef>
+			id_dataObject | id_task | id_property
+		</sourceRef>
+		<targetRef>
+			id_dataObject | id_task | id_property
+		</targetRef>
+	</dataInputAssociation>
+	<dataOutputAssociation id="id">
+		<sourceRef>
+			id_dataObject | id_task | id_property
+		</sourceRef>
+		<targetRef>
+			id_dataObject | id_task | id_property
+		</targetRef>
+	</dataOutputAssociation>
 </task>
 ```
 ### serviceTask 
@@ -157,7 +188,7 @@ Strom elementů:
   - Služba může vracet data (Pozor! Před uložením data budou serializována do JSON.)
 ```xml
 <serviceTask id="id" name="string" mwe:implementation="task_implementation_name">
-	...
+	...(viz. task)
 </serviceTask>
 ```
 ### scriptTask 
@@ -170,46 +201,47 @@ Strom elementů:
 	<script>
 		Some code ...
 	</script>
+	...(Viz. task)
 </scriptTask>
 ```
 
-### incoming
+#### incoming
 - Vstupující tok.
 ```xml
 <incoming id="id">
 	id_sequenceFlow
 </incoming>
 ```
-### outgoing
+#### outgoing
 - Vystupující tok.
 ```xml
 <outgoing id="id">
 	id_sequenceFlow
 </outgoing>
 ```
-### property
+#### property
 ```xml
 <property id="id" name="string" />
 ```
-### dataInputAssociation
+#### dataInputAssociation
 ```xml
 <dataInputAssociation id="id">
 	...
 </dataInputAssociation>
 ```
-### dataOutputAssociation
+#### dataOutputAssociation
 ```xml
 <dataOutputAssociation id="id">
 	...
 </dataOutputAssociation>
 ```
-### sourceRef
+#### sourceRef
 ```xml
 <sourceRef id="id">
 	id_dataObject | id_task | id_property
 </sourceRef>
 ```
-### targetRef
+#### targetRef
 ```xml
 <targetRef id="id">
 	id_dataObject | id_task | id_property
@@ -223,13 +255,17 @@ Strom elementů:
 </startEvent>
 
 <startEvent id="id" name="string" eventDefinitionRefs="Id_eventDefinitions">
-	...
+	<outgoing id="id">
+		id_sequenceFlow
+	</outgoing>
 </startEvent>
 ```
 ### endEvent 
 ```xml
 <endEvent id="id" name="string" eventDefinitionRefs="Id_eventDefinitions">
-	...
+	<incoming id="id">
+		id_sequenceFlow
+	</incoming>
 </endEvent>
 ```
 ### sequenceFlow
@@ -239,4 +275,107 @@ Strom elementů:
 <sequenceFlow id="id" name="string" sourceRef="id_taks | id_gateway | id_event" targetRef="id_taks | id_gateway | id_event">
 	<conditionExpression xsi:type="bpmn2:tFormalExpression">O===Z</conditionExpression>
 </sequenceFlow>
+```
+
+### parallelGateway
+```xml
+<parallelGateway id="id" name="string">
+	<incoming id="id">
+		id_sequenceFlow
+	</incoming>
+	<outgoing id="id">
+		id_sequenceFlow
+	</outgoing>
+</parallelGateway>
+```
+### exclusiveGateway
+```xml
+<exclusiveGateway id="id" name="string" default="id_sequenceFlow">
+	<incoming id="id">
+		id_sequenceFlow
+	</incoming>
+	<outgoing id="id">
+		id_sequenceFlow
+	</outgoing>
+</exclusiveGateway>
+```
+### inclusiveGateway
+```xml
+<inclusiveGateway id="id" name="string" default="id_sequenceFlow">
+	<incoming id="id">
+		id_sequenceFlow
+	</incoming>
+	<outgoing id="id">
+		id_sequenceFlow
+	</outgoing>
+</inclusiveGateway>
+```
+### laneSet
+```xml
+<laneSet id="id" name="string">
+	<lane id="id" name="string">
+		<flowNodeRef>
+			id_taks | id_gateway | id_event | id_data
+		</flowNodeRef>
+	</lane>
+</laneSet>
+```
+
+### EventDefinition 
+
+#### timerEventDefinition
+```xml
+<timerEventDefinition id="id" />
+
+<timerEventDefinition id="id">
+	<timeDuration xsi:type="tFormalExpression">
+		1000
+	</timeDuration>
+</timerEventDefinition>
+
+<timerEventDefinition id="id">
+	<timeDate xsi:type="tFormalExpression">
+		1.2.2021
+	</timeDate>
+</timerEventDefinition>
+
+<timerEventDefinition id="id">
+	<timeCycle xsi:type="tFormalExpression">
+		2000
+	</timeCycle>
+</timerEventDefinition>
+```
+#### signalEventDefinition
+```xml
+<signalEventDefinition id="id" signalRef="id_signal" />
+```
+#### messageEventDefinition
+```xml
+<messageEventDefinition id="id" messageRef="id_message" />
+```
+#### errorEventDefinition
+```xml
+<errorEventDefinition id="id" errorRef="id_error" />
+```
+#### conditionalEventDefinition
+```xml
+<conditionalEventDefinition id="id">
+	<condition xsi:type="tFormalExpression">
+		a=1
+	</condition>
+</conditionalEventDefinition>
+```
+
+
+## signal
+```xml
+<signam id="id" name="string" />
+```
+## message
+```xml
+<message id="id" name="string" />
+```
+## error
+```xml
+<error id="id" name="string" errorCode="string" camunda:errorMessage="string"/>
 ```

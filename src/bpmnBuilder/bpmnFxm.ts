@@ -154,26 +154,61 @@ export declare namespace BpmnFxm {
   type StartEvent = {
     '#attr'?: StartEventAttr,
     outgoing?: string | string[], /** */
-    conditionalEventDefinition?: string, /** */
-    timerEventDefinition?: string, /** */
-    linkEventDefinition?: string, /** */
-    messageEventDefinition?: string, /** */
-    errorEventDefinition?: string, /** */
-    signalEventDefinition?: string, /** */
+    conditionalEventDefinition?: string | ConditionalEventDefinitionAttr[], /** */
+    timerEventDefinition?: string | TimerEventDefinitionAttr[], /** */
+    // linkEventDefinition?: string, /** */
+    messageEventDefinition?: string | MessageEventDefinitionAttr[], /** */
+    // errorEventDefinition?: string, /** */
+    signalEventDefinition?: string | SignalEventDefinitionAttr[], /** */
   }
-
   type EndEventAttr = {
     eventDefinitionRefs?: string,
   } & BaseElementAttr
   type EndEvent = {
     '#attr'?: EndEventAttr,
     incoming?: string | string[], /** */
-    linkEventDefinition?: string, /** */
-    messageEventDefinition?: string, /** */
-    errorEventDefinition?: string, /** */
-    signalEventDefinition?: string, /** */
+    // linkEventDefinition?: string, /** */
+    messageEventDefinition?: string | MessageEventDefinitionAttr[], /** */
+    errorEventDefinition?: string | ErrorEventDefinitionAttr[], /** */
+    signalEventDefinition?: string | SignalEventDefinitionAttr[], /** */
   }
 
+  type EventDefinitionAttr = { } & BaseElementAttr
+  type EventDefinition = {
+    '#attr'?: EventDefinitionAttr,
+  }
+  type TimerEventDefinitionAttr = {
+  } & EventDefinitionAttr
+  type TimerEventDefinition = {
+    '#attr'?: TimerEventDefinitionAttr,
+    timeDuration?: string | ConditionExpression[],
+    timeDate?: string | ConditionExpression[],
+    timeCycle?: string | ConditionExpression[],
+  }
+  type ConditionalEventDefinitionAttr = {
+  } & EventDefinitionAttr
+  type ConditionalEventDefinition = {
+    '#attr'?: ConditionalEventDefinitionAttr,
+    condition?: string | ConditionExpression[],
+  }
+  type ErrorEventDefinitionAttr = {
+    errorRef?: string,
+  } & EventDefinitionAttr
+  type ErrorEventDefinition = {
+    '#attr'?: ErrorEventDefinitionAttr,
+  }
+  type MessageEventDefinitionAttr = {
+    messageRef?: string,
+  } & EventDefinitionAttr
+  type MessageEventDefinition = {
+    '#attr'?: MessageEventDefinitionAttr,
+  }
+  type SignalEventDefinitionAttr = {
+    signalRef?: string,
+  } & EventDefinitionAttr
+  type SignalEventDefinition = {
+    '#attr'?: SignalEventDefinitionAttr,
+  }
 
   type GatewayAttr = {
     gatewayDirections?: string,

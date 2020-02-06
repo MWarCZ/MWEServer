@@ -5,6 +5,7 @@ import { BaseElementTemplate } from '../entity/bpmn/baseElement'
 import { DataObjectTemplate } from '../entity/bpmn/dataObject'
 import { EndEventTemplate } from '../entity/bpmn/endEvent'
 import { EventTemplate } from '../entity/bpmn/event'
+import { FlowElementTemplate } from '../entity/bpmn/flowElement'
 import { GatewayDirection, GatewayTemplate, GatewayType } from '../entity/bpmn/gateway'
 import { ProcessTemplate, ProcessType, VersionType } from '../entity/bpmn/process'
 import { SequenceFlowTemplate } from '../entity/bpmn/sequenceFlow'
@@ -96,6 +97,11 @@ export class BpmnBuilder {
       entity.bpmnId = attr.id
       entity.name = attr.name
     }
+    return entity
+  }
+  // FlowElementTemplate
+  private loadFlowElement<T extends FlowElementTemplate>(entity: T, process: ProcessTemplate): T {
+    entity.processTemplate = process
     return entity
   }
   // Process
@@ -290,30 +296,12 @@ export class BpmnBuilder {
       queues.SequenceFlow = sequenceFlows.map(s => this.parseSequenceFlow(s))
     }
 
-
     // RELATIONS OBJECTS
 
     // DataObject
     queues.DataObject.forEach(dataObject => {
-      dataObject.entity.processTemplate = process.entity
-      let extensionElements = dataObject.data[`${this.ns.bpmn2}extensionElements` as 'extensionElements']
-      if (typeof extensionElements === 'object') {
-        extensionElements.find(ex => {
-          let json = ex[`${this.ns.mwe}json` as 'json']
-          if (typeof json === 'string') {
-            dataObject.entity.json = JSON.parse(json)
-            return true
-          } else if (typeof json === 'object') {
-            if (json[0]['#text']) {
-              dataObject.entity.json = JSON.parse(json[0]["#text"])
-              return true
-            }
-          }
-          return false
-        })
-      }
-
-
+      this.loadFlowElement(dataObject.entity, process.entity)
+      this.loadDataObject(dataObject.entity, dataObject.data)
     })
     // DataObjectReference
     queues.DataObjectReference.forEach(dataObjectReference => {
@@ -328,92 +316,30 @@ export class BpmnBuilder {
     // Task
     queues.Task.forEach(task => {
       // Prirazeni k procesu
-      task.entity.processTemplate = process.entity
-
-      // Prirazeni vstupnich dat
-      let dataInputAssociations = task.data[`${this.ns.bpmn2}dataInputAssociation` as 'dataInputAssociation']
-      if (typeof dataInputAssociations === 'object') {
-        let inputsDataObjectTemplate = dataInputAssociations.reduce((acc: DataObjectTemplate[], inputAssociation) => {
-          let sourceRefs = inputAssociation[`${this.ns.bpmn2}sourceRef` as 'sourceRef']
-          acc.push(...this.parseTaskDataAssociation(
-            queues.DataObjectReference, queues.DataObject, sourceRefs,
-          ))
-          return acc
-        }, [])
-        task.entity.inputs = [...new Set(inputsDataObjectTemplate)]
-      }
-      // Prirazeni vystupnich dat
-      let dataOutputAssociations = task.data[`${this.ns.bpmn2}dataOutputAssociation` as 'dataOutputAssociation']
-      if (typeof dataOutputAssociations === 'object') {
-        let outputsDataObjectTemplate = dataOutputAssociations.reduce((acc: DataObjectTemplate[], inputAssociation) => {
-          let targetRefs = inputAssociation[`${this.ns.bpmn2}targetRef` as 'targetRef']
-          acc.push(...this.parseTaskDataAssociation(
-            queues.DataObjectReference, queues.DataObject, targetRefs,
-          ))
-          return acc
-        }, [])
-        task.entity.outputs = [...new Set(outputsDataObjectTemplate)]
-      }
+      this.loadFlowElement(task.entity, process.entity)
+      this.loadTaskIO(task.entity, task.data, queues)
     })
     // TODO ScriptTask, ....
 
     // StartEvent
     queues.StartEvent.forEach(event => {
-      event.entity.processTemplate = process.entity
+      this.loadFlowElement(event.entity, process.entity)
+      // TODO Definition
     })
     // EndEvent
     queues.EndEvent.forEach(event => {
-      event.entity.processTemplate = process.entity
+      this.loadFlowElement(event.entity, process.entity)
+      // TODO Definition
     })
     // SequenceFlow
     queues.SequenceFlow.forEach(seq => {
-      seq.entity.processTemplate = process.entity
-
-      // Source = Outgoing Propojeni Uzlu a odchoziho spoje
-      if (seq.data && seq.data['#attr'] && seq.data['#attr'].sourceRef) {
-        let sourceRef = seq.data['#attr'].sourceRef
-        let okSource = queues.Task.find(task => {
-          this.connectNode2SequenceFlow(seq.entity, task.entity, sourceRef)
-        }) || queues.StartEvent.find(event => {
-          this.connectNode2SequenceFlow(seq.entity, event.entity, sourceRef)
-        }) || queues.Gateway.find(event => {
-          this.connectNode2SequenceFlow(seq.entity, event.entity, sourceRef)
-        })
-        // || queueEvents.find(...) || queueGateways.find(...)
-        // TODO
-      }
-
-      // Target = Incoming Propojeni Uzlu a prichoziho spoje
-      if (seq.data && seq.data['#attr'] && seq.data['#attr'].targetRef) {
-        let targetRef = seq.data['#attr'].targetRef
-        let okTarget = queues.Task.find(task => {
-          this.connectSequenceFlow2Node(seq.entity, task.entity, targetRef)
-        }) || queues.EndEvent.find(event => {
-          this.connectSequenceFlow2Node(seq.entity, event.entity, targetRef)
-        }) || queues.Gateway.find(event => {
-          this.connectSequenceFlow2Node(seq.entity, event.entity, targetRef)
-        })
-        // || queueEvents.find(...) || queueGateways.find(...)
-        // TODO
-      }
+      this.loadFlowElement(seq.entity, process.entity)
+      this.loadSequenceFlow(seq.entity, seq.data, queues)
     })
     // Gateway
     queues.Gateway.forEach(gateway => {
-      gateway.entity.processTemplate = process.entity
-
-      if (gateway.data['#attr']) {
-        let bpmnIdDefault = gateway.data['#attr'].default
-        queues.SequenceFlow.find(seqence => {
-          if (bpmnIdDefault === seqence.entity.bpmnId) {
-            // NEPROHAZOVAT! Gateway bude ukladan drive nez sekvence
-            // V dobe ukladani gateway neexistuji sekvence!
-            seqence.entity.default = gateway.entity
-            return true
-          }
-          return false
-        })
-      }
-
+      this.loadFlowElement(gateway.entity, process.entity)
+      this.loadGateway(gateway.entity, gateway.data, queues)
     })
 
     return queues
@@ -495,6 +421,131 @@ export class BpmnBuilder {
       return (d.entity.bpmnId === bpmnReference)
     })
     return (obj) ? obj.entity : undefined
+  }
+
+  private loadTaskIO<T extends TaskTemplate>(
+    entity: T,
+    attr: BpmnFxm.Task,
+    queues: {
+      DataObjectReference: BpmnLevel.DataObjectReference[],
+      DataObject: BpmnLevel.DataObject[],
+    }
+  ): T {
+    // Prirazeni vstupnich dat
+    let dataInputAssociations = attr[`${this.ns.bpmn2}dataInputAssociation` as 'dataInputAssociation']
+    if (typeof dataInputAssociations === 'object') {
+      let inputsDataObjectTemplate = dataInputAssociations.reduce((acc: DataObjectTemplate[], inputAssociation) => {
+        let sourceRefs = inputAssociation[`${this.ns.bpmn2}sourceRef` as 'sourceRef']
+        acc.push(...this.parseTaskDataAssociation(
+          queues.DataObjectReference, queues.DataObject, sourceRefs,
+        ))
+        return acc
+      }, [])
+      entity.inputs = [...new Set(inputsDataObjectTemplate)]
+    }
+    // Prirazeni vystupnich dat
+    let dataOutputAssociations = attr[`${this.ns.bpmn2}dataOutputAssociation` as 'dataOutputAssociation']
+    if (typeof dataOutputAssociations === 'object') {
+      let outputsDataObjectTemplate = dataOutputAssociations.reduce((acc: DataObjectTemplate[], inputAssociation) => {
+        let targetRefs = inputAssociation[`${this.ns.bpmn2}targetRef` as 'targetRef']
+        acc.push(...this.parseTaskDataAssociation(
+          queues.DataObjectReference, queues.DataObject, targetRefs,
+        ))
+        return acc
+      }, [])
+      entity.outputs = [...new Set(outputsDataObjectTemplate)]
+    }
+    return entity
+  }
+
+  private loadDataObject<T extends DataObjectTemplate>(
+    entity: T,
+    attr: BpmnFxm.DataObject,
+
+  ): T {
+    let extensionElements = attr[`${this.ns.bpmn2}extensionElements` as 'extensionElements']
+    if (typeof extensionElements === 'object') {
+      extensionElements.find(ex => {
+        let json = ex[`${this.ns.mwe}json` as 'json']
+        if (typeof json === 'string') {
+          entity.json = JSON.parse(json)
+          return true
+        } else if (typeof json === 'object') {
+          if (json[0]['#text']) {
+            entity.json = JSON.parse(json[0]["#text"])
+            return true
+          }
+        }
+        return false
+      })
+    }
+    return entity
+  }
+
+  private loadGateway<T extends GatewayTemplate>(
+    entity: T,
+    attr: BpmnFxm.Gateway,
+    queues: {
+      SequenceFlow: BpmnLevel.SequenceFlow[],
+    }
+  ): T {
+    if (attr['#attr']) {
+      let bpmnIdDefault = attr['#attr'].default
+      queues.SequenceFlow.find(seqence => {
+        if (bpmnIdDefault === seqence.entity.bpmnId) {
+          // NEPROHAZOVAT! Gateway bude ukladan drive nez sekvence
+          // V dobe ukladani gateway neexistuji sekvence!
+          seqence.entity.default = entity
+          return true
+        }
+        return false
+      })
+    }
+    return entity
+  }
+
+
+  private loadSequenceFlow<T extends SequenceFlowTemplate> (
+    entity: T,
+    attr: BpmnFxm.SequenceFlow,
+    queues: {
+      Task: BpmnLevel.Task[],
+      StartEvent: BpmnLevel.StartEvent[],
+      EndEvent: BpmnLevel.EndEvent[],
+      Gateway: BpmnLevel.Gateway[],
+    }
+  ): T {
+    // Source = Outgoing Propojeni Uzlu a odchoziho spoje
+    if (attr && attr['#attr'] && attr['#attr'].sourceRef) {
+      let sourceRef = attr['#attr'].sourceRef
+      let okSource = queues.Task.find(task => {
+        this.connectNode2SequenceFlow(entity, task.entity, sourceRef)
+      }) || queues.StartEvent.find(event => {
+        this.connectNode2SequenceFlow(entity, event.entity, sourceRef)
+      }) || queues.Gateway.find(event => {
+        this.connectNode2SequenceFlow(entity, event.entity, sourceRef)
+      })
+    }
+
+    // Target = Incoming Propojeni Uzlu a prichoziho spoje
+    if (attr && attr['#attr'] && attr['#attr'].targetRef) {
+      let targetRef = attr['#attr'].targetRef
+      let okTarget = queues.Task.find(task => {
+        this.connectSequenceFlow2Node(entity, task.entity, targetRef)
+      }) || queues.EndEvent.find(event => {
+        this.connectSequenceFlow2Node(entity, event.entity, targetRef)
+      }) || queues.Gateway.find(event => {
+        this.connectSequenceFlow2Node(entity, event.entity, targetRef)
+      })
+    }
+    return entity
+  }
+
+  private loadEvent<T extends EventTemplate>(
+    entity: EventTemplate,
+    attr: BpmnFxm.EndEvent,
+  ) {
+
   }
 
 
