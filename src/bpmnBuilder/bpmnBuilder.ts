@@ -2,12 +2,14 @@ import { parse, validate, X2jOptionsOptional } from 'fast-xml-parser'
 import { Connection } from 'typeorm'
 
 import { BaseElementTemplate } from '../entity/bpmn/baseElement'
+import { BasicTaskTemplate } from '../entity/bpmn/basicTask'
 import { DataObjectTemplate } from '../entity/bpmn/dataObject'
 import { EndEventTemplate } from '../entity/bpmn/endEvent'
 import { EventTemplate } from '../entity/bpmn/event'
 import { FlowElementTemplate } from '../entity/bpmn/flowElement'
 import { GatewayDirection, GatewayTemplate, GatewayType } from '../entity/bpmn/gateway'
 import { ProcessTemplate, ProcessType, VersionType } from '../entity/bpmn/process'
+import { ScriptTaskTemplate } from '../entity/bpmn/scriptTask'
 import { SequenceFlowTemplate } from '../entity/bpmn/sequenceFlow'
 import { NodeToSequenceFlow, SequenceFlowToNode } from '../entity/bpmn/sequenceFlowToNode'
 import { StartEventTemplate } from '../entity/bpmn/startEvent'
@@ -168,10 +170,26 @@ export class BpmnBuilder {
   private parseTask(task: BpmnFxm.Task): BpmnLevel.Task {
     let entity = new TaskTemplate()
     this.loadBaseElement(entity, task['#attr'])
+    if (task['#attr']) {
+      entity.implementation = task['#attr'][`${this.ns.mwe}implementation` as 'implementation']
+    }
     return {
       entity,
       data: task,
       tag: 'task',
+    }
+  }
+  private parseScriptTask(task: BpmnFxm.ScriptTask): BpmnLevel.ScriptTask {
+    let entity = new ScriptTaskTemplate()
+    this.loadBaseElement(entity, task['#attr'])
+    if (task['#attr']) {
+      entity.implementation = task['#attr'][`${this.ns.mwe}implementation` as 'implementation']
+      entity.scriptFormat = task['#attr'].scriptFormat
+    }
+    return {
+      entity,
+      data: task,
+      tag: 'scriptTask',
     }
   }
   private parseStartEvent(event: BpmnFxm.StartEvent): BpmnLevel.StartEvent {
@@ -230,6 +248,7 @@ export class BpmnBuilder {
       EndEvent: BpmnLevel.EndEvent[],
       SequenceFlow: BpmnLevel.SequenceFlow[],
       Gateway: BpmnLevel.Gateway[],
+      ScriptTask: BpmnLevel.ScriptTask[],
     } = {
       DataObject: [],
       DataObjectReference: [],
@@ -238,7 +257,7 @@ export class BpmnBuilder {
       EndEvent: [],
       SequenceFlow: [],
       Gateway: [],
-    // TODO ScriptTask, Gateway, ....
+      ScriptTask: [],
     }
 
     // GET OBJECTS
@@ -258,7 +277,11 @@ export class BpmnBuilder {
     if (typeof tasks === 'object') {
       queues.Task = tasks.map(t => this.parseTask(t))
     }
-    // TODO ScriptTask, ....
+    // ScriptTask
+    let scriptTasks = process.data[`${this.ns.bpmn2}scriptTask` as 'scriptTask']
+    if (typeof scriptTasks === 'object') {
+      queues.ScriptTask = scriptTasks.map(t => this.parseScriptTask(t))
+    }
 
     // Gateway
     let exclusiveGateways = process.data[`${this.ns.bpmn2}exclusiveGateway` as 'exclusiveGateway']
@@ -315,11 +338,15 @@ export class BpmnBuilder {
     })
     // Task
     queues.Task.forEach(task => {
-      // Prirazeni k procesu
       this.loadFlowElement(task.entity, process.entity)
       this.loadTaskIO(task.entity, task.data, queues)
     })
-    // TODO ScriptTask, ....
+    // ScriptTask
+    queues.ScriptTask.forEach(task => {
+      this.loadFlowElement(task.entity, process.entity)
+      this.loadTaskIO(task.entity, task.data, queues)
+      this.loadScriptTask(task.entity, task.data)
+    })
 
     // StartEvent
     queues.StartEvent.forEach(event => {
@@ -350,7 +377,7 @@ export class BpmnBuilder {
   ): boolean {
     if (nodeEntity.bpmnId === referenceBpmnId) {
       let n2s = new NodeToSequenceFlow()
-      if (nodeEntity instanceof TaskTemplate) {
+      if (nodeEntity instanceof BasicTaskTemplate) {
         n2s.task = nodeEntity
       } else if (nodeEntity instanceof EventTemplate) {
         n2s.event = nodeEntity
@@ -370,7 +397,7 @@ export class BpmnBuilder {
   ): boolean {
     if (nodeEntity.bpmnId === referenceBpmnId) {
       let s2n = new SequenceFlowToNode()
-      if (nodeEntity instanceof TaskTemplate) {
+      if (nodeEntity instanceof BasicTaskTemplate) {
         s2n.task = nodeEntity
       } else if (nodeEntity instanceof EventTemplate) {
         s2n.event = nodeEntity
@@ -429,7 +456,7 @@ export class BpmnBuilder {
     queues: {
       DataObjectReference: BpmnLevel.DataObjectReference[],
       DataObject: BpmnLevel.DataObject[],
-    }
+    },
   ): T {
     // Prirazeni vstupnich dat
     let dataInputAssociations = attr[`${this.ns.bpmn2}dataInputAssociation` as 'dataInputAssociation']
@@ -458,6 +485,17 @@ export class BpmnBuilder {
     return entity
   }
 
+  private loadScriptTask<T extends ScriptTaskTemplate>(
+    entity: T,
+    attr: BpmnFxm.ScriptTask,
+  ): T {
+    let script = attr[`${this.ns.bpmn2}script` as 'script']
+    if (typeof script === 'string') {
+      entity.script = script
+    }
+    return entity
+  }
+
   private loadDataObject<T extends DataObjectTemplate>(
     entity: T,
     attr: BpmnFxm.DataObject,
@@ -472,7 +510,7 @@ export class BpmnBuilder {
           return true
         } else if (typeof json === 'object') {
           if (json[0]['#text']) {
-            entity.json = JSON.parse(json[0]["#text"])
+            entity.json = JSON.parse(json[0]['#text'])
             return true
           }
         }
@@ -487,7 +525,7 @@ export class BpmnBuilder {
     attr: BpmnFxm.Gateway,
     queues: {
       SequenceFlow: BpmnLevel.SequenceFlow[],
-    }
+    },
   ): T {
     if (attr['#attr']) {
       let bpmnIdDefault = attr['#attr'].default
@@ -505,7 +543,7 @@ export class BpmnBuilder {
   }
 
 
-  private loadSequenceFlow<T extends SequenceFlowTemplate> (
+  private loadSequenceFlow<T extends SequenceFlowTemplate>(
     entity: T,
     attr: BpmnFxm.SequenceFlow,
     queues: {
@@ -513,7 +551,8 @@ export class BpmnBuilder {
       StartEvent: BpmnLevel.StartEvent[],
       EndEvent: BpmnLevel.EndEvent[],
       Gateway: BpmnLevel.Gateway[],
-    }
+      ScriptTask: BpmnLevel.ScriptTask[],
+    },
   ): T {
     // Source = Outgoing Propojeni Uzlu a odchoziho spoje
     if (attr && attr['#attr'] && attr['#attr'].sourceRef) {
@@ -524,6 +563,8 @@ export class BpmnBuilder {
         this.connectNode2SequenceFlow(entity, event.entity, sourceRef)
       }) || queues.Gateway.find(event => {
         this.connectNode2SequenceFlow(entity, event.entity, sourceRef)
+      }) || queues.ScriptTask.find(task => {
+        this.connectNode2SequenceFlow(entity, task.entity, sourceRef)
       })
     }
 
@@ -536,6 +577,8 @@ export class BpmnBuilder {
         this.connectSequenceFlow2Node(entity, event.entity, targetRef)
       }) || queues.Gateway.find(event => {
         this.connectSequenceFlow2Node(entity, event.entity, targetRef)
+      }) || queues.ScriptTask.find(task => {
+        this.connectSequenceFlow2Node(entity, task.entity, targetRef)
       })
     }
     return entity
@@ -568,11 +611,13 @@ export class BpmnBuilder {
         let startEvents = new Set(level.StartEvent.map(e => e.entity).filter(e => !!e))
         let endEvents = new Set(level.EndEvent.map(e => e.entity).filter(e => !!e))
         let gateways = new Set(level.Gateway.map(e => e.entity).filter(e => !!e))
+        let scriptTasks = new Set(level.ScriptTask.map(e => e.entity).filter(e => !!e))
         await this.connection.manager.save([
           ...tasks,
           ...startEvents,
           ...endEvents,
           ...gateways,
+          ...scriptTasks,
         ])
 
         let sequenceFlows = new Set(level.SequenceFlow.map(e => e.entity).filter(e => !!e))

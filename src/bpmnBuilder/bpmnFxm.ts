@@ -69,7 +69,9 @@ export declare namespace BpmnFxm {
   }
 
 
-  type TaskAttr = {} & BaseElementAttr
+  type TaskAttr = {
+    implementation?: string,
+  } & BaseElementAttr
   type Task = {
     '#attr'?: TaskAttr,
     dataOutputAssociation?: DataOutputAssociation[],
@@ -81,15 +83,14 @@ export declare namespace BpmnFxm {
 
   type ScriptTaskAttr = {
     scriptFormat?: string,
-  } & BaseElementAttr
+  } & TaskAttr
   type ScriptTask = {
     '#attr'?: ScriptTaskAttr,
     script?: string,
   } & Task
 
   type ServiceTaskAttr = {
-    implementation?: string,
-  } & BaseElementAttr
+  } & TaskAttr
   type ServiceTask = {
     '#attr'?: ServiceTaskAttr,
   } & Task

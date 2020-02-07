@@ -152,8 +152,13 @@ Strom elementů:
 ### task 
 - Abstraktní úloha sloužící pro ladění.
 - Ve výchozím stavu se chová jako `scriptTask` bez skriptu.
+- `mwe:implementation`
+  - Název služby v systému.
+  - V systemu můze byt vice implementaci, kdy kazda ma unikatni nazev.
+  - Služba může přijímat data (Obdrží jen kopii dat z dataObject.).
+  - Služba může vracet data (Pozor! Před uložením data budou serializována do JSON.)
 ```xml
-<task id="id" name="string" ...>
+<task id="id" name="string" mwe:implementation="task_implementation_name">
 	<incoming id="id">
 		id_sequenceFlow
 	</incoming>
@@ -182,10 +187,7 @@ Strom elementů:
 ### serviceTask 
 - Úloha spouští interní program plnící nějakou službu.
 - `mwe:implementation`
-  - Název služby v systému.
-  - Pokud služba není nalezena v systému je vyhozena chyba při spuštění.
-  - Služba může přijímat data (Obdrží jen kopii dat z dataObject.).
-  - Služba může vracet data (Pozor! Před uložením data budou serializována do JSON.)
+  - viz. task
 ```xml
 <serviceTask id="id" name="string" mwe:implementation="task_implementation_name">
 	...(viz. task)

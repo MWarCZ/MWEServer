@@ -1,5 +1,6 @@
 import { Entity, JoinColumn, ManyToOne, OneToOne, PrimaryGeneratedColumn } from 'typeorm'
 
+import { BasicTaskTemplate } from './basicTask'
 import { EventTemplate } from './event'
 import { GatewayTemplate } from './gateway'
 import { SequenceFlowTemplate } from './sequenceFlow'
@@ -29,8 +30,8 @@ export class SequenceFlowToNode {
   @JoinColumn()
   sequenceFlow?: SequenceFlowTemplate
 
-  @ManyToOne(type => TaskTemplate, { onDelete: 'CASCADE' })
-  task?: TaskTemplate
+  @ManyToOne(type => BasicTaskTemplate, { onDelete: 'CASCADE' })
+  task?: BasicTaskTemplate
 
   @ManyToOne(type => GatewayTemplate, { onDelete: 'CASCADE' })
   gateway?: GatewayTemplate

@@ -9,6 +9,7 @@ import { DataObjectTemplate } from '../../src/entity/bpmn/dataObject'
 import { EndEventTemplate } from '../../src/entity/bpmn/endEvent'
 import { GatewayTemplate, GatewayType } from '../../src/entity/bpmn/gateway'
 import { ProcessTemplate, ProcessType } from '../../src/entity/bpmn/process'
+import { ScriptTaskTemplate } from '../../src/entity/bpmn/scriptTask'
 import { SequenceFlowTemplate } from '../../src/entity/bpmn/sequenceFlow'
 import { StartEventTemplate } from '../../src/entity/bpmn/startEvent'
 import { TaskTemplate } from '../../src/entity/bpmn/task'
@@ -291,6 +292,89 @@ describe('Testy prevodu XML na interni entity DB', () => {
 
     })
 
+    it('Diagram tasks_and_gates', async() => {
+
+      let xml = readFileSync(joinPath(
+        __dirname,
+        '../resources/bpmn/tasks_and_gates.bpmn',
+      ), 'utf8').toString()
+
+      let builder = new BpmnBuilder(connection)
+      await builder.loadFromXml(xml)
+
+      const process = await connection.getRepository(ProcessTemplate).findOneOrFail()
+
+      const startEvent = await connection.getRepository(StartEventTemplate).findOneOrFail({
+        relations: ['outgoing'],
+      })
+      expect(startEvent.outgoing).toBeArrayOfSize(1)
+
+      const endEvents = await connection.getRepository(EndEventTemplate).find({
+        relations: ['incoming'],
+      })
+      expect(endEvents).toBeArrayOfSize(3)
+      endEvents.forEach(event => {
+        expect(event.incoming).toBeArrayOfSize(1)
+      })
+
+      const tasks = await connection.getRepository(TaskTemplate).find({
+        relations: ['incoming', 'outgoing'],
+      })
+      expect(tasks).toBeArrayOfSize(4)
+      tasks.forEach(task => {
+        expect(task.incoming).toBeArrayOfSize(1)
+        expect(task.outgoing).toBeArrayOfSize(1)
+      })
+
+      const scriptTasks = await connection.getRepository(ScriptTaskTemplate).find({
+        relations: ['incoming', 'outgoing'],
+      })
+      expect(scriptTasks).toBeArrayOfSize(3)
+      scriptTasks.forEach(task => {
+        expect(task.incoming).toBeArrayOfSize(1)
+        expect(task.outgoing).toBeArrayOfSize(1)
+      })
+
+      const gateways = await connection.getRepository(GatewayTemplate).find({
+        relations: ['incoming', 'outgoing', 'outgoing.sequenceFlow', 'default'],
+      })
+      expect(gateways).toBeArrayOfSize(3)
+      const parallel = gateways.filter(g => g.type === GatewayType.Parallel)
+      const exclusive = gateways.filter(g => g.type === GatewayType.Exclusive)
+      expect(parallel).toBeArrayOfSize(2)
+      expect(exclusive).toBeArrayOfSize(1)
+      exclusive.forEach(gate => {
+        expect(gate.incoming).toBeArrayOfSize(1)
+        expect(gate.outgoing).toBeArrayOfSize(2)
+        expect(gate.default).toBeDefined()
+
+        let match = 0
+        gate.outgoing && gate.outgoing.forEach(outgoing => {
+          if (outgoing.sequenceFlow
+            && gate.default
+            && outgoing.sequenceFlow.id === gate.default.id
+          ) {
+            match++
+          }
+        })
+        expect(match).toBe(1)
+
+      })
+
+    })
+
   })
 })
 
+// function commonExcect4Task<T extends TaskTemplate>(entity: T, relations: (keyof TaskTemplate)[] = [])  {
+//   if (relations.includes('incoming')) {
+//     expect(entity.incoming).toBeArrayOfSize(1)
+//   }
+//   if (relations.includes('outgoing')) {
+//     expect(entity.outgoing).toBeArrayOfSize(1)
+//     expect(true).toBeFalsy()
+//   }
+// }
+// function commonExcect4Tasks<T extends TaskTemplate>(entitys: T[], relations: (keyof TaskTemplate)[] = []) {
+//   entitys.forEach(entity => commonExcect4Task(entity, relations))
+// }

@@ -1,9 +1,9 @@
-import { GatewayTemplate } from 'entity/bpmn/gateway'
-
 import { BaseElementTemplate } from '../entity/bpmn/baseElement'
 import { DataObjectTemplate } from '../entity/bpmn/dataObject'
 import { EndEventTemplate } from '../entity/bpmn/endEvent'
+import { GatewayTemplate } from '../entity/bpmn/gateway'
 import { ProcessTemplate } from '../entity/bpmn/process'
+import { ScriptTaskTemplate } from '../entity/bpmn/scriptTask'
 import { SequenceFlowTemplate } from '../entity/bpmn/sequenceFlow'
 import { StartEventTemplate } from '../entity/bpmn/startEvent'
 import { TaskTemplate } from '../entity/bpmn/task'
@@ -25,6 +25,9 @@ export declare namespace BpmnLevel {
   /** Parsovani BPMN Level 2 */
   type Task = {
     entity: TaskTemplate, data: BpmnFxm.Task, tag: 'task',
+  }
+  type ScriptTask = {
+    entity: ScriptTaskTemplate, data: BpmnFxm.ScriptTask, tag: 'scriptTask',
   }
   type SequenceFlow = {
     entity: SequenceFlowTemplate, data: BpmnFxm.SequenceFlow, tag: 'sequenceFlow',

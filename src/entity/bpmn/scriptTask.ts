@@ -1,10 +1,9 @@
 import { ChildEntity, Column, Entity, ManyToOne, OneToMany } from 'typeorm'
 
-import { TaskInstance, TaskTemplate } from './task'
+import { BasicTaskInstance, BasicTaskTemplate } from './basicTask'
 
-// @Entity()
 @ChildEntity()
-export class ScriptTaskTemplate extends TaskTemplate {
+export class ScriptTaskTemplate extends BasicTaskTemplate {
 
   @Column('varchar', { default: 'js', nullable: false, length: 50 })
   scriptFormat?: string
@@ -18,7 +17,7 @@ export class ScriptTaskTemplate extends TaskTemplate {
 }
 
 @Entity()
-export class ScriptTaskInstance extends TaskInstance {
+export class ScriptTaskInstance extends BasicTaskInstance {
 
   @ManyToOne(type => ScriptTaskTemplate, entity => entity.instances)
   template?: ScriptTaskTemplate

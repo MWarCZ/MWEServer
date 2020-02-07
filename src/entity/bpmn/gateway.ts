@@ -33,7 +33,9 @@ export class GatewayTemplate extends FlowElementTemplate {
   })
   direction?: GatewayDirection
 
-  @OneToOne(type => SequenceFlowTemplate)
+  @OneToOne(type => SequenceFlowTemplate, {
+    onDelete: 'CASCADE',
+  })
   @JoinColumn()
   default?: SequenceFlowTemplate
 
