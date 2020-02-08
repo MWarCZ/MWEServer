@@ -1,8 +1,7 @@
 import { Column, Entity, JoinTable, ManyToMany, ManyToOne, OneToMany, TableInheritance } from 'typeorm'
 
-import { ActivityStatus, BaseElementInstance } from './baseElement'
 import { DataObjectTemplate } from './dataObject'
-import { FlowElementTemplate } from './flowElement'
+import { FlowElementInstance, FlowElementTemplate } from './flowElement'
 import { NodeToSequenceFlow, SequenceFlowToNode } from './sequenceFlowToNode'
 
 @Entity()
@@ -35,15 +34,7 @@ export class BasicTaskTemplate extends FlowElementTemplate {
 }
 
 @Entity()
-export class BasicTaskInstance extends BaseElementInstance {
-
-  @Column('enum', {
-    enum: ActivityStatus,
-    default: ActivityStatus.None,
-    nullable: false,
-  })
-  status?: ActivityStatus
-
+export class BasicTaskInstance extends FlowElementInstance {
   @Column('simple-json')
   returnValue?: any
 

@@ -124,16 +124,19 @@ describe('Testy prevodu XML na interni entity DB', () => {
       relations: ['outgoing'],
     })
     expect(startEvent.outgoing).toBeArrayOfSize(1)
+    expect(startEvent.processTemplateId).toBe(process.id)
 
     const endEvent = await connection.getRepository(EndEventTemplate).findOneOrFail({
       relations: ['incoming'],
     })
     expect(endEvent.incoming).toBeArrayOfSize(1)
+    expect(endEvent.processTemplateId).toBe(process.id)
 
     const dataObject = await connection.getRepository(DataObjectTemplate).findOneOrFail()
     expect(dataObject.name).toBe('DATA')
     expect(dataObject.strict).toBeFalsy()
     expect(dataObject.json).toMatchObject({})
+    expect(dataObject.processTemplateId).toBe(process.id)
 
     const task = await connection.getRepository(TaskTemplate).findOneOrFail({
       relations: ['incoming', 'outgoing', 'inputs', 'outputs'],
@@ -142,6 +145,7 @@ describe('Testy prevodu XML na interni entity DB', () => {
     expect(task.outgoing).toBeArrayOfSize(1)
     expect(task.inputs).toBeArrayOfSize(1)
     expect(task.outputs).toBeArrayOfSize(1)
+    expect(task.processTemplateId).toBe(process.id)
 
     const sequences = await connection.getRepository(SequenceFlowTemplate).find({
       relations: ['source', 'target'],
@@ -150,6 +154,7 @@ describe('Testy prevodu XML na interni entity DB', () => {
     sequences.forEach(sequence => {
       expect(sequence.source).toBeDefined()
       expect(sequence.target).toBeDefined()
+      expect(sequence.processTemplateId).toBe(process.id)
     })
 
   })

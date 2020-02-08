@@ -47,8 +47,18 @@ export class ProcessTemplate extends BaseElementTemplate {
   })
   versionType?: VersionType
 
-  @OneToMany(type => ProcessInstance, processInstance => processInstance.processTemplate)
+  @OneToMany(
+    type => ProcessInstance,
+    processInstance => processInstance.processTemplate,
+    { onDelete: 'CASCADE' },
+  )
   processInstances?: ProcessInstance[]
+
+
+  // @OneToMany(type => StartEventTemplate, event => event.processTemplate)
+  // startEvent?: StartEventTemplate[]
+  // @OneToMany(type => EndEventTemplate, event => event.processTemplate)
+  // endEvent?: EndEventTemplate[]
 
   constructor(options?: Partial<OptionsProcess>) {
     super(options)
@@ -65,7 +75,13 @@ export class ProcessInstance extends BaseElementInstance {
   })
   status?: ActivityStatus
 
-  @ManyToOne(type => ProcessTemplate, version => version.processInstances)
+  @ManyToOne(
+    type => ProcessTemplate,
+    version => version.processInstances,
+    { onDelete: 'CASCADE' },
+  )
   processTemplate?: ProcessTemplate
 
+  @Column({ nullable: true })
+  processTemplateId?: number
 }

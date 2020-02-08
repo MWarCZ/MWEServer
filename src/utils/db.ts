@@ -31,14 +31,16 @@ export async function closeConn(connection?: Connection): Promise<void> {
 }
 
 export async function cleanDataInTables(connection: Connection, entities: EntityMetadata[]) {
+  let sql = ''
   try {
     for (const entity of entities) {
       const repository = await connection.getRepository(entity.name)
       // await repository.query(`TRUNCATE TABLE \`${entity.tableName}\`;`);
+      sql = `DELETE FROM \`${entity.tableName}\`;`
       await repository.query(`DELETE FROM \`${entity.tableName}\`;`)
     }
   } catch (error) {
-    throw new Error(`ERROR: Cleaning data in test db: ${error}`)
+    throw new Error(`ERROR: Cleaning data in test db:\n sql: ${sql} \n${error}`)
   }
 }
 
