@@ -403,7 +403,7 @@ export class Parser {
   parseTaskDataAssociation(
     queueDataObjectReference: BpmnLevel.DataObjectReference[],
     queueDataObjects: BpmnLevel.DataObject[],
-    bpmnReference: string | BpmnFxm.SourceRef[] | BpmnFxm.TargetRef[] | undefined,
+    bpmnReference: string | string[] | BpmnFxm.SourceRef[] | BpmnFxm.TargetRef[] | undefined,
   ): DataObjectTemplate[] {
     // Jen text v tagu
     if (typeof bpmnReference === 'string') {
@@ -414,8 +414,17 @@ export class Parser {
     }
     // Tag s textem a atributem
     else if (typeof bpmnReference === 'object') {
-      let dataObjs = bpmnReference
-        .reduce((acc: string[], ref) => (!!ref['#text']) ? [...acc, ref['#text']] : acc, [])
+      let dataObjs = (bpmnReference as [])
+        .reduce((acc: string[], ref: string | BpmnFxm.SourceRef | BpmnFxm.TargetRef) => {
+          if (typeof ref === 'string') {
+            acc.push(ref)
+          } else {
+            if (!!ref['#text'] && typeof ref['#text'] === 'string') {
+              acc.push(ref['#text'])
+            }
+          }
+          return acc
+        }, [])
         .map(refId => this.parseTaskDataAssociationReference(
           queueDataObjectReference, queueDataObjects, refId,
         ))

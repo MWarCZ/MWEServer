@@ -3,6 +3,7 @@ import 'jest-extended'
 import { parse as fxpParse } from 'fast-xml-parser'
 
 import { BpmnFxm } from '../../src/bpmnBuilder/bpmnFxm'
+import { BpmnLevel } from '../../src/bpmnBuilder/bpmnLevel'
 import { options } from '../../src/bpmnBuilder/fxp.config'
 import { BpmnNamespace } from '../../src/bpmnBuilder/namespace'
 import { Parser } from '../../src/bpmnBuilder/parser'
@@ -397,9 +398,9 @@ describe('Testy zakladnich funkci parseru (ploche parsovani).', () => {
 })
 
 
-let definitions: BpmnFxm.Definitions
-
 describe('Testy pro parsovani dle urovne (L1, L2, aj.).', () => {
+  let definitions: BpmnFxm.Definitions
+
   beforeEach(() => {
     parser = new Parser()
     let data = fxpParse(`
@@ -486,10 +487,268 @@ describe('Testy pro parsovani dle urovne (L1, L2, aj.).', () => {
   })
 
   describe('parseLevel2', () => {
-    it('', () => {
+    let process: BpmnLevel.Process
 
-      // let queues = parser.parseLevel2()
-      // expect(processes.Process).toBeArrayOfSize(0)
+    beforeEach(() => {
+      let data = fxpParse(`
+        <bpmn:process id="process_1" name="PROCESS 1">
+        </bpmn:process>
+      `, options)
+      definitions = { ...definitions, ...data }
+
+      let queues = parser.parseLevel1(definitions)
+      process = queues.Process[0]
     })
+    it('Process without childs.', () => {
+      let queues = parser.parseLevel2(process)
+      let arr = Object.keys(queues).map(key => (queues as any)[key]).reduce((acc:any[], value)=>{
+        return [...acc, ...value]
+      }, [])
+      expect(arr).toBeArrayOfSize(0)
+    })
+    it('Process with dataObject.', () => {
+      let test = {
+        dataObject: {
+          id: 'idX',
+          name: 'nameX',
+          json: {
+            pozdrav: 'ahojda',
+            cislo: 12,
+            existuje: true,
+          }
+        }
+      }
+      let data = fxpParse(`
+        <bpmn:dataObject name='${test.dataObject.name}' id="${test.dataObject.id}">
+          <bpmn:extensionElements>
+            <mwe:json>
+            ${JSON.stringify(test.dataObject.json)}
+            </mwe:json>
+          </bpmn:extensionElements>
+        </bpmn:dataObject>
+      `, options)
+      process.data = { ...process.data, ...data }
+
+      let queues = parser.parseLevel2(process)
+      let arr = Object.keys(queues).map(key => (queues as any)[key]).reduce((acc: any[], value) => {
+        return [...acc, ...value]
+      }, [])
+      expect(arr).toBeArrayOfSize(1)
+      expect(queues.DataObject).toBeArrayOfSize(1)
+      queues.DataObject.forEach(obj => {
+        expect(obj.entity.bpmnId).toBe(test.dataObject.id)
+        expect(obj.entity.name).toBe(test.dataObject.name)
+        expect(obj.entity.json).toMatchObject(test.dataObject.json)
+      })
+    })
+
+
+    it('Process with XXX.', () => {
+      let test = {
+        dataObject: [
+          {
+            id: 'd1',
+            name: 'nameX1',
+            json: {
+              pozdrav: 'ahojda',
+              cislo: 12,
+              existuje: true,
+            }
+          }, {
+            id: 'd2',
+            name: 'nameX2',
+            json: {
+              pozdrav: 'caw',
+              cislo: 33,
+              existuje: false,
+            }
+          }
+        ],
+        dataObjectReference: [
+          { id: 'dr1', name: '', dataObjectRef: 'd1'},
+        ],
+        startEvent: [
+          { id: 'se1', name: '' },
+          { id: 'se2', name: '' },
+        ],
+        endEvent: [
+          { id: 'ee1', name: '' },
+          { id: 'ee2', name: '' },
+        ],
+        gateway: [
+          { id: 'g1', name: '', type: GatewayType.Exclusive },
+          { id: 'g2', name: '', type: GatewayType.Inclusive },
+          { id: 'g3', name: '', type: GatewayType.Parallel },
+        ],
+        task: [
+          {
+            id: 't1', name: '',
+            inputs: ['d2', 'd1'], outputs: ['d2'],
+          },
+        ],
+        scriptTask: [
+          {
+            id: 'st1', name: '', script: 'console.log("ahoj");',
+            inputs: ['d1'], outputs: ['dr1'],
+          },
+          { id: 'st2', name: '', script: undefined },
+        ],
+        sequenceFlow: [
+          { id: 'sf1', name: '', sourceRef: 'se1', targetRef: 'ee1' },
+          { id: 'sf2', name: '', sourceRef: 'se2', targetRef: 'g1' },
+          { id: 'sf3', name: '', sourceRef: 'g1', targetRef: 'g2' },
+          { id: 'sf4', name: '', sourceRef: 'g1', targetRef: 'ee2' },
+          { id: 'sf5', name: '', sourceRef: 'g2', targetRef: 'g3' },
+          { id: 'sf5', name: '', sourceRef: 'g2', targetRef: 'ee1' },
+          { id: 'sf5', name: '', sourceRef: 'g3', targetRef: 'ee1' },
+          { id: 'sf5', name: '', sourceRef: 'g3', targetRef: 'ee2' },
+          { id: 'sf6', name: '', sourceRef: 'g3', targetRef: 'st1' },
+          { id: 'sf7', name: '', sourceRef: 'st1', targetRef: 'st2' },
+          { id: 'sf8', name: '', sourceRef: 'st2', targetRef: 'ee1' },
+        ],
+      }
+      let xml = test.dataObject.reduce((acc, obj) => {
+        return acc + `
+          <bpmn:dataObject name="${obj.name}" id="${obj.id}">
+            <bpmn:extensionElements>
+              <mwe:json>
+                ${JSON.stringify(obj.json)}
+              </mwe:json>
+            </bpmn:extensionElements>
+          </bpmn:dataObject>`
+      }, '') + test.dataObjectReference.reduce((acc, obj) => {
+        return acc + `
+          <bpmn:dataObjectReference
+            id="${obj.id}"
+            name="${obj.name}"
+            dataObjectRef="${obj.dataObjectRef}"
+          />`
+      }, '') + test.startEvent.reduce((acc, obj) => {
+        return acc + `
+          <bpmn:startEvent id="${obj.id}" name="${obj.name}" />`
+      }, '') + test.endEvent.reduce((acc, obj) => {
+        return acc + `
+          <bpmn:endEvent id="${obj.id}" name="${obj.name}" />`
+      }, '') + test.gateway.reduce((acc, obj) => {
+        return acc + `
+          <bpmn:${obj.type}Gateway id="${obj.id}" name="${obj.name}">
+          </bpmn${obj.type}:Gateway>`
+      }, '') + test.task.reduce((acc, obj) => {
+        return acc + `
+          <bpmn:task id="${obj.id}" name="${obj.name}">
+            ${ (!obj.inputs) ? '' :
+            `<bpmn:dataInputAssociation>
+              ${
+            obj.inputs.reduce((acc, input) => {
+              return acc + `
+                    <bpmn:sourceRef>${input}</bpmn:sourceRef>`
+            }, '')
+            }
+            </bpmn:dataInputAssociation>`}
+            ${ (!obj.outputs) ? '' :
+            `<bpmn:dataOutputAssociation>
+              ${
+            obj.outputs.reduce((acc, output) => {
+              return acc + `
+                    <bpmn:targetRef>${output}</bpmn:targetRef>`
+            }, '')
+            }
+            </bpmn:dataOutputAssociation>`}
+          </bpmn:task>`
+      }, '') + test.scriptTask.reduce((acc, obj) => {
+        return acc + `
+          <bpmn:scriptTask id="${obj.id}" name="${obj.name}">
+          ${ (!obj.script)?'':
+            `<bpmn:script>
+              ${obj.script}
+            </bpmn:script>`}
+            ${ (!obj.inputs)?'':
+            `<bpmn:dataInputAssociation>
+              ${
+                obj.inputs.reduce((acc, input)=>{
+                  return acc + `
+                    <bpmn:sourceRef>${input}</bpmn:sourceRef>`
+                }, '')
+              }
+            </bpmn:dataInputAssociation>`}
+            ${ (!obj.outputs) ? '' :
+            `<bpmn:dataOutputAssociation>
+              ${
+            obj.outputs.reduce((acc, output) => {
+              return acc + `
+                    <bpmn:targetRef>${output}</bpmn:targetRef>`
+            }, '')
+            }
+            </bpmn:dataOutputAssociation>`}
+          </bpmn:scriptTask>`
+      }, '') + test.sequenceFlow.reduce((acc, obj) => {
+        return acc + `
+          <bpmn:sequenceFlow id="${obj.id}" name="${obj.name}"
+            sourceRef="${obj.sourceRef}"
+            targetRef="${obj.targetRef}"
+          />`
+      }, '')
+
+      let data = fxpParse(xml, options)
+      process.data = { ...process.data, ...data }
+
+      let queues = parser.parseLevel2(process)
+      expect(queues.DataObject).toBeArrayOfSize(test.dataObject.length)
+      expect(queues.DataObjectReference).toBeArrayOfSize(test.dataObjectReference.length)
+      expect(queues.StartEvent).toBeArrayOfSize(test.startEvent.length)
+      expect(queues.EndEvent).toBeArrayOfSize(test.endEvent.length)
+      expect(queues.Gateway).toBeArrayOfSize(test.gateway.length)
+      expect(queues.Task).toBeArrayOfSize(test.task.length)
+      expect(queues.ScriptTask).toBeArrayOfSize(test.scriptTask.length)
+      expect(queues.SequenceFlow).toBeArrayOfSize(test.sequenceFlow.length)
+
+      queues.DataObject.forEach((obj, index) => {
+        expect(obj.entity.processTemplate).toBe(process.entity)
+        expect(obj.entity.bpmnId).toBe(test.dataObject[index].id)
+        expect(obj.entity.json).toMatchObject(test.dataObject[index].json)
+      })
+      queues.DataObjectReference.forEach((obj, index) => {
+        expect(obj.entity && obj.entity.bpmnId).toBe(test.dataObjectReference[index].dataObjectRef)
+      })
+      queues.StartEvent.forEach((obj, index) => {
+        expect(obj.entity.processTemplate).toBe(process.entity)
+        expect(obj.entity.bpmnId).toBe(test.startEvent[index].id)
+      })
+      queues.EndEvent.forEach((obj, index) => {
+        expect(obj.entity.processTemplate).toBe(process.entity)
+        expect(obj.entity.bpmnId).toBe(test.endEvent[index].id)
+      })
+      queues.Gateway.forEach((obj, index) => {
+        expect(obj.entity.processTemplate).toBe(process.entity)
+        if (obj.entity.bpmnId === test.gateway[0].id) {
+          expect(obj.entity.type).toBe(test.gateway[0].type)
+        } else if (obj.entity.bpmnId === test.gateway[1].id) {
+          expect(obj.entity.type).toBe(test.gateway[1].type)
+        } else if (obj.entity.bpmnId === test.gateway[2].id) {
+          expect(obj.entity.type).toBe(test.gateway[2].type)
+        } else {
+          throw new Error('Neznama brana (Gateway)')
+        }
+      })
+      queues.Task.forEach((obj, index) => {
+        expect(obj.entity.processTemplate).toBe(process.entity)
+        expect(obj.entity.bpmnId).toBe(test.task[index].id)
+        if (obj.entity.inputs) {
+          let idMap = obj.entity.inputs.map(d=>d.bpmnId)
+          expect(idMap).toEqual(test.task[index].inputs)
+        }
+      })
+      queues.ScriptTask.forEach((obj, index) => {
+        expect(obj.entity.processTemplate).toBe(process.entity)
+        expect(obj.entity.bpmnId).toBe(test.scriptTask[index].id)
+        expect(obj.entity.script).toBe(test.scriptTask[index].script)
+      })
+      queues.SequenceFlow.forEach((obj, index) => {
+        expect(obj.entity.processTemplate).toBe(process.entity)
+        expect(obj.entity.bpmnId).toBe(test.sequenceFlow[index].id)
+      })
+
+    })
+
   })
 })
