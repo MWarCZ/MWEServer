@@ -1,7 +1,6 @@
 import { Column, Entity, JoinColumn, ManyToOne, OneToMany, OneToOne } from 'typeorm'
 
-import { BaseElementInstance } from './baseElement'
-import { FlowElementTemplate } from './flowElement'
+import { FlowElementInstance, FlowElementTemplate } from './flowElement'
 import { SequenceFlowTemplate } from './sequenceFlow'
 import { NodeToSequenceFlow, SequenceFlowToNode } from './sequenceFlowToNode'
 
@@ -47,14 +46,22 @@ export class GatewayTemplate extends FlowElementTemplate {
   outgoing?: NodeToSequenceFlow[]
 
 
-  @OneToMany(type => GatewayInstance, entity => entity.template)
+  @OneToMany(
+    type => GatewayInstance,
+    entity => entity.template,
+    { onDelete: 'CASCADE' },
+  )
   instances?: GatewayInstance[]
 
 }
 
 @Entity()
-export class GatewayInstance extends BaseElementInstance {
+export class GatewayInstance extends FlowElementInstance {
 
-  @ManyToOne(type => GatewayTemplate, entity => entity.instances)
+  @ManyToOne(
+    type => GatewayTemplate,
+    entity => entity.instances,
+    { onDelete: 'CASCADE' },
+  )
   template?: GatewayTemplate
 }

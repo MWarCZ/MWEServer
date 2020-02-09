@@ -13,7 +13,11 @@ export class DataObjectTemplate extends FlowElementTemplate {
   @Column('simple-json')
   json?: Json = {}
 
-  @OneToMany(type => DataObjectInstance, entity => entity.template)
+  @OneToMany(
+    type => DataObjectInstance,
+    entity => entity.template,
+    { onDelete: 'CASCADE' },
+  )
   instances?: DataObjectInstance[]
 
 }
@@ -24,6 +28,10 @@ export class DataObjectInstance extends BaseElementInstance {
   @Column('simple-json')
   data?: Json
 
-  @ManyToOne(type => DataObjectTemplate, entity => entity.instances)
+  @ManyToOne(
+    type => DataObjectTemplate,
+    entity => entity.instances,
+    { onDelete: 'CASCADE' },
+  )
   template?: DataObjectTemplate
 }

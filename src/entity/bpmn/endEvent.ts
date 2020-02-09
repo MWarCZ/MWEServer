@@ -1,7 +1,6 @@
 import { ChildEntity, Entity, ManyToOne, OneToMany } from 'typeorm'
 
-import { BaseElementInstance } from './baseElement'
-import { EventTemplate } from './event'
+import { EventInstance, EventTemplate } from './event'
 import { SequenceFlowToNode } from './sequenceFlowToNode'
 
 @ChildEntity()
@@ -10,13 +9,21 @@ export  class EndEventTemplate extends EventTemplate {
   @OneToMany(type => SequenceFlowToNode, entity => entity.event)
   incoming?: SequenceFlowToNode[]
 
-  @OneToMany(type => EndEventInstance, entity => entity.template)
+  @OneToMany(
+    type => EndEventInstance,
+    entity => entity.template,
+    { onDelete: 'CASCADE' },
+  )
   instances?: EndEventInstance[]
 }
 
 @Entity()
-export class EndEventInstance extends BaseElementInstance {
+export class EndEventInstance extends EventInstance {
 
-  @ManyToOne(type => EndEventTemplate, entity => entity.instances)
+  @ManyToOne(
+    type => EndEventTemplate,
+    entity => entity.instances,
+    { onDelete: 'CASCADE' },
+  )
   template?: EndEventTemplate
 }

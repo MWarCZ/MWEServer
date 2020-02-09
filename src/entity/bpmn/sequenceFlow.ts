@@ -27,5 +27,6 @@ export class SequenceFlowTemplate extends FlowElementTemplate {
   @OneToOne(type => GatewayTemplate, entity => entity.default, { cascade: true })
   default?: GatewayTemplate
 
+  instances: undefined
 }
 

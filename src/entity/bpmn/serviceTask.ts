@@ -6,7 +6,11 @@ import { TaskInstance, TaskTemplate } from './task'
 @ChildEntity()
 export class ServiceTaskTemplate extends TaskTemplate {
 
-  @OneToMany(type => ServiceTaskInstance, entity => entity.template)
+  @OneToMany(
+    type => ServiceTaskInstance,
+    entity => entity.template,
+    { onDelete: 'CASCADE' },
+  )
   instances?: ServiceTaskInstance[]
 
 }
@@ -14,6 +18,10 @@ export class ServiceTaskTemplate extends TaskTemplate {
 @Entity()
 export class ServiceTaskInstance extends TaskInstance {
 
-  @ManyToOne(type => ServiceTaskTemplate, entity => entity.instances)
+  @ManyToOne(
+    type => ServiceTaskTemplate,
+    entity => entity.instances,
+    { onDelete: 'CASCADE' },
+  )
   template?: ServiceTaskTemplate
 }

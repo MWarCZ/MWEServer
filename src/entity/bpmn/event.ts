@@ -1,10 +1,18 @@
 import { Entity, TableInheritance } from 'typeorm'
 
-import { FlowElementTemplate } from './flowElement'
+import { FlowElementInstance, FlowElementTemplate } from './flowElement'
 
 @Entity()
 @TableInheritance({ column: { type: 'varchar', name: 'class' } })
 export abstract class EventTemplate extends FlowElementTemplate {
   eventDefinition?: any
+  // @OneToMany(type => EventInstance, entity => entity.template)
+  abstract instances?: EventInstance[]
+}
+
+
+export abstract class EventInstance extends FlowElementInstance {
+  // @ManyToOne(type => EventTemplate, entity => entity.instances)
+  abstract template?: EventTemplate
 }
 
