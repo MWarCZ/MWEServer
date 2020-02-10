@@ -1,6 +1,8 @@
 import { Column, Entity, ManyToOne, OneToMany } from 'typeorm'
 
 import { ActivityStatus, BaseElementInstance, BaseElementTemplate, OptionsBaseElement } from './baseElement'
+import { DataObjectInstance } from './dataObject'
+import { EndEventInstance } from './endEvent'
 
 export enum ProcessType {
   None = 'none',
@@ -84,4 +86,16 @@ export class ProcessInstance extends BaseElementInstance {
 
   @Column({ nullable: true })
   processTemplateId?: number
+
+  @OneToMany(type => DataObjectInstance, entity => entity.processInstance)
+  dataObjects?: DataObjectInstance[]
+  // @OneToMany(type => StartEventInstance, entity => entity.processInstance)
+  // startEvents?: StartEventInstance[]
+  @OneToMany(type => EndEventInstance, entity => entity.processInstance)
+  endEvents?: EndEventInstance[]
+
+
+  // @OneToMany(type => GatewayInstance, entity => entity.processInstance)
+  // gateways?: GatewayInstance[]
+
 }

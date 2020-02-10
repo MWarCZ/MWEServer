@@ -1,5 +1,6 @@
 import { Column, Entity, JoinTable, ManyToMany, ManyToOne, OneToMany, TableInheritance } from 'typeorm'
 
+import { Json } from '../../types/json'
 import { DataObjectTemplate } from './dataObject'
 import { FlowElementInstance, FlowElementTemplate } from './flowElement'
 import { NodeToSequenceFlow, SequenceFlowToNode } from './sequenceFlowToNode'
@@ -36,7 +37,7 @@ export class BasicTaskTemplate extends FlowElementTemplate {
 @Entity()
 export class BasicTaskInstance extends FlowElementInstance {
   @Column('simple-json')
-  returnValue?: any
+  returnValue: Json = false
 
   @ManyToOne(type => BasicTaskTemplate, entity => entity.instances)
   template?: BasicTaskTemplate

@@ -85,31 +85,31 @@ export class BpmnRunner {
   //#region Pomocne funkce k ziskani sablony z sablony ci id_sablony.
 
   async getTemplate<T extends BaseElementTemplate>(
-    template: ObjectType<T>,
+    templateClass: ObjectType<T>,
     entityOrId: { id: number } | T,
   ): Promise<T> {
 
-    if (entityOrId instanceof template) {
+    if (entityOrId instanceof templateClass) {
       return entityOrId
     }
-    let res = await this.connection.getRepository(template).findOne(entityOrId.id)
+    let res = await this.connection.getRepository(templateClass).findOne(entityOrId.id)
     if (!res) {
-      throw new Error(`Sablona '${template.name}(${entityOrId.id})' nenalezena.`)
+      throw new Error(`Sablona '${templateClass.name}(${entityOrId.id})' nenalezena.`)
     }
     return res
   }
 
   async getInstance<T extends BaseElementInstance>(
-    instance: ObjectType<T>,
+    instanceClass: ObjectType<T>,
     entityOrId: { id: number } | T,
   ): Promise<T> {
 
-    if (entityOrId instanceof instance) {
+    if (entityOrId instanceof instanceClass) {
       return entityOrId
     }
-    let res = await this.connection.getRepository(instance).findOne(entityOrId.id)
+    let res = await this.connection.getRepository(instanceClass).findOne(entityOrId.id)
     if (!res) {
-      throw new Error(`Instance '${instance.name}' nenalezena.`)
+      throw new Error(`Instance '${instanceClass.name}' nenalezena.`)
     }
     return res
   }
@@ -206,18 +206,46 @@ export class BpmnRunner {
 
   initDataObject(
     processInstance: { id: number } | ProcessInstance,
-    task: { id: number } | ScriptTaskTemplate,
+    dataObject: { id: number } | DataObjectTemplate,
   ): Promise<DataObjectInstance> {
     return this.initElement(
       DataObjectTemplate,
       DataObjectInstance,
       processInstance,
-      task,
+      dataObject,
       (instance, template) => {
         instance.data = template.json
         return instance
       },
     )
+  }
+
+  //#endregion
+
+
+  //#region Funkce RunXXX
+
+  async createContext(taskInstance: {id: number}) {
+    // let taskI = await this.getInstance(TaskInstance, task)
+    // let taskT = await this.connection.getRepository(TaskTemplate).findOne(taskI.templateId, {
+    //   relations: ['inputs', 'inputs.instances'],
+    // })
+    let taskX = await this.connection.getRepository(TaskInstance).findOne(taskInstance.id, {
+      relations: ['template', 'template.inputs', 'template.inputs.instances'],
+    })
+    let dataI = await this.connection.getRepository(DataObjectInstance).find()
+
+    // if (taskX && taskX.template && taskX.template.inputs) {
+    //   taskX.template.inputs.forEach(input => {
+    //     if()
+    //   })
+    // }
+    console.log(JSON.stringify(taskX, null, 2))
+  }
+
+  runXXX() {
+
+
   }
 
   //#endregion
