@@ -91,8 +91,8 @@ export class ProcessInstance extends BaseElementInstance {
   dataObjects?: DataObjectInstance[]
   // @OneToMany(type => StartEventInstance, entity => entity.processInstance)
   // startEvents?: StartEventInstance[]
-  @OneToMany(type => EndEventInstance, entity => entity.processInstance)
-  endEvents?: EndEventInstance[]
+  // @OneToMany(type => EndEventInstance, entity => entity.processInstance)
+  // endEvents?: EndEventInstance[]
 
 
   // @OneToMany(type => GatewayInstance, entity => entity.processInstance)

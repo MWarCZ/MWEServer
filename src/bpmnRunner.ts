@@ -1,4 +1,4 @@
-import { Connection } from 'typeorm'
+import { Connection, Equal, In } from 'typeorm'
 
 import {
   ActivityStatus,
@@ -50,6 +50,17 @@ type ObjectType<T> = {
   [ ] Poskladat datovy kontext (pr. pro data ulohy, pro data k vyhodnoceni vyrazu, ...)
 
 */
+
+/*
+  $INPUT
+ */
+type BpmnRunContext = {
+  $GLOBAL: any,
+  $INPUT: {
+    [dataObjectName: string]: any,
+  },
+}
+
 
 export class BpmnRunner {
 
@@ -225,22 +236,55 @@ export class BpmnRunner {
 
   //#region Funkce RunXXX
 
-  async createContext(taskInstance: {id: number}) {
-    // let taskI = await this.getInstance(TaskInstance, task)
-    // let taskT = await this.connection.getRepository(TaskTemplate).findOne(taskI.templateId, {
-    //   relations: ['inputs', 'inputs.instances'],
-    // })
-    let taskX = await this.connection.getRepository(TaskInstance).findOne(taskInstance.id, {
-      relations: ['template', 'template.inputs', 'template.inputs.instances'],
-    })
-    let dataI = await this.connection.getRepository(DataObjectInstance).find()
 
-    // if (taskX && taskX.template && taskX.template.inputs) {
-    //   taskX.template.inputs.forEach(input => {
-    //     if()
-    //   })
-    // }
-    console.log(JSON.stringify(taskX, null, 2))
+  async createContext(taskInstance: { id: number }) {
+    // [x] Ziskat instanci ulohy.
+    // [x] Ziskat sablonu ulohy.
+    // [x] Ziskat datove vstupy dane sablony ulohy.
+    // [x] Ziskat existujici instance datovych vstupu.
+    //    [x] Stejna instance procesu pro instanci ulohy a instance datoveho objektu.
+    //    [x] Instance datoveho objektu je vytvorena dle sablon datovych vstupu sablony ulohy.
+    let context: BpmnRunContext = {
+      $GLOBAL: {},
+      $INPUT: {},
+    }
+
+    let taskI = await this.connection.getRepository(TaskInstance).findOneOrFail({
+      relations: ['template', 'template.inputs'],
+    })
+    console.log(JSON.stringify(taskI, null, 2))
+
+    if (taskI && taskI.template && taskI.template.inputs) {
+      // DataObjectTemplate pro ulohu
+      let taskInputsTemplates = taskI.template.inputs
+      // jejich id => DataObjectTemplate.id
+      let taskInputsTemplatesIds = taskInputsTemplates.map(d => d.id)
+      // DataObjectInstance patrici do instance procesu a zaroven do mnoziny vstupu ulohy
+      let taskInputsIntances = await this.connection.getRepository(DataObjectInstance).find({
+        processInstanceId: Equal(taskI.processInstanceId),
+        templateId: In([...taskInputsTemplatesIds]),
+      })
+      console.log('DOI:\n', JSON.stringify(taskInputsIntances, null, 2))
+
+      // prochzej DataObjectTemplate
+      let data = taskInputsTemplates.map(input => {
+       const { name = '', json} = input
+       let inputInstance = taskInputsIntances.find(d => d.templateId == input.id)
+        return {
+          [name]: (inputInstance) ? inputInstance.data : json,
+        }
+      }).reduce((acc: any, value) => {
+        return {
+          ...acc,
+          ...value,
+        }
+      }, {})
+      console.log('DATA:\n', JSON.stringify(data, null, 2))
+      context.$INPUT = data
+    }
+
+    // console.log(JSON.stringify(taskX, null, 2))
+    return context
   }
 
   runXXX() {

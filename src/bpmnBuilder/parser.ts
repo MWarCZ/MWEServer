@@ -105,8 +105,8 @@ export class Parser {
     if (process['#attr']) {
       entity.isExecutable = process['#attr'].isExecutable
       // TODO Osetrit enum
-      entity.processType = <ProcessType>process['#attr'].processType
-      entity.versionType = <VersionType>process['#attr'][`${this.ns.mwe}versionType` as 'versionType']
+      entity.processType = <ProcessType> process['#attr'].processType
+      entity.versionType = <VersionType> process['#attr'][`${this.ns.mwe}versionType` as 'versionType']
       entity.version = process['#attr'][`${this.ns.mwe}version` as 'version']
     }
     return {
