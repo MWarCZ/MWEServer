@@ -13,6 +13,8 @@ import {
   ProcessTemplate,
   ScriptTaskInstance,
   ScriptTaskTemplate,
+  SequenceFlowInstance,
+  SequenceFlowTemplate,
   StartEventInstance,
   StartEventTemplate,
   TaskInstance,
@@ -189,6 +191,18 @@ export function initNewDataObject(
       instance.data = template.json
       return instance
     },
+  })
+}
+
+export function initNewSequenceFlow(
+  processInstance: ProcessInstance,
+  sequenceTemplate: SequenceFlowTemplate,
+): SequenceFlowInstance {
+  return initNewElement({
+    templateClass: SequenceFlowTemplate,
+    instanceClass: SequenceFlowInstance,
+    elementTemplate: sequenceTemplate,
+    processInstance,
   })
 }
 

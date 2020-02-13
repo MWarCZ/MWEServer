@@ -11,6 +11,8 @@ import {
   ProcessInstance,
   ProcessTemplate,
   ScriptTaskInstance,
+  SequenceFlowInstance,
+  SequenceFlowTemplate,
   StartEventInstance,
   StartEventTemplate,
   TaskInstance,
@@ -115,6 +117,18 @@ describe('Testy funkci v InitHelpers: Se sablonou procesu.', () => {
       expect(instance.template).toMatchObject(dataObject)
       expect(instance.processInstance).toMatchObject(processInstance)
       expect(instance.data).toMatchObject(dataObject.json)
+    })
+
+    it('initNewSequenceFlow', () => {
+      let sequence = new SequenceFlowTemplate()
+      sequence.processTemplate = processTemplate
+      sequence.name = 'Spoj A'
+      sequence.id = 345
+
+      let instance = InitHelpers.initNewSequenceFlow(processInstance, sequence)
+      expect(instance).toBeInstanceOf(SequenceFlowInstance)
+      expect(instance.template).toMatchObject(sequence)
+      expect(instance.processInstance).toMatchObject(processInstance)
     })
 
     describe('Testy chybovych stavu.', ()=>{
