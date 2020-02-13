@@ -1,16 +1,23 @@
-import { BaseElementTemplate } from '../entity/bpmn/baseElement'
-import { BasicTaskTemplate } from '../entity/bpmn/basicTask'
-import { DataObjectTemplate } from '../entity/bpmn/dataObject'
-import { EndEventTemplate } from '../entity/bpmn/endEvent'
-import { EventTemplate } from '../entity/bpmn/event'
-import { FlowElementTemplate } from '../entity/bpmn/flowElement'
-import { GatewayDirection, GatewayTemplate, GatewayType } from '../entity/bpmn/gateway'
-import { ProcessTemplate, ProcessType, VersionType } from '../entity/bpmn/process'
-import { ScriptTaskTemplate } from '../entity/bpmn/scriptTask'
-import { SequenceFlowTemplate } from '../entity/bpmn/sequenceFlow'
-import { NodeToSequenceFlow, SequenceFlowToNode } from '../entity/bpmn/sequenceFlowToNode'
-import { StartEventTemplate } from '../entity/bpmn/startEvent'
-import { TaskTemplate } from '../entity/bpmn/task'
+import {
+  BaseElementTemplate,
+  BasicTaskTemplate,
+  ConnectorNode2Sequence,
+  ConnectorSequence2Node,
+  DataObjectTemplate,
+  EndEventTemplate,
+  EventTemplate,
+  FlowElementTemplate,
+  GatewayDirection,
+  GatewayTemplate,
+  GatewayType,
+  ProcessTemplate,
+  ProcessType,
+  ScriptTaskTemplate,
+  SequenceFlowTemplate,
+  StartEventTemplate,
+  TaskTemplate,
+  VersionType,
+} from '../entity/bpmn'
 import { BpmnFxm } from './bpmnFxm'
 import { BpmnLevel } from './bpmnLevel'
 import { BpmnNamespace, BpmnNamespaceUri } from './namespace'
@@ -364,7 +371,7 @@ export class Parser {
     sequenceFlowEntity: SequenceFlowTemplate, nodeEntity: T, referenceBpmnId: string,
   ): boolean {
     if (nodeEntity.bpmnId === referenceBpmnId) {
-      let n2s = new NodeToSequenceFlow()
+      let n2s = new ConnectorNode2Sequence()
       if (nodeEntity instanceof BasicTaskTemplate) {
         n2s.task = nodeEntity
       } else if (nodeEntity instanceof EventTemplate) {
@@ -384,7 +391,7 @@ export class Parser {
     sequenceFlowEntity: SequenceFlowTemplate, nodeEntity: T, referenceBpmnId: string,
   ): boolean {
     if (nodeEntity.bpmnId === referenceBpmnId) {
-      let s2n = new SequenceFlowToNode()
+      let s2n = new ConnectorSequence2Node()
       if (nodeEntity instanceof BasicTaskTemplate) {
         s2n.task = nodeEntity
       } else if (nodeEntity instanceof EventTemplate) {

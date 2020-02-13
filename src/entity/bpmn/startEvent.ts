@@ -1,13 +1,19 @@
-import { ChildEntity, Entity, ManyToOne, OneToMany } from 'typeorm'
+import { ChildEntity, Entity, JoinTable, ManyToMany, ManyToOne, OneToMany } from 'typeorm'
 
+import { ConnectorNode2Sequence } from './connectorNodeAndSequence'
+import { DataObjectTemplate } from './dataObject'
 import { EventInstance, EventTemplate } from './event'
-import { NodeToSequenceFlow } from './sequenceFlowToNode'
+import { NodeOutgoing, NodeOutputs } from './flowElement'
 
 @ChildEntity()
-export  class StartEventTemplate extends EventTemplate {
+export class StartEventTemplate extends EventTemplate implements NodeOutgoing, NodeOutputs {
 
-  @OneToMany(type => NodeToSequenceFlow, entity => entity.event)
-  outgoing?: NodeToSequenceFlow[]
+  @OneToMany(type => ConnectorNode2Sequence, entity => entity.event)
+  outgoing?: ConnectorNode2Sequence[]
+
+  @ManyToMany(type => DataObjectTemplate)
+  @JoinTable()
+  outputs?: DataObjectTemplate[]
 
   @OneToMany(
     type => StartEventInstance,

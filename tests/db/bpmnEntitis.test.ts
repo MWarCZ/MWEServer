@@ -1,11 +1,18 @@
 import { Connection } from 'typeorm'
 
-import { DataObjectTemplate } from '../../src/entity/bpmn/dataObject'
-import { GatewayDirection, GatewayTemplate, GatewayType } from '../../src/entity/bpmn/gateway'
-import { ProcessTemplate, ProcessType, VersionType } from '../../src/entity/bpmn/process'
-import { SequenceFlowTemplate } from '../../src/entity/bpmn/sequenceFlow'
-import { NodeToSequenceFlow, SequenceFlowToNode } from '../../src/entity/bpmn/sequenceFlowToNode'
-import { TaskTemplate } from '../../src/entity/bpmn/task'
+import {
+  ConnectorNode2Sequence,
+  ConnectorSequence2Node,
+  DataObjectTemplate,
+  GatewayDirection,
+  GatewayTemplate,
+  GatewayType,
+  ProcessTemplate,
+  ProcessType,
+  SequenceFlowTemplate,
+  TaskTemplate,
+  VersionType,
+} from '../../src/entity/bpmn'
 import { cleanDataInTables, closeConn, createConn } from '../../src/utils/db'
 
 const printJSON = false
@@ -169,21 +176,27 @@ describe('Testovani entit ', () => {
 
       // await connection.manager.save([...tasks, sequence])
 
-      const source = new NodeToSequenceFlow({
+      const source = new ConnectorNode2Sequence({
         sequenceFlow: sequence,
         task: tasks[0],
       })
+
+      // console.log(JSON.stringify(source, null, 2))
       // const target = new SequenceFlowToNode({
       //   sequenceFlow: sequence,
       //   task: tasks[1],
       // })
-      const target = new SequenceFlowToNode()
+      const target = new ConnectorSequence2Node()
       target.task = tasks[1]
+      // console.log(JSON.stringify(target, null, 2))
 
       await connection.manager.save([...tasks])
       sequence.source = source
       sequence.target = target
-      await connection.manager.save([sequence])
+      // console.log(sequence)
+      // console.log(JSON.stringify(sequence, null, 2))
+      await connection.manager.save(sequence)
+      // await connection.manager.save([sequence.source, sequence.target])
 
       // source.task = tasks[0]
       // source.sequenceFlow = sequence

@@ -1,13 +1,16 @@
-import { BaseElementTemplate } from '../entity/bpmn/baseElement'
-import { DataObjectTemplate } from '../entity/bpmn/dataObject'
-import { EndEventTemplate } from '../entity/bpmn/endEvent'
-import { GatewayTemplate } from '../entity/bpmn/gateway'
-import { ProcessTemplate } from '../entity/bpmn/process'
-import { ScriptTaskTemplate } from '../entity/bpmn/scriptTask'
-import { SequenceFlowTemplate } from '../entity/bpmn/sequenceFlow'
-import { StartEventTemplate } from '../entity/bpmn/startEvent'
-import { TaskTemplate } from '../entity/bpmn/task'
+import {
+  BaseElementTemplate,
+  DataObjectTemplate,
+  EndEventTemplate,
+  GatewayTemplate,
+  ProcessTemplate,
+  ScriptTaskTemplate,
+  SequenceFlowTemplate,
+  StartEventTemplate,
+  TaskTemplate,
+} from '../entity/bpmn'
 import { BpmnFxm } from './bpmnFxm'
+
 
 
 // import { NodeToSequenceFlow, SequenceFlowToNode } from '../entity/bpmn/sequenceFlowToNode'
