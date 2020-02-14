@@ -1,6 +1,11 @@
+import { scriptTaskImplementation } from 'bpmnRunnerPlugins/scriptTask'
+import { taskImplementation } from 'bpmnRunnerPlugins/task'
 import { Connection } from 'typeorm'
 
 import {
+  ActivityStatus,
+  BasicTaskInstance,
+  BasicTaskTemplate,
   DataObjectInstance,
   DataObjectTemplate,
   EndEventInstance,
@@ -13,6 +18,8 @@ import {
   ProcessTemplate,
   ScriptTaskInstance,
   ScriptTaskTemplate,
+  SequenceFlowInstance,
+  SequenceFlowTemplate,
   StartEventInstance,
   StartEventTemplate,
   TaskInstance,
@@ -21,6 +28,8 @@ import {
 import { ObjectType } from '../types/objectType'
 import { getInstance, getTemplate } from './anotherHelpers'
 import * as InitHelpers from './initHelpers'
+import { LibrariesWithNodeImplementations } from './pluginNodeImplementation'
+import { loadContextForBasicTask } from './runContext'
 
 
 /*
@@ -50,15 +59,27 @@ import * as InitHelpers from './initHelpers'
 export class BpmnRunner {
 
   connection: Connection
+  pluginsWithImplementations: LibrariesWithNodeImplementations
 
-  constructor(connection: Connection) {
+  constructor(connection: Connection, pluginsWithImplementations?: LibrariesWithNodeImplementations) {
     this.connection = connection
+
+    this.pluginsWithImplementations = {
+      task: taskImplementation,
+      scriptTask: scriptTaskImplementation,
+    }
+    if (typeof pluginsWithImplementations === 'object') {
+      this.pluginsWithImplementations = {
+        ...this.pluginsWithImplementations,
+        ...pluginsWithImplementations,
+      }
+    }
   }
 
 
   //#region Funkce InitXXX - Kontrola, vytvoreni instance, ulozeni instance.
 
-  private async initAndSaveElement<T extends FlowElementTemplate, I extends FlowElementInstance>(
+  async initAndSaveElement<T extends FlowElementTemplate, I extends FlowElementInstance>(
     options: {
       templateClass: ObjectType<T>,
       elementTemplate: { id: number } | T,
@@ -186,6 +207,57 @@ export class BpmnRunner {
       elementTemplate: dataObject,
       templateClass: DataObjectTemplate,
     })
+  }
+
+  initSequenceFlow(
+    processInstance: { id: number } | ProcessInstance,
+    event: { id: number } | SequenceFlowTemplate,
+  ): Promise<SequenceFlowInstance> {
+    return this.initAndSaveElement({
+      callInitNew: InitHelpers.initNewSequenceFlow,
+      processInstance,
+      elementTemplate: event,
+      templateClass: SequenceFlowTemplate,
+    })
+  }
+
+  //#endregion
+
+
+  //#region Funkce RunXXX
+
+  runIt(elementInstance: FlowElementInstance) {
+    if(elementInstance instanceof StartEventInstance) {
+
+    } else if (elementInstance instanceof EndEventInstance) {
+
+    } else if (elementInstance instanceof BasicTaskInstance) {
+
+    } else {
+      throw new Error('Neznamou instanci leze spustit.')
+    }
+  }
+
+  async runBasicTask(taskInstance: BasicTaskInstance, args: any) {
+    let taskTemplate = await getTemplate({
+      templateClass: BasicTaskTemplate,
+      entityOrId: taskInstance.template || { id: taskInstance.templateId as number},
+      typeormConnection: this.connection,
+    })
+    let implementation = this.pluginsWithImplementations[taskTemplate.implementation as string]
+    if (typeof implementation !== 'object') {
+      throw new Error('Implementace ulohy nenalezena.')
+    }
+    let context = await loadContextForBasicTask({ id: taskInstance.id as number }, this.connection)
+
+    try {
+      let result = implementation.run(context, args)
+      taskInstance.returnValue = result
+      taskInstance.status = ActivityStatus.Completed
+    } catch (e) {
+
+    }
+
   }
 
   //#endregion
