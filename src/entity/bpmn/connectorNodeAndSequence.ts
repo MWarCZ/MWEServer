@@ -20,15 +20,12 @@ interface OptionsS2FGateway {
 }
 export type OptionsSequenceFlowToNode = OptionsS2FEvent | OptionsS2FTask | OptionsS2FGateway
 
-@Entity()
+// @Entity()
 // @TableInheritance({ column: { type: "varchar", name: "class" } })
-export class SequenceFlowToNode {
+export class ConnectorNodeAndSequence {
   @PrimaryGeneratedColumn()
   id?: number
 
-  @OneToOne(type => SequenceFlowTemplate, { onDelete: 'CASCADE' })
-  @JoinColumn()
-  sequenceFlow?: SequenceFlowTemplate
   @Column({ nullable: true })
   sequenceFlowId?: number
 
@@ -57,6 +54,18 @@ export class SequenceFlowToNode {
 }
 
 @Entity()
-export class NodeToSequenceFlow extends SequenceFlowToNode {
+export class ConnectorNode2Sequence extends ConnectorNodeAndSequence {
+
+  @OneToOne(type => SequenceFlowTemplate, entity => entity.source, { onDelete: 'CASCADE' })
+  @JoinColumn()
+  sequenceFlow?: SequenceFlowTemplate
+}
+
+@Entity()
+export class ConnectorSequence2Node extends ConnectorNodeAndSequence {
+
+  @OneToOne(type => SequenceFlowTemplate, entity => entity.target, { onDelete: 'CASCADE' })
+  @JoinColumn()
+  sequenceFlow?: SequenceFlowTemplate
 
 }

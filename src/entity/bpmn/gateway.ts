@@ -1,8 +1,10 @@
 import { Column, Entity, JoinColumn, ManyToOne, OneToMany, OneToOne } from 'typeorm'
 
-import { FlowElementInstance, FlowElementTemplate } from './flowElement'
+import { ConnectorNode2Sequence, ConnectorSequence2Node } from './connectorNodeAndSequence'
+import { FlowElementInstance, FlowElementTemplate, NodeIncoming, NodeOutgoing } from './flowElement'
 import { SequenceFlowTemplate } from './sequenceFlow'
-import { NodeToSequenceFlow, SequenceFlowToNode } from './sequenceFlowToNode'
+
+
 
 export enum GatewayType {
   Exclusive = 'exclusive',
@@ -17,7 +19,7 @@ export enum GatewayDirection {
 }
 
 @Entity()
-export class GatewayTemplate extends FlowElementTemplate {
+export class GatewayTemplate extends FlowElementTemplate implements NodeOutgoing, NodeIncoming {
 
   @Column('enum', {
     enum: GatewayType,
@@ -39,11 +41,11 @@ export class GatewayTemplate extends FlowElementTemplate {
   default?: SequenceFlowTemplate
 
 
-  @OneToMany(type => SequenceFlowToNode, entity => entity.gateway)
-  incoming?: SequenceFlowToNode[]
+  @OneToMany(type => ConnectorSequence2Node, entity => entity.gateway)
+  incoming?: ConnectorSequence2Node[]
 
-  @OneToMany(type => NodeToSequenceFlow, entity => entity.gateway)
-  outgoing?: NodeToSequenceFlow[]
+  @OneToMany(type => ConnectorNode2Sequence, entity => entity.gateway)
+  outgoing?: ConnectorNode2Sequence[]
 
 
   @OneToMany(
