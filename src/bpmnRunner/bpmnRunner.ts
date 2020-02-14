@@ -1,4 +1,4 @@
-import { scriptTaskImplementation } from 'bpmnRunnerPlugins/scriptTask'
+import { scriptTask } from 'bpmnRunnerPlugins/scriptTask'
 import { taskImplementation } from 'bpmnRunnerPlugins/task'
 import { Connection } from 'typeorm'
 
@@ -66,7 +66,7 @@ export class BpmnRunner {
 
     this.pluginsWithImplementations = {
       task: taskImplementation,
-      scriptTask: scriptTaskImplementation,
+      scriptTask: scriptTask,
     }
     if (typeof pluginsWithImplementations === 'object') {
       this.pluginsWithImplementations = {
