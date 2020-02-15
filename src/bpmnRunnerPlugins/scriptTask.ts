@@ -6,11 +6,11 @@ import { NodeImplementation } from '../bpmnRunner'
  * ScriptTask je uloha, ktera provede skript.
  */
 export const scriptTaskImplementation: NodeImplementation = {
-  run(context, args: {script: string, scriptFormat?: string}) {
+  run({ context, args }) {
     const {
       script,
       scriptFormat = 'js',
-    } = args || {}
+    }: { script: string, scriptFormat?: string } = args || {}
     if (typeof script !== 'string') {
       throw new Error('Skript nenalezen.')
     } else if (!['js', 'JS', 'javascript', 'JavaScript'].includes(scriptFormat)) {

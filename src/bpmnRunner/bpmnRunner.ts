@@ -1,9 +1,8 @@
-import { scriptTask } from 'bpmnRunnerPlugins/scriptTask'
-import { taskImplementation } from 'bpmnRunnerPlugins/task'
 import { Connection } from 'typeorm'
 
+import { scriptTaskImplementation } from '../bpmnRunnerPlugins/scriptTask'
+import { taskImplementation } from '../bpmnRunnerPlugins/task'
 import {
-  ActivityStatus,
   BasicTaskInstance,
   BasicTaskTemplate,
   DataObjectInstance,
@@ -27,10 +26,10 @@ import {
 } from '../entity/bpmn'
 import { ObjectType } from '../types/objectType'
 import { getInstance, getTemplate } from './anotherHelpers'
+import { executeBasicTask } from './executeHelpers'
 import * as InitHelpers from './initHelpers'
 import { LibrariesWithNodeImplementations } from './pluginNodeImplementation'
 import { loadContextForBasicTask } from './runContext'
-
 
 /*
   [x] Vytvorit instanci procesu. PT => PI
@@ -66,7 +65,7 @@ export class BpmnRunner {
 
     this.pluginsWithImplementations = {
       task: taskImplementation,
-      scriptTask: scriptTask,
+      scriptTask: scriptTaskImplementation,
     }
     if (typeof pluginsWithImplementations === 'object') {
       this.pluginsWithImplementations = {
@@ -224,24 +223,38 @@ export class BpmnRunner {
   //#endregion
 
 
-  //#region Funkce RunXXX
+  //#region Funkce RunXXX, ExecuteXXX
 
-  runIt(elementInstance: FlowElementInstance) {
+  // ExecuteXXX - synchronni funkce
+  // RunXXX - asynchronni funkce
+
+  async runIt(elementInstance: FlowElementInstance, args?: any) {
     if(elementInstance instanceof StartEventInstance) {
 
     } else if (elementInstance instanceof EndEventInstance) {
 
-    } else if (elementInstance instanceof BasicTaskInstance) {
+    } else if (elementInstance instanceof GatewayInstance) {
 
+    } else if (elementInstance instanceof BasicTaskInstance) {
+      await this.runBasicTask({
+        taskInstance: elementInstance,
+        taskArgs: args,
+      })
     } else {
-      throw new Error('Neznamou instanci leze spustit.')
+      throw new Error('Neznamou instanci nelze spustit.')
     }
   }
 
-  async runBasicTask(taskInstance: BasicTaskInstance, args: any) {
+
+  async runBasicTask(options: {
+    taskInstance: BasicTaskInstance,
+    taskArgs: any,
+  }) {
+    const { taskInstance, taskArgs } = options
+
     let taskTemplate = await getTemplate({
       templateClass: BasicTaskTemplate,
-      entityOrId: taskInstance.template || { id: taskInstance.templateId as number},
+      entityOrId: taskInstance.template || { id: taskInstance.templateId as number },
       typeormConnection: this.connection,
     })
     let implementation = this.pluginsWithImplementations[taskTemplate.implementation as string]
@@ -251,13 +264,18 @@ export class BpmnRunner {
     let context = await loadContextForBasicTask({ id: taskInstance.id as number }, this.connection)
 
     try {
-      let result = implementation.run(context, args)
-      taskInstance.returnValue = result
-      taskInstance.status = ActivityStatus.Completed
-    } catch (e) {
+      executeBasicTask({
+        taskInstance,
+        taskArgs,
+        taskConstext: context,
+        taskImplementation: implementation,
+      })
+      // Uloz instanci ktera prosla zpracovanim
+      await this.connection.manager.save(taskInstance)
 
+    } catch(e) {
+      throw e
     }
-
   }
 
   //#endregion

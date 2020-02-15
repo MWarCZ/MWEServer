@@ -1,16 +1,24 @@
 import { RunContext } from './runContext'
 
-
+/**
+ * Rozhrani definujici podobu pluginu
+ */
 export interface NodeImplementation {
-  prerun?: NodeImplementationRunFunction,
-  run: NodeImplementationPrerunFunction,
+  prerun?: NodeImplementationFunction,
+  run: NodeImplementationFunction,
+  onCompleting?: NodeImplementationFunction,
+  onFailing?: NodeImplementationFunction,
 }
 
-export interface NodeImplementationRunFunction {
-  (context: RunContext, argument?: any): any
+export interface NodeImplementationFunctionOptions {
+  context: RunContext,
+  args?: any,
+  // Funkce ktera vytvori dalsi instance elementu dle vybranych id sablon elementu
+  initNext: (ids: number[]|{id: number}[]) => void
 }
-export interface NodeImplementationPrerunFunction {
-  (context: RunContext, argument?: any): any
+
+export interface NodeImplementationFunction {
+  (options: NodeImplementationFunctionOptions): any
 }
 
 export type LibrariesWithNodeImplementations = {
