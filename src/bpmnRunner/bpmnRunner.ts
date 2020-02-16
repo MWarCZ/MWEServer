@@ -5,10 +5,12 @@ import { taskImplementation } from '../bpmnRunnerPlugins/task'
 import {
   BasicTaskInstance,
   BasicTaskTemplate,
+  ConnectorSequence2Node,
   DataObjectInstance,
   DataObjectTemplate,
   EndEventInstance,
   EndEventTemplate,
+  EventTemplate,
   FlowElementInstance,
   FlowElementTemplate,
   GatewayInstance,
@@ -26,11 +28,12 @@ import {
 } from '../entity/bpmn'
 import { ObjectType } from '../types/objectType'
 import { getInstance, getTemplate } from './anotherHelpers'
-import { executeBasicTask } from './executeHelpers'
+import { executeNode } from './executeHelpers'
 import * as InitHelpers from './initHelpers'
 import { LibrariesWithNodeImplementations } from './pluginNodeImplementation'
 import { loadContextForBasicTask } from './runContext'
 
+// import * as bpmn from '../entity/bpmn'
 /*
   [x] Vytvorit instanci procesu. PT => PI
     [x] Vytvorit instanci procesu.
@@ -84,7 +87,7 @@ export class BpmnRunner {
       elementTemplate: { id: number } | T,
       processInstance: { id: number } | ProcessInstance,
       callInitNew: (processInstance: ProcessInstance, elementTemplate: T) => I,
-    }
+    },
   ): Promise<I> {
     const {
       templateClass,
@@ -220,6 +223,54 @@ export class BpmnRunner {
     })
   }
 
+  async initNext(
+    processInstance: { id: number } | ProcessInstance,
+    sequenceFlows: (number | { id: number } | SequenceFlowTemplate)[],
+  ) {
+    // ziskat vsechny cile (uzly) pro vsechny sablony spoju
+    let sequences = await Promise.all(sequenceFlows.map(async seq => {
+      return await getTemplate({
+        typeormConnection: this.connection,
+        entityOrId: (typeof seq === 'number') ? { id: seq } : seq,
+        templateClass: SequenceFlowTemplate,
+        relations: ['target', 'target.task', 'target.gateway', 'target.event'],
+      })
+    }))
+    // Prejit zkrze spoj na zaznamy o cilech
+    let targets = sequences.map(s => s.target).filter(s => !!s) as ConnectorSequence2Node[]
+    // Ziskat cile (uloha, udalost, brana)
+    let tasks = targets.map(t => t.task).filter(t => !!t) as BasicTaskTemplate[]
+    let events = targets.map(t => t.event).filter(t => !!t) as EventTemplate[]
+    let gateways = targets.map(t => t.gateway).filter(t => !!t) as GatewayTemplate[]
+
+    // Vytvorit a ulozit instance pro ziskane ulohy.
+    await Promise.all(tasks.map(task => {
+      switch (task.class) {
+        case TaskTemplate.name:
+          return this.initTask(processInstance, task)
+        case ScriptTaskTemplate.name:
+          return this.initScriptTask(processInstance, task)
+      }
+      return Promise.resolve(undefined)
+    }))
+    await Promise.all(events.map(event => {
+      switch (event.class) {
+        case StartEventTemplate.name:
+          return this.initStartEvent(processInstance, event)
+        case EndEventTemplate.name:
+          return this.initEndEvent(processInstance, event)
+      }
+      return Promise.resolve(undefined)
+    }))
+    await Promise.all(gateways.map(gate => {
+      return this.initGateway(processInstance, gate)
+    }))
+
+
+
+    // new SequenceFlowTemplate().target?.task?.class
+  }
+
   //#endregion
 
 
@@ -229,7 +280,7 @@ export class BpmnRunner {
   // RunXXX - asynchronni funkce
 
   async runIt(elementInstance: FlowElementInstance, args?: any) {
-    if(elementInstance instanceof StartEventInstance) {
+    if (elementInstance instanceof StartEventInstance) {
 
     } else if (elementInstance instanceof EndEventInstance) {
 
@@ -264,16 +315,16 @@ export class BpmnRunner {
     let context = await loadContextForBasicTask({ id: taskInstance.id as number }, this.connection)
 
     try {
-      executeBasicTask({
-        taskInstance,
-        taskArgs,
-        taskConstext: context,
-        taskImplementation: implementation,
+      executeNode({
+        nodeInstance: taskInstance,
+        args: taskArgs,
+        context,
+        nodeImplementation: implementation,
       })
       // Uloz instanci ktera prosla zpracovanim
       await this.connection.manager.save(taskInstance)
 
-    } catch(e) {
+    } catch (e) {
       throw e
     }
   }

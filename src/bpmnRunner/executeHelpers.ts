@@ -1,35 +1,34 @@
-import { taskImplementation } from '../bpmnRunnerPlugins/task'
-import { ActivityStatus, BasicTaskInstance } from '../entity/bpmn'
+import { ActivityStatus, FlowElementInstance } from '../entity/bpmn'
 import { NodeImplementation } from './pluginNodeImplementation'
 import { RunContext } from './runContext'
 
 
-export function executeBasicTaskPrerun(options: {
-  taskInstance: BasicTaskInstance,
-  taskImplementation: NodeImplementation,
-  taskConstext: RunContext,
-  taskArgs: any,
+export function executeNodePrerun(options: {
+  nodeInstance: FlowElementInstance,
+  nodeImplementation: NodeImplementation,
+  context: RunContext,
+  args: any,
 }): boolean {
   const {
-    taskInstance,
-    taskImplementation,
-    taskConstext,
-    taskArgs,
+    nodeInstance,
+    nodeImplementation,
+    context,
+    args,
   } = options
   // status === Ready
   try {
-    let result = taskImplementation.prerun ? taskImplementation.prerun({
-      context: taskConstext,
-      args: taskArgs,
-      initNext: ()=>{},
+    let result = nodeImplementation.prerun ? nodeImplementation.prerun({
+      context,
+      args,
+      initNext: () => {},
     }) : true
-    taskInstance.returnValue = result
-    taskInstance.status = ActivityStatus.Active
+    nodeInstance.returnValue = result
+    nodeInstance.status = ActivityStatus.Active
     // status === Active
     return true
   } catch (e) {
     if (e instanceof Error) {
-      taskInstance.returnValue = { error: { name: e.name, message: e.message } }
+      nodeInstance.returnValue = { error: { name: e.name, message: e.message } }
     } else {
       throw e
     }
@@ -38,33 +37,33 @@ export function executeBasicTaskPrerun(options: {
   }
 }
 
-export function executeBasicTaskRun(options: {
-  taskInstance: BasicTaskInstance,
-  taskImplementation: NodeImplementation,
-  taskConstext: RunContext,
-  taskArgs: any,
+export function executeNodeRun(options: {
+  nodeInstance: FlowElementInstance,
+  nodeImplementation: NodeImplementation,
+  context: RunContext,
+  args: any,
 }): boolean {
   const {
-    taskInstance,
-    taskImplementation,
-    taskConstext,
-    taskArgs,
+    nodeInstance,
+    nodeImplementation,
+    context,
+    args,
   } = options
   // status === Active
   try {
-    let result = taskImplementation.run({
-      context: taskConstext,
-      args: taskArgs,
+    let result = nodeImplementation.run({
+      context,
+      args,
       initNext: () => { },
     })
-    taskInstance.status = ActivityStatus.Compensating
-    taskInstance.returnValue = result
+    nodeInstance.status = ActivityStatus.Compensating
+    nodeInstance.returnValue = result
     // status === Completing
     return true
   } catch (e) {
-    taskInstance.status = ActivityStatus.Falling
+    nodeInstance.status = ActivityStatus.Falling
     if (e instanceof Error) {
-      taskInstance.returnValue = { error: { name: e.name, message: e.message } }
+      nodeInstance.returnValue = { error: { name: e.name, message: e.message } }
     } else {
       throw e
     }
@@ -74,49 +73,45 @@ export function executeBasicTaskRun(options: {
 
 }
 
-export function executeBasicTask(options: {
-  taskInstance: BasicTaskInstance,
-  taskImplementation: NodeImplementation,
-  taskConstext: RunContext,
-  taskArgs: any,
+export function executeNode(options: {
+  nodeInstance: FlowElementInstance,
+  nodeImplementation: NodeImplementation,
+  context: RunContext,
+  args: any,
 }) {
-  const { taskInstance, taskArgs, taskImplementation, taskConstext } = options
+  const { nodeInstance, args, nodeImplementation, context } = options
 
   // taskInstance.status === Ready
-  if (executeBasicTaskPrerun({
-    taskInstance, taskArgs, taskConstext, taskImplementation,
-  })) {
+  if (executeNodePrerun({ nodeInstance, args, context, nodeImplementation })) {
     // status === Active
-    if (executeBasicTaskRun({
-      taskInstance, taskArgs, taskConstext, taskImplementation,
-    })) {
+    if (executeNodeRun({ nodeInstance, args, context, nodeImplementation })) {
       // status === completing
-      if (typeof taskImplementation.onCompleting === 'function') {
+      if (typeof nodeImplementation.onCompleting === 'function') {
         // TODO - dovymislet onCompleting()
-        taskImplementation.onCompleting({
-          context: taskConstext,
-          args: taskArgs,
-          initNext: ()=>{},
+        nodeImplementation.onCompleting({
+          context: context,
+          args: args,
+          initNext: () => {},
         })
       }
-      taskInstance.status = ActivityStatus.Completed
+      nodeInstance.status = ActivityStatus.Completed
       // status === completed
     } else {
       // status === Failing
-      if (typeof taskImplementation.onFailing === 'function') {
+      if (typeof nodeImplementation.onFailing === 'function') {
         // TODO - dovymislet onFailing()
-        taskImplementation.onFailing({
-          context: taskConstext,
-          args: taskArgs,
+        nodeImplementation.onFailing({
+          context: context,
+          args: args,
           initNext: () => { },
         })
       }
-      taskInstance.status = ActivityStatus.Failled
+      nodeInstance.status = ActivityStatus.Failled
       // status === Failed
     }
   } else {
     // status === Ready
-    taskInstance.status = ActivityStatus.Ready
+    nodeInstance.status = ActivityStatus.Ready
     // status === Ready
   }
 }

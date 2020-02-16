@@ -1,4 +1,5 @@
 import { Column, ManyToOne } from 'typeorm'
+import { Json } from 'types/json'
 
 import { ActivityStatus, BaseElementInstance, BaseElementTemplate } from './baseElement'
 import { ConnectorNode2Sequence, ConnectorSequence2Node } from './connectorNodeAndSequence'
@@ -69,6 +70,9 @@ export abstract class FlowElementInstance extends BaseElementInstance {
 
   @Column({ nullable: true })
   processInstanceId?: number
+
+
+  returnValue: Json = false
 
 }
 

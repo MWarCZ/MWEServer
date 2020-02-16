@@ -9,6 +9,9 @@ import { FlowElementInstance, FlowElementTemplate, NodeIncoming, NodeInputs, Nod
 @TableInheritance({ column: { type: 'varchar', name: 'class' } })
 export class BasicTaskTemplate extends FlowElementTemplate implements NodeIncoming, NodeOutgoing, NodeInputs, NodeOutputs {
 
+  @Column()
+  class!: string
+
   // @Column('text')
   @Column('varchar', { default: '', nullable: false, length: 150 })
   implementation?: string

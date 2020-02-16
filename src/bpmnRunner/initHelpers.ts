@@ -55,7 +55,7 @@ export function checkIsElementInsideProcess<T extends FlowElementTemplate>(
   childClass: ObjectType < T >,
 ) {
   let idFromChild: number | undefined = child.processTemplateId
-  if (child instanceof FlowElementTemplate && child.processTemplate){
+  if (child instanceof FlowElementTemplate && child.processTemplate) {
     idFromChild = child.processTemplate.id
   }
   if (typeof idFromChild === 'undefined') {
@@ -82,7 +82,7 @@ export function initNewElement<T extends FlowElementTemplate, I extends FlowElem
     elementTemplate: T,
     callSetup?: (elementInstance: I, elementTemplate: T) => I,
     disableCheckIsElementInsideProcess?: boolean,
-  }
+  },
 ): I {
   const {
     templateClass,
@@ -206,4 +206,4 @@ export function initNewSequenceFlow(
   })
 }
 
-  //#endregion
+//#endregion

@@ -20,7 +20,7 @@ import {
 //#region Typy
 
 export type RunContextMap = {
-  [key: string]: any
+  [key: string]: any,
 }
 export type RunContextInput = RunContextMap
 export type RunContextOutput = RunContextMap
@@ -147,7 +147,7 @@ export function createContextForStartEvent(
 
   let outputsData = createContextOutputs({
     outputsDataInstances,
-    outputsDataTemplates
+    outputsDataTemplates,
   })
   context.$OUTPUT = { ...context.$OUTPUT, ...outputsData }
 
@@ -241,13 +241,13 @@ export function createContextForBasicTask(
 
   let inputsData = createContextInputs({
     inputsDataInstances,
-    inputsDataTemplates
+    inputsDataTemplates,
   })
   context.$INPUT = { ...context.$INPUT, ...inputsData }
 
   let outputsData = createContextOutputs({
     outputsDataInstances,
-    outputsDataTemplates
+    outputsDataTemplates,
   })
   context.$OUTPUT = { ...context.$OUTPUT, ...outputsData }
 

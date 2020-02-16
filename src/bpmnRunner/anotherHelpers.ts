@@ -10,13 +10,14 @@ export async function getTemplate<T extends BaseElementTemplate>(
     typeormConnection: Connection,
     templateClass: ObjectType<T>,
     entityOrId: { id: number } | T,
-  }
+    relations?: string[],
+  },
 ): Promise<T> {
-  const { typeormConnection, templateClass, entityOrId } = options
-  if (entityOrId instanceof templateClass) {
+  const { typeormConnection, templateClass, entityOrId, relations } = options
+  if (entityOrId instanceof templateClass && !relations) {
     return entityOrId
   }
-  let res = await typeormConnection.getRepository(templateClass).findOne(entityOrId.id)
+  let res = await typeormConnection.getRepository(templateClass).findOne(entityOrId.id, { relations })
   if (!res) {
     throw new Error(`Sablona '${templateClass.name}(${entityOrId.id})' nenalezena.`)
   }
@@ -28,7 +29,7 @@ export async function getInstance<T extends BaseElementInstance>(
     typeormConnection: Connection,
     instanceClass: ObjectType<T>,
     entityOrId: { id: number } | T,
-  }
+  },
 ): Promise<T> {
   const { typeormConnection, instanceClass, entityOrId } = options
   if (entityOrId instanceof instanceClass) {

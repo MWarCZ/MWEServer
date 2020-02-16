@@ -14,7 +14,7 @@ export interface NodeImplementationFunctionOptions {
   context: RunContext,
   args?: any,
   // Funkce ktera vytvori dalsi instance elementu dle vybranych id sablon elementu
-  initNext: (ids: number[]|{id: number}[]) => void
+  initNext: (sequenceFlowIds: number[]|{id: number}[]) => void
 }
 
 export interface NodeImplementationFunction {
@@ -22,7 +22,7 @@ export interface NodeImplementationFunction {
 }
 
 export type LibrariesWithNodeImplementations = {
-  [implementationRef: string]: NodeImplementation | undefined
+  [implementationRef: string]: NodeImplementation | undefined,
 }
 
 let taskImplementation: NodeImplementation = {

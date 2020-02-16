@@ -37,19 +37,19 @@ export const gatewayImplementation: NodeImplementation = {
       incoming = [],
       outgoing = [],
     }: GatewayImplementationArgs = args || {}
-    switch(gatewayType) {
+    switch (gatewayType) {
       case GatewayType.Exclusive:
       case GatewayType.Inclusive:
-        break;
+        break
       case GatewayType.Parallel:
         // Vsechny incoming musi biti prichozi
         let result = incoming.reduce((acc, value) => {
           return acc && value.came
         }, true)
-        if(!result) {
+        if (!result) {
           throw new Error('Stale cekame na vsechny prichozi.')
         }
-        break;
+        break
       default:
         throw new Error('Neznamy typ brany.')
     }
@@ -69,9 +69,9 @@ export const gatewayImplementation: NodeImplementation = {
           let { expression = 'true' } = value
           let result = evalExpression({ expression, context })
           return result
-        }).map(v=>v.id)
+        }).map(v => v.id)
         initNext(selectedOutgoing)
-        break;
+        break
       case GatewayType.Inclusive:
         // Splustit prvni splnujici vyraz
         if (true) {
@@ -80,15 +80,15 @@ export const gatewayImplementation: NodeImplementation = {
             let result = evalExpression({ expression, context })
             return result
           })
-          selectedOutgoing = (tmp)? [tmp.id] : []
+          selectedOutgoing = (tmp) ? [tmp.id] : []
         }
         initNext(selectedOutgoing)
-        break;
+        break
       case GatewayType.Parallel:
         // Vsechny incoming musi biti prichozi
         selectedOutgoing = outgoing.map(v => v.id)
         initNext(selectedOutgoing)
-        break;
+        break
       default:
         throw new Error('Neznamy typ brany.')
     }
