@@ -315,7 +315,8 @@ export class BpmnRunner {
     let context = await loadContextForBasicTask({ id: taskInstance.id as number }, this.connection)
 
     try {
-      executeNode({
+      // TODO Zavolat init next pro ziskane id sekvenci
+      let nextSequences = executeNode({
         nodeInstance: taskInstance,
         args: taskArgs,
         context,

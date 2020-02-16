@@ -24,4 +24,7 @@ export const scriptTaskImplementation: NodeImplementation = {
     let result = vm.run(script)
     return result
   },
+  onCompleting({initNext, context}){
+    initNext(context.$OUTGOING)
+  },
 }

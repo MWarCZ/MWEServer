@@ -8,4 +8,7 @@ export const taskImplementation: NodeImplementation = {
   run() {
     return true
   },
+  onCompleting({ initNext, context }) {
+    initNext(context.$OUTGOING)
+  },
 }

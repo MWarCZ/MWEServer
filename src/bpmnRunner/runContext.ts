@@ -8,6 +8,8 @@ import {
   DataObjectInstance,
   DataObjectTemplate,
   EndEventInstance,
+  SequenceFlowInstance,
+  SequenceFlowTemplate,
   StartEventInstance,
   StartEventTemplate,
 } from '../entity/bpmn'
@@ -24,6 +26,10 @@ export type RunContextMap = {
 }
 export type RunContextInput = RunContextMap
 export type RunContextOutput = RunContextMap
+
+export type RunContextIncoming = { id: number, came: boolean }[]
+export type RunContextOutgoing = { id: number, expression: string }[]
+
 export type RunContextTask = {
   // Z instance
   startDate: Date,
@@ -43,9 +49,10 @@ export type RunContextStartEvent = {
   name: string,
   bpmnId: string,
 }
-
 export type RunContext = {
   $GLOBAL: any,
+  $INCOMING: RunContextIncoming,
+  $OUTGOING: RunContextOutgoing,
   $INPUT: RunContextInput,
   $OUTPUT: RunContextOutput,
   $SELF: Partial<RunContextTask> | Partial<RunContextStartEvent>,
@@ -61,6 +68,8 @@ export function createEmptyContext(): RunContext {
     $INPUT: {},
     $OUTPUT: {},
     $SELF: {},
+    $INCOMING: [],
+    $OUTGOING: [],
   }
 }
 
@@ -110,6 +119,47 @@ export function createContextOutputs(
 }
 
 
+export function createContextIncoming(
+  options: {
+    incomingSequenceTemplates: SequenceFlowTemplate[],
+    incomingSequenceInstances: SequenceFlowInstance[],
+  },
+): RunContextIncoming {
+  const {
+    incomingSequenceTemplates,
+    incomingSequenceInstances,
+  } = options
+
+  let incomingIds = incomingSequenceInstances.map(incomingInstance => {
+    let id = incomingInstance.templateId || (incomingInstance.template && incomingInstance.template.id)
+    return id
+  }).filter(x => !!x) as number[]
+
+  let data: RunContextIncoming = incomingSequenceTemplates.map(incomingTemplate=>{
+    const {id = -1} = incomingTemplate
+    return { id, came: incomingIds.includes(id) }
+  })
+
+  return data
+}
+
+export function createContextOutgoing(
+  options: {
+    outgoingSequenceTemplates: SequenceFlowTemplate[],
+  },
+): RunContextOutgoing {
+  const {
+    outgoingSequenceTemplates,
+  } = options
+
+  let data: RunContextOutgoing = outgoingSequenceTemplates.map(outgoingTemplate => {
+    const { id = -1, expression = 'true' } = outgoingTemplate
+    return { id, expression }
+  })
+
+  return data
+}
+
 
 export function createContextForStartEvent(
   options: {
@@ -117,6 +167,7 @@ export function createContextForStartEvent(
     eventInstance: StartEventInstance,
     outputsDataTemplates: DataObjectTemplate[],
     outputsDataInstances: DataObjectInstance[],
+    outgoingSequenceTemplates: SequenceFlowTemplate[],
     context?: RunContext,
   },
 ): RunContext {
@@ -125,6 +176,7 @@ export function createContextForStartEvent(
     eventInstance,
     outputsDataTemplates,
     outputsDataInstances,
+    outgoingSequenceTemplates,
     context = createEmptyContext(),
   } = options
   let {
@@ -151,6 +203,9 @@ export function createContextForStartEvent(
   })
   context.$OUTPUT = { ...context.$OUTPUT, ...outputsData }
 
+  let outgoing = createContextOutgoing({outgoingSequenceTemplates})
+  context.$OUTGOING = { ...context.$OUTGOING, ...outgoing }
+
   return context
 }
 
@@ -160,6 +215,8 @@ export function createContextForEndEvent(
     eventInstance: StartEventInstance,
     inputsDataTemplates: DataObjectTemplate[],
     inputsDataInstances: DataObjectInstance[],
+    incomingSequenceTemplates: SequenceFlowTemplate[],
+    incomingSequenceInstances: SequenceFlowInstance[],
     context?: RunContext,
   },
 ): RunContext {
@@ -168,6 +225,8 @@ export function createContextForEndEvent(
     eventInstance,
     inputsDataTemplates,
     inputsDataInstances,
+    incomingSequenceInstances,
+    incomingSequenceTemplates,
     context = createEmptyContext(),
   } = options
 
@@ -195,6 +254,9 @@ export function createContextForEndEvent(
   })
   context.$INPUT = { ...context.$INPUT, ...inputsData }
 
+  let incoming = createContextIncoming({ incomingSequenceInstances, incomingSequenceTemplates })
+  context.$INCOMING = { ...context.$INCOMING, ...incoming }
+
   return context
 }
 
@@ -207,6 +269,9 @@ export function createContextForBasicTask(
     inputsDataInstances: DataObjectInstance[],
     outputsDataTemplates: DataObjectTemplate[],
     outputsDataInstances: DataObjectInstance[],
+    incomingSequenceTemplates: SequenceFlowTemplate[],
+    incomingSequenceInstances: SequenceFlowInstance[],
+    outgoingSequenceTemplates: SequenceFlowTemplate[],
     context?: RunContext,
   },
 ): RunContext {
@@ -217,6 +282,9 @@ export function createContextForBasicTask(
     inputsDataInstances,
     outputsDataTemplates,
     outputsDataInstances,
+    outgoingSequenceTemplates,
+    incomingSequenceTemplates,
+    incomingSequenceInstances,
     context = createEmptyContext(),
   } = options
   let {
@@ -251,6 +319,12 @@ export function createContextForBasicTask(
   })
   context.$OUTPUT = { ...context.$OUTPUT, ...outputsData }
 
+  let outgoing = createContextOutgoing({ outgoingSequenceTemplates })
+  context.$OUTGOING = { ...context.$OUTGOING, ...outgoing }
+
+  let incoming = createContextIncoming({incomingSequenceInstances, incomingSequenceTemplates})
+  context.$INCOMING = { ...context.$INCOMING, ...incoming }
+
   return context
 }
 
@@ -278,6 +352,25 @@ export async function loadFilteredDataInstances(options: {
   return dataInstances
 }
 
+export async function loadFilteredSequenceInstances(options: {
+  typeormConnection: Connection,
+  sequenceTemplates: SequenceFlowTemplate[],
+  processInstanceId: number,
+}): Promise<SequenceFlowInstance[]> {
+  const {
+    typeormConnection,
+    sequenceTemplates,
+    processInstanceId,
+  } = options
+  let sequenceTemplatesIds = sequenceTemplates.map(d => d.id)
+  // DataObjectInstance patrici do instance procesu a zaroven do mnoziny vstupu ulohy
+  let sequenceInstances = await typeormConnection.getRepository(SequenceFlowInstance).find({
+    processInstanceId: Equal(processInstanceId),
+    templateId: In([...sequenceTemplatesIds]),
+  })
+  return sequenceInstances
+}
+
 
 export async function loadContextForBasicTask(
   taskInstance: { id: number },
@@ -293,7 +386,12 @@ export async function loadContextForBasicTask(
   let context: RunContext = createEmptyContext()
 
   let taskI = await typeormConnection.getRepository(BasicTaskInstance).findOneOrFail(taskInstance.id, {
-    relations: ['template', 'template.inputs', 'template.outputs'],
+    relations: [
+      'template',
+      'template.inputs', 'template.outputs',
+      'template.outgoing', 'template.incoming',
+      'template.outgoing.sequenceFlow', 'template.incoming.sequenceFlow',
+    ],
   })
   // console.log(JSON.stringify(taskI, null, 2))
 
@@ -302,6 +400,9 @@ export async function loadContextForBasicTask(
     let inputsDataInstances: DataObjectInstance[] = []
     let outputsDataTemplates: DataObjectTemplate[] = []
     let outputsDataInstances: DataObjectInstance[] = []
+    let incomingSequenceTemplates: SequenceFlowTemplate[] = []
+    let incomingSequenceInstances: SequenceFlowInstance[] = []
+    let outgoingSequenceTemplates: SequenceFlowTemplate[] = []
 
     if (taskI.template.inputs) {
       inputsDataTemplates = taskI.template.inputs
@@ -320,6 +421,23 @@ export async function loadContextForBasicTask(
         dataTemplates: outputsDataTemplates,
       })
     }
+
+    if (taskI.template.outgoing) {
+      outgoingSequenceTemplates = taskI.template.outgoing.map(
+        x => x.sequenceFlow
+      ).filter(x => !!x) as SequenceFlowTemplate[]
+    }
+    if(taskI.template.incoming) {
+      incomingSequenceTemplates = taskI.template.incoming.map(
+        x => x.sequenceFlow
+      ).filter(x=>!!x) as SequenceFlowTemplate[]
+      incomingSequenceInstances = await loadFilteredSequenceInstances({
+        typeormConnection,
+        processInstanceId: taskI.processInstanceId as number,
+        sequenceTemplates: incomingSequenceTemplates,
+      })
+    }
+
     context = createContextForBasicTask({
       context,
       taskTemplate: taskI.template,
@@ -328,6 +446,9 @@ export async function loadContextForBasicTask(
       inputsDataInstances,
       outputsDataTemplates,
       outputsDataInstances,
+      incomingSequenceTemplates,
+      incomingSequenceInstances,
+      outgoingSequenceTemplates,
     })
   }
   // console.log(JSON.stringify(context, null, 2))
@@ -360,6 +481,7 @@ export async function loadContextForStartEvent(
   if (eventI && eventI.template) {
     let outputsDataTemplates: DataObjectTemplate[] = []
     let outputsDataInstances: DataObjectInstance[] = []
+    let outgoingSequenceTemplates: SequenceFlowTemplate[] = []
 
     if (eventI.template.outputs) {
       outputsDataTemplates = eventI.template.outputs
@@ -368,12 +490,20 @@ export async function loadContextForStartEvent(
         processInstanceId: eventI.processInstanceId as number,
         dataTemplates: outputsDataTemplates,
       })
+    }eventI
+
+    if (eventI.template.outgoing) {
+      outgoingSequenceTemplates = eventI.template.outgoing.map(
+        x => x.sequenceFlow
+      ).filter(x => !!x) as SequenceFlowTemplate[]
     }
+
     context = createContextForStartEvent({
       eventTemplate: eventI.template,
       eventInstance: eventI,
       outputsDataTemplates,
       outputsDataInstances,
+      outgoingSequenceTemplates,
     })
   }
   return context
@@ -391,6 +521,8 @@ export async function loadContextForEndEvent(
   if (eventI && eventI.template) {
     let inputsDataTemplates: DataObjectTemplate[] = []
     let inputsDataInstances: DataObjectInstance[] = []
+    let incomingSequenceTemplates: SequenceFlowTemplate[] = []
+    let incomingSequenceInstances: SequenceFlowInstance[] = []
 
     if (eventI.template.inputs) {
       inputsDataTemplates = eventI.template.inputs
@@ -400,11 +532,25 @@ export async function loadContextForEndEvent(
         dataTemplates: inputsDataTemplates,
       })
     }
+
+    if (eventI.template.incoming) {
+      incomingSequenceTemplates = eventI.template.incoming.map(
+        x => x.sequenceFlow
+      ).filter(x => !!x) as SequenceFlowTemplate[]
+      incomingSequenceInstances = await loadFilteredSequenceInstances({
+        typeormConnection,
+        processInstanceId: eventI.processInstanceId as number,
+        sequenceTemplates: incomingSequenceTemplates,
+      })
+    }
+
     context = createContextForEndEvent({
       eventTemplate: eventI.template,
       eventInstance: eventI,
-      inputsDataTemplates: inputsDataTemplates,
-      inputsDataInstances: inputsDataInstances,
+      inputsDataTemplates,
+      inputsDataInstances,
+      incomingSequenceTemplates,
+      incomingSequenceInstances,
     })
   }
   return context
