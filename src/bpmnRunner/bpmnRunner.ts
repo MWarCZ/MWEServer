@@ -1,4 +1,7 @@
+import { options } from 'bpmnBuilder/fxp.config'
+import { gatewayImplementation } from 'bpmnRunnerPlugins/gateway'
 import { Connection } from 'typeorm'
+import { convertTemplate2Instance } from 'utils/entityHelpers'
 
 import { scriptTaskImplementation } from '../bpmnRunnerPlugins/scriptTask'
 import { taskImplementation } from '../bpmnRunnerPlugins/task'
@@ -26,7 +29,7 @@ import {
   TaskInstance,
   TaskTemplate,
 } from '../entity/bpmn'
-import { ObjectType } from '../types/objectType'
+import { Constructor } from '../types/constructor'
 import { getInstance, getTemplate } from './anotherHelpers'
 import { executeNode } from './executeHelpers'
 import * as InitHelpers from './initHelpers'
@@ -69,6 +72,7 @@ export class BpmnRunner {
     this.pluginsWithImplementations = {
       task: taskImplementation,
       scriptTask: scriptTaskImplementation,
+      gateway: gatewayImplementation,
     }
     if (typeof pluginsWithImplementations === 'object') {
       this.pluginsWithImplementations = {
@@ -81,9 +85,9 @@ export class BpmnRunner {
 
   //#region Funkce InitXXX - Kontrola, vytvoreni instance, ulozeni instance.
 
-  async initAndSaveElement<T extends FlowElementTemplate, I extends FlowElementInstance>(
+  async initElement<T extends FlowElementTemplate, I extends FlowElementInstance>(
     options: {
-      templateClass: ObjectType<T>,
+      templateClass: Constructor<T>,
       elementTemplate: { id: number } | T,
       processInstance: { id: number } | ProcessInstance,
       callInitNew: (processInstance: ProcessInstance, elementTemplate: T) => I,
@@ -108,12 +112,54 @@ export class BpmnRunner {
     })
 
     let elementI = callInitNew(processI, elementT)
-
-    elementI = await this.connection.manager.save(elementI)
     return elementI
   }
+  async saveElement<I extends FlowElementInstance | FlowElementInstance[]>(
+    options: { elementI: I},
+  ): Promise<I> {
+    return this.connection.manager.save(options.elementI)
+  }
+  async initAndSaveElement<T extends FlowElementTemplate, I extends FlowElementInstance>(
+    options: {
+      templateClass: Constructor<T>,
+      elementTemplate: { id: number } | T,
+      processInstance: { id: number } | ProcessInstance,
+      callInitNew: (processInstance: ProcessInstance, elementTemplate: T) => I,
+    },
+  ): Promise<I> {
+    let elementI = await this.initElement(options)
+    elementI = await this.saveElement({elementI})
+    return elementI
+  }
+  async initIfUnexistElement<T extends FlowElementTemplate, I extends FlowElementInstance>(
+    options: {
+      templateClass: Constructor<T>,
+      elementTemplate: { id: number } | T,
+      processInstance: { id: number } | ProcessInstance,
+      callInitNew: (processInstance: ProcessInstance, elementTemplate: T) => I,
+    },
+  ): Promise<I | undefined> {
+    // [x] Ziskat tridu instance.
+    // [x] Pokusit se najit instanci s id instance procesu a id sablony elementu.
+    //    [x] Nalezeno => Vrat undefined
+    //    [x] Nenalezeno => Vytvor a vrat
+    //
+    const { templateClass, processInstance, elementTemplate} = options
+    const instanceClass = convertTemplate2Instance(templateClass)
+    if (instanceClass) {
+      let instanceRepo = this.connection.getRepository(instanceClass as Constructor<FlowElementInstance>)
+      let result = await instanceRepo.findOne({
+        processInstanceId: processInstance.id,
+        templateId: elementTemplate.id
+      })
+      if (!result) {
+        return this.initElement(options)
+      }
+    }
+    return undefined
+  }
 
-  async initProcess(
+  async initAndSaveProcess(
     processTemplate: { id: number } | ProcessTemplate,
     startEvent: { id: number } | StartEventTemplate,
   ): Promise<ProcessInstance> {
@@ -134,7 +180,8 @@ export class BpmnRunner {
     processInstance = await this.connection.manager.save(processInstance)
 
     // Vytvoreni instance prvniho startovaciho eventu
-    await this.initStartEvent(processInstance, startEventT)
+    let startEventI = await this.initStartEvent(processInstance, startEventT)
+    startEventI = await this.saveElement({ elementI: startEventI })
 
     return processInstance
   }
@@ -143,7 +190,7 @@ export class BpmnRunner {
     processInstance: { id: number } | ProcessInstance,
     event: { id: number } | StartEventTemplate,
   ): Promise<StartEventInstance> {
-    return this.initAndSaveElement({
+    return this.initElement({
       callInitNew: InitHelpers.initNewStartEvent,
       processInstance,
       elementTemplate: event,
@@ -155,7 +202,7 @@ export class BpmnRunner {
     processInstance: { id: number } | ProcessInstance,
     event: { id: number } | EndEventTemplate,
   ): Promise<EndEventInstance> {
-    return this.initAndSaveElement({
+    return this.initElement({
       callInitNew: InitHelpers.initNewEndEvent,
       processInstance,
       elementTemplate: event,
@@ -167,7 +214,7 @@ export class BpmnRunner {
     processInstance: { id: number } | ProcessInstance,
     gateway: { id: number } | GatewayTemplate,
   ): Promise<GatewayInstance> {
-    return this.initAndSaveElement({
+    return this.initElement({
       callInitNew: InitHelpers.initNewGateway,
       processInstance,
       elementTemplate: gateway,
@@ -179,7 +226,7 @@ export class BpmnRunner {
     processInstance: { id: number } | ProcessInstance,
     task: { id: number } | TaskTemplate,
   ): Promise<TaskInstance> {
-    return this.initAndSaveElement({
+    return this.initElement({
       callInitNew: InitHelpers.initNewTask,
       processInstance,
       elementTemplate: task,
@@ -191,7 +238,7 @@ export class BpmnRunner {
     processInstance: { id: number } | ProcessInstance,
     task: { id: number } | ScriptTaskTemplate,
   ): Promise<ScriptTaskInstance> {
-    return this.initAndSaveElement({
+    return this.initElement({
       callInitNew: InitHelpers.initNewScriptTask,
       processInstance,
       elementTemplate: task,
@@ -203,7 +250,7 @@ export class BpmnRunner {
     processInstance: { id: number } | ProcessInstance,
     dataObject: { id: number } | DataObjectTemplate,
   ): Promise<DataObjectInstance> {
-    return this.initAndSaveElement({
+    return this.initElement({
       callInitNew: InitHelpers.initNewDataObject,
       processInstance,
       elementTemplate: dataObject,
@@ -213,16 +260,19 @@ export class BpmnRunner {
 
   initSequenceFlow(
     processInstance: { id: number } | ProcessInstance,
-    event: { id: number } | SequenceFlowTemplate,
+    sequence: { id: number } | SequenceFlowTemplate,
   ): Promise<SequenceFlowInstance> {
-    return this.initAndSaveElement({
+    return this.initElement({
       callInitNew: InitHelpers.initNewSequenceFlow,
       processInstance,
-      elementTemplate: event,
+      elementTemplate: sequence,
       templateClass: SequenceFlowTemplate,
     })
   }
 
+
+
+  // TODO nemam ani paru zda funguje
   async initNext(
     processInstance: { id: number } | ProcessInstance,
     sequenceFlows: (number | { id: number } | SequenceFlowTemplate)[],
@@ -301,17 +351,31 @@ export class BpmnRunner {
     taskInstance: BasicTaskInstance,
     taskArgs: any,
   }) {
+    // [x] Ziskat implementaci k vykonani ulohy
+    // [x] Ziskat kontext pro danou instanci urceni pro implementaci
+    // [ ] Ziskani argumentu pro implementaci (kombinace prichozich a vnitrnitch)
+    //    - args napr.: Vyplneny form od uzivatele, Nactene vnitrni data (skript, jazyk, aj.), ...
+    // [ ] Vykonta implementaci
+    //    [x] Zavolat vykonani implementace
+    //    [ ] Vytvorit instance vracenych sequenceFlow
+    //    [ ] Vytvorit cilove uzly vracenych sequenceFlow
+    //    [ ] Osetrit necekane chybove stavy
+    // [x] Ulozit danou instanci s jejimi novymi stavy (hodnotami)
+
     const { taskInstance, taskArgs } = options
+
 
     let taskTemplate = await getTemplate({
       templateClass: BasicTaskTemplate,
       entityOrId: taskInstance.template || { id: taskInstance.templateId as number },
       typeormConnection: this.connection,
+      relations: ['outgoing', 'outgoing.sequenceFlow'],
     })
     let implementation = this.pluginsWithImplementations[taskTemplate.implementation as string]
     if (typeof implementation !== 'object') {
       throw new Error('Implementace ulohy nenalezena.')
     }
+
     let context = await loadContextForBasicTask({ id: taskInstance.id as number }, this.connection)
 
     try {
@@ -322,12 +386,13 @@ export class BpmnRunner {
         context,
         nodeImplementation: implementation,
       })
-      // Uloz instanci ktera prosla zpracovanim
-      await this.connection.manager.save(taskInstance)
-
     } catch (e) {
-      throw e
+      // TODO Osetrit validni vyjimky.
+      console.error('runBasicTask:', e)
     }
+
+    // Uloz instanci ktera prosla zpracovanim
+    await this.connection.manager.save(taskInstance)
   }
 
   //#endregion

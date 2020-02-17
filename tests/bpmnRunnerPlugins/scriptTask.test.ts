@@ -33,5 +33,17 @@ describe('Zakladni testy pro scriptTaskImplementation.', ()=>{
     expect(result).toBe(33)
   })
 
+  it('xxx.', () => {
+    let context = createEmptyContext()
+    let args = {
+      script: `
+      function add(x, y) {
+        return x+y
+      }
+      $OUTGOING.push(11)
+    ` }
+    let result = scriptTask.run({ context, args, initNext: () => { } })
+    console.log({result, context})
+  })
 
 })

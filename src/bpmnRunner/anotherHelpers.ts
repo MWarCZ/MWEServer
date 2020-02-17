@@ -1,14 +1,14 @@
 import { Connection } from 'typeorm'
 
 import { BaseElementInstance, BaseElementTemplate } from '../entity/bpmn'
-import { ObjectType } from '../types/objectType'
+import { Constructor } from '../types/constructor'
 
 //#region Pomocne funkce k ziskani sablony z sablony ci id_sablony.
 
 export async function getTemplate<T extends BaseElementTemplate>(
   options: {
     typeormConnection: Connection,
-    templateClass: ObjectType<T>,
+    templateClass: Constructor<T>,
     entityOrId: { id: number } | T,
     relations?: string[],
   },
@@ -27,7 +27,7 @@ export async function getTemplate<T extends BaseElementTemplate>(
 export async function getInstance<T extends BaseElementInstance>(
   options: {
     typeormConnection: Connection,
-    instanceClass: ObjectType<T>,
+    instanceClass: Constructor<T>,
     entityOrId: { id: number } | T,
   },
 ): Promise<T> {

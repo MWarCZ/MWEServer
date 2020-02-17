@@ -20,7 +20,8 @@ import {
   TaskInstance,
   TaskTemplate,
 } from '../entity/bpmn'
-import { ObjectType } from '../types/objectType'
+import { Constructor } from '../types/constructor'
+import { convertTemplate2Instance } from '../utils/entityHelpers'
 
 
 //#region Pomocne funkce vytvarejici ze sablon instance.
@@ -34,7 +35,7 @@ export function createProcess(process: ProcessTemplate): ProcessInstance {
 }
 
 export function createInstance<T extends BaseElementTemplate, I extends FlowElementInstance>(
-  instance: ObjectType < I >,
+  instance: Constructor<I>,
   template: T,
   process: ProcessInstance,
 ): I {
@@ -52,7 +53,7 @@ export function createInstance<T extends BaseElementTemplate, I extends FlowElem
 export function checkIsElementInsideProcess<T extends FlowElementTemplate>(
   process: ProcessTemplate | { id?: number },
   child: T | { processTemplateId?: number },
-  childClass: ObjectType < T >,
+  childClass: Constructor < T >,
 ) {
   let idFromChild: number | undefined = child.processTemplateId
   if (child instanceof FlowElementTemplate && child.processTemplate) {
@@ -76,8 +77,7 @@ export function checkIsElementInsideProcess<T extends FlowElementTemplate>(
 
 export function initNewElement<T extends FlowElementTemplate, I extends FlowElementInstance>(
   options: {
-    templateClass: ObjectType<T>,
-    instanceClass: ObjectType<I>,
+    templateClass: Constructor<T>,
     processInstance: ProcessInstance,
     elementTemplate: T,
     callSetup?: (elementInstance: I, elementTemplate: T) => I,
@@ -86,7 +86,6 @@ export function initNewElement<T extends FlowElementTemplate, I extends FlowElem
 ): I {
   const {
     templateClass,
-    instanceClass,
     processInstance,
     elementTemplate,
     callSetup,
@@ -101,6 +100,10 @@ export function initNewElement<T extends FlowElementTemplate, I extends FlowElem
       elementTemplate,
       templateClass,
     )
+  }
+  const instanceClass = convertTemplate2Instance(templateClass) as Constructor<I>
+  if(!instanceClass) {
+    throw new Error('Instance nenalezena')
   }
 
   let elementI = createInstance(instanceClass, elementTemplate, processInstance)
@@ -124,7 +127,6 @@ export function initNewStartEvent(
 ): StartEventInstance {
   return initNewElement({
     templateClass: StartEventTemplate,
-    instanceClass: StartEventInstance,
     elementTemplate: eventTemplate,
     processInstance,
   })
@@ -136,7 +138,6 @@ export function initNewEndEvent(
 ): EndEventInstance {
   return initNewElement({
     templateClass: EndEventTemplate,
-    instanceClass: EndEventInstance,
     elementTemplate: eventTemplate,
     processInstance,
   })
@@ -148,7 +149,6 @@ export function initNewGateway(
 ): GatewayInstance {
   return initNewElement({
     templateClass: GatewayTemplate,
-    instanceClass: GatewayInstance,
     elementTemplate: gatewayTemplate,
     processInstance,
   })
@@ -160,7 +160,6 @@ export function initNewTask(
 ): TaskInstance {
   return initNewElement({
     templateClass: TaskTemplate,
-    instanceClass: TaskInstance,
     elementTemplate: taskTemplate,
     processInstance,
   })
@@ -172,7 +171,6 @@ export function initNewScriptTask(
 ): ScriptTaskInstance {
   return initNewElement({
     templateClass: ScriptTaskTemplate,
-    instanceClass: ScriptTaskInstance,
     elementTemplate: taskTemplate,
     processInstance,
   })
@@ -184,7 +182,6 @@ export function initNewDataObject(
 ): DataObjectInstance {
   return initNewElement({
     templateClass: DataObjectTemplate,
-    instanceClass: DataObjectInstance,
     elementTemplate: dataObjectTemplate,
     processInstance,
     callSetup: (instance, template) => {
@@ -200,7 +197,7 @@ export function initNewSequenceFlow(
 ): SequenceFlowInstance {
   return initNewElement({
     templateClass: SequenceFlowTemplate,
-    instanceClass: SequenceFlowInstance,
+    // instanceClass: SequenceFlowInstance,
     elementTemplate: sequenceTemplate,
     processInstance,
   })

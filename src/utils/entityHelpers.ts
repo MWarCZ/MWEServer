@@ -1,8 +1,5 @@
-// import {
-//   TaskTemplate, ScriptTaskTemplate, StartEventTemplate, EndEventTemplate,
-//   GatewayTemplate, DataObjectTemplate, SequenceFlowTemplate, BasicTaskTemplate,
-//   EventTemplate, ProcessTemplate,
-// } from '../entity/bpmn'
+import { Constructor } from 'types/constructor'
+
 import {
   BaseElementInstance,
   BaseElementTemplate,
@@ -32,12 +29,13 @@ import {
 import * as bpmn from '../entity/bpmn'
 
 
+
 const xxx = {...bpmn}
 
 let a = xxx['GatewayTemplate']
 
 export const ConvertTemplate2InstanceMap = {
-  [BaseElementTemplate.name]: BaseElementInstance,
+  [BaseElementTemplate.name]: BaseElementInstance ,
   [BasicTaskTemplate.name]: BasicTaskInstance,
   [DataObjectTemplate.name]: DataObjectInstance,
   [EndEventTemplate.name]: EndEventInstance,
@@ -50,6 +48,9 @@ export const ConvertTemplate2InstanceMap = {
   [StartEventTemplate.name]: StartEventInstance,
   [TaskTemplate.name]: TaskInstance,
 }
+// as {
+//   [x: string]: Constructor<BaseElementInstance> | undefined
+// }
 
 export const ConvertInstance2TemplateMap = {
   [BaseElementInstance.name]: BaseElementTemplate,
@@ -97,25 +98,38 @@ export const ConvertString2InstanceMap = {
   TaskInstance,
 }
 
-export function convertTemplate2Instance<T extends BaseElementTemplate>(
-  templateClass: (new () => T ) | typeof BaseElementTemplate,
-): undefined | typeof BaseElementInstance  {
-  return ConvertTemplate2InstanceMap[templateClass.name]
-}
-export function convertInstance2Template<T extends BaseElementInstance>(
-  instanceClass: (new () => T) | typeof BaseElementInstance,
-): undefined | typeof BaseElementTemplate {
-  return ConvertInstance2TemplateMap[instanceClass.name]
+export function convertTemplate2Instance<
+  T extends BaseElementTemplate,
+  I extends BaseElementInstance,
+>(
+  templateClass: Constructor<T>,
+) {
+  return ConvertTemplate2InstanceMap[templateClass.name] as Constructor<I> | undefined
 }
 
-export function convertString2Template<T extends BaseElementTemplate>(
+export function convertInstance2Template<
+  T extends BaseElementTemplate,
+  I extends BaseElementInstance,
+>(
+  instanceClass: (new () => I),
+) {
+  return ConvertInstance2TemplateMap[instanceClass.name] as Constructor<T> | undefined
+}
+
+export function convertString2Template<
+  T extends BaseElementTemplate,
+  I extends BaseElementInstance,
+>(
   templateClass: string,
-): undefined | typeof BaseElementTemplate {
-  return ConvertString2TemplateMap[templateClass as 'BaseElementTemplate']
+) {
+  return ConvertString2TemplateMap[templateClass as 'BaseElementTemplate'] as Constructor<T> | undefined
 }
 
-export function convertString2Instance<T extends BaseElementTemplate>(
+export function convertString2Instance<
+  T extends BaseElementTemplate,
+  I extends BaseElementInstance,
+>(
   instanceClass: string,
 ): undefined | typeof BaseElementInstance {
-  return ConvertString2InstanceMap[instanceClass as 'BaseElementInstance']
+  return ConvertString2InstanceMap[instanceClass as 'BaseElementInstance'] as Constructor<I> | undefined
 }
