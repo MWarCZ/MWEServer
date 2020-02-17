@@ -32,8 +32,8 @@ export type RunContextOutgoing = { id: number, expression: string }[]
 
 export type RunContextTask = {
   // Z instance
-  startDate: Date,
-  endData: Date,
+  startDateTime: Date,
+  endDateTime: Date,
   status: ActivityStatus,
   // Ze sablony
   name: string,

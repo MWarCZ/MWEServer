@@ -2,9 +2,18 @@ import { BeforeInsert, Column, PrimaryGeneratedColumn } from 'typeorm'
 import { v4 as uuid } from 'uuid'
 
 
-export interface OptionsBaseElement {
-  bpmnId: string,
-  name: string,
+// export interface OptionsBaseElement {
+//   bpmnId: string,
+//   name: string,
+// }
+export type OptionsConstructor<T> = { [P in keyof T]?: any }
+
+export function fillElement<T>(element: any, options?: OptionsConstructor<T>) {
+  if (!!options) {
+    Object.keys(options).forEach(key => {
+      element[key] = (options as any)[key]
+    })
+  }
 }
 
 /**
@@ -26,12 +35,8 @@ export abstract class BaseElementTemplate {
       this.bpmnId = uuid()
   }
 
-  constructor(options?: {[key: string]: any}) {
-    if (!!options) {
-      Object.keys(options).forEach(key => {
-        (this as any)[key] = (options as any)[key]
-      })
-    }
+  constructor(options?: OptionsConstructor<BaseElementTemplate> ) {
+    fillElement(this, options)
   }
 }
 
@@ -41,6 +46,10 @@ export abstract class BaseElementTemplate {
 export abstract class BaseElementInstance {
   @PrimaryGeneratedColumn()
   id?: number
+
+  constructor(options?: OptionsConstructor<BaseElementInstance>) {
+    fillElement(this, options)
+  }
 }
 
 /**
