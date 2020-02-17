@@ -75,7 +75,7 @@ export class ProcessInstance extends BaseElementInstance {
   })
   status?: ActivityStatus
 
-  @Column('datetime',{ nullable: true })
+  @Column('datetime', { nullable: true })
   startDateTime?: Date
 
   @Column('datetime', { nullable: true })
