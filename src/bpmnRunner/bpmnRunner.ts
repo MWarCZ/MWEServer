@@ -1,6 +1,6 @@
 import { options } from 'bpmnBuilder/fxp.config'
 import { gatewayImplementation } from 'bpmnRunnerPlugins/gateway'
-import { Connection } from 'typeorm'
+import { Connection, In } from 'typeorm'
 import { convertTemplate2Instance } from 'utils/entityHelpers'
 
 import { scriptTaskImplementation } from '../bpmnRunnerPlugins/scriptTask'
@@ -56,7 +56,7 @@ import { loadContextForBasicTask } from './runContext'
   [ ] Zpracovat instanci udalosti. EI
   [ ] Zpracovat instanci brany. GI
 
-  [ ] Vytvorit nasledujici instance
+  [ ] Vytvorit nasledujici instance (HARD AS FUCK)
   [ ] Poskladat datovy kontext (pr. pro data ulohy, pro data k vyhodnoceni vyrazu, ...)
 
 */
@@ -88,11 +88,11 @@ export class BpmnRunner {
   async initElement<T extends FlowElementTemplate, I extends FlowElementInstance>(
     options: {
       templateClass: Constructor<T>,
-      elementTemplate: { id: number } | T,
+      elementTemplate: ({ id: number } | T)[],
       processInstance: { id: number } | ProcessInstance,
       callInitNew: (processInstance: ProcessInstance, elementTemplate: T) => I,
     },
-  ): Promise<I> {
+  ): Promise<I[]> {
     const {
       templateClass,
       processInstance,
@@ -105,58 +105,75 @@ export class BpmnRunner {
       entityOrId: processInstance,
       typeormConnection: this.connection,
     })
-    let elementT = await getTemplate({
-      templateClass,
-      entityOrId: elementTemplate,
-      typeormConnection: this.connection,
-    })
-
-    let elementI = callInitNew(processI, elementT)
-    return elementI
+    let elementIs = await Promise.all(elementTemplate.map(async entityOrId=>{
+      let elementT = await getTemplate({
+        templateClass,
+        entityOrId,
+        typeormConnection: this.connection,
+      })
+      let elementI = callInitNew(processI, elementT)
+      return elementI
+    }))
+    return elementIs
   }
   async saveElement<I extends FlowElementInstance | FlowElementInstance[]>(
-    options: { elementI: I},
+    elementI: I,
   ): Promise<I> {
-    return this.connection.manager.save(options.elementI)
+    return this.connection.manager.save(elementI)
   }
   async initAndSaveElement<T extends FlowElementTemplate, I extends FlowElementInstance>(
     options: {
       templateClass: Constructor<T>,
-      elementTemplate: { id: number } | T,
+      elementTemplate: ({ id: number } | T)[],
       processInstance: { id: number } | ProcessInstance,
       callInitNew: (processInstance: ProcessInstance, elementTemplate: T) => I,
     },
-  ): Promise<I> {
+  ): Promise<I[]> {
     let elementI = await this.initElement(options)
-    elementI = await this.saveElement({elementI})
+    elementI = await this.saveElement(elementI)
     return elementI
   }
   async initIfUnexistElement<T extends FlowElementTemplate, I extends FlowElementInstance>(
     options: {
       templateClass: Constructor<T>,
-      elementTemplate: { id: number } | T,
+      elementTemplate: ({ id: number } | T)[],
       processInstance: { id: number } | ProcessInstance,
       callInitNew: (processInstance: ProcessInstance, elementTemplate: T) => I,
     },
-  ): Promise<I | undefined> {
+  ): Promise<I[]> {
     // [x] Ziskat tridu instance.
-    // [x] Pokusit se najit instanci s id instance procesu a id sablony elementu.
-    //    [x] Nalezeno => Vrat undefined
-    //    [x] Nenalezeno => Vytvor a vrat
+    // [x] Pokusit se najit instance s id instance procesu a id sablon elementu.
+    // [x] Polezt sablony elementu
+    //    [x] Kontrola shody id sablony elemenu na existujici ziskane instance
+    //    [x] Nenalezena shoda, tak proved inicializaci
+    // [x] Vrat vsechny uspesne inicializovane instance elementu
     //
     const { templateClass, processInstance, elementTemplate} = options
     const instanceClass = convertTemplate2Instance(templateClass)
     if (instanceClass) {
       let instanceRepo = this.connection.getRepository(instanceClass as Constructor<FlowElementInstance>)
-      let result = await instanceRepo.findOne({
+
+      let elementIds = elementTemplate.map(e=>e.id)
+      // Najde vsechny instance elementu
+      let result = await instanceRepo.find({
         processInstanceId: processInstance.id,
-        templateId: elementTemplate.id
+        templateId: In(elementIds),
       })
-      if (!result) {
-        return this.initElement(options)
-      }
+      let resultIds = result.map(r=>r.templateId)
+
+      let tmpMatrixWithElementInstance = await Promise.all(elementTemplate.map(template=>{
+        let isIn = resultIds.includes(template.id)
+        return (isIn) ? [] : this.initElement({
+          ...options,
+          elementTemplate: [template],
+        })
+      }))
+      let elementInstances = tmpMatrixWithElementInstance.reduce((acc, value)=>{
+        return {...acc, ...value}
+      })
+      return elementInstances
     }
-    return undefined
+    return []
   }
 
   async initAndSaveProcess(
@@ -180,105 +197,125 @@ export class BpmnRunner {
     processInstance = await this.connection.manager.save(processInstance)
 
     // Vytvoreni instance prvniho startovaciho eventu
-    let startEventI = await this.initStartEvent(processInstance, startEventT)
-    startEventI = await this.saveElement({ elementI: startEventI })
+    let startEventI = await this.initStartEvent(processInstance, [startEventT])
+    startEventI = await this.saveElement(startEventI)
 
     return processInstance
   }
 
   initStartEvent(
     processInstance: { id: number } | ProcessInstance,
-    event: { id: number } | StartEventTemplate,
-  ): Promise<StartEventInstance> {
-    return this.initElement({
+    event: ({ id: number } | StartEventTemplate)[],
+    onlyIfUnexist: boolean = false,
+  ): Promise<StartEventInstance[]> {
+    let options = {
       callInitNew: InitHelpers.initNewStartEvent,
       processInstance,
       elementTemplate: event,
       templateClass: StartEventTemplate,
-    })
+    }
+    return (onlyIfUnexist) ? this.initIfUnexistElement(options) : this.initElement(options)
   }
 
   initEndEvent(
     processInstance: { id: number } | ProcessInstance,
-    event: { id: number } | EndEventTemplate,
-  ): Promise<EndEventInstance> {
-    return this.initElement({
+    event: ({ id: number } | EndEventTemplate)[],
+    onlyIfUnexist: boolean = false,
+  ): Promise<EndEventInstance[]> {
+    let options = {
       callInitNew: InitHelpers.initNewEndEvent,
       processInstance,
       elementTemplate: event,
       templateClass: EndEventTemplate,
-    })
+    }
+    return (onlyIfUnexist) ? this.initIfUnexistElement(options) : this.initElement(options)
   }
 
   initGateway(
     processInstance: { id: number } | ProcessInstance,
-    gateway: { id: number } | GatewayTemplate,
-  ): Promise<GatewayInstance> {
-    return this.initElement({
+    gateway: ({ id: number } | GatewayTemplate)[],
+    onlyIfUnexist: boolean = false,
+  ): Promise<GatewayInstance[]> {
+    let options = {
       callInitNew: InitHelpers.initNewGateway,
       processInstance,
       elementTemplate: gateway,
       templateClass: GatewayTemplate,
-    })
+    }
+    return (onlyIfUnexist) ? this.initIfUnexistElement(options) : this.initElement(options)
   }
 
   initTask(
     processInstance: { id: number } | ProcessInstance,
-    task: { id: number } | TaskTemplate,
-  ): Promise<TaskInstance> {
-    return this.initElement({
+    task: ({ id: number } | TaskTemplate)[],
+    onlyIfUnexist: boolean = false,
+  ): Promise<TaskInstance[]> {
+    let options = {
       callInitNew: InitHelpers.initNewTask,
       processInstance,
       elementTemplate: task,
       templateClass: TaskTemplate,
-    })
+    }
+    return (onlyIfUnexist) ? this.initIfUnexistElement(options) : this.initElement(options)
   }
 
   initScriptTask(
     processInstance: { id: number } | ProcessInstance,
-    task: { id: number } | ScriptTaskTemplate,
-  ): Promise<ScriptTaskInstance> {
-    return this.initElement({
+    task: ({ id: number } | ScriptTaskTemplate)[],
+    onlyIfUnexist: boolean = false,
+  ): Promise<ScriptTaskInstance[]> {
+    let options = {
       callInitNew: InitHelpers.initNewScriptTask,
       processInstance,
       elementTemplate: task,
       templateClass: ScriptTaskTemplate,
-    })
+    }
+    return (onlyIfUnexist) ? this.initIfUnexistElement(options) : this.initElement(options)
   }
 
   initDataObject(
     processInstance: { id: number } | ProcessInstance,
-    dataObject: { id: number } | DataObjectTemplate,
-  ): Promise<DataObjectInstance> {
-    return this.initElement({
+    dataObject: ({ id: number } | DataObjectTemplate)[],
+    onlyIfUnexist: boolean = false,
+  ): Promise<DataObjectInstance[]> {
+    let options = {
       callInitNew: InitHelpers.initNewDataObject,
       processInstance,
       elementTemplate: dataObject,
       templateClass: DataObjectTemplate,
-    })
+    }
+    return (onlyIfUnexist) ? this.initIfUnexistElement(options) : this.initElement(options)
   }
 
   initSequenceFlow(
     processInstance: { id: number } | ProcessInstance,
-    sequence: { id: number } | SequenceFlowTemplate,
-  ): Promise<SequenceFlowInstance> {
-    return this.initElement({
+    sequence: ({ id: number } | SequenceFlowTemplate)[],
+    onlyIfUnexist: boolean = false,
+  ): Promise<SequenceFlowInstance[]> {
+    let options = {
       callInitNew: InitHelpers.initNewSequenceFlow,
       processInstance,
       elementTemplate: sequence,
       templateClass: SequenceFlowTemplate,
-    })
+    }
+    return (onlyIfUnexist) ? this.initIfUnexistElement(options) : this.initElement(options)
   }
 
-
-
-  // TODO nemam ani paru zda funguje
-  async initNext(
+  // TODO Nejtezsi funkce ;( nevim si rady
+  async initNextNodes(options: {
     processInstance: { id: number } | ProcessInstance,
-    sequenceFlows: (number | { id: number } | SequenceFlowTemplate)[],
-  ) {
+    selectedSequenceFlows: (number | { id: number } | SequenceFlowTemplate)[],
+  }) {
+    // [ ] Ziskat cilove uzly ze sekvence
+    // [ ] Inicializovat cilove uzly pokud neexistuji
+    // [ ] ...
+    const {
+      processInstance,
+      selectedSequenceFlows,
+    } = options
+
     // ziskat vsechny cile (uzly) pro vsechny sablony spoju
-    let sequences = await Promise.all(sequenceFlows.map(async seq => {
+    let sequences = await Promise.all(selectedSequenceFlows.map(async seq => {
       return await getTemplate({
         typeormConnection: this.connection,
         entityOrId: (typeof seq === 'number') ? { id: seq } : seq,
@@ -286,6 +323,7 @@ export class BpmnRunner {
         relations: ['target', 'target.task', 'target.gateway', 'target.event'],
       })
     }))
+
     // Prejit zkrze spoj na zaznamy o cilech
     let targets = sequences.map(s => s.target).filter(s => !!s) as ConnectorSequence2Node[]
     // Ziskat cile (uloha, udalost, brana)
@@ -293,32 +331,73 @@ export class BpmnRunner {
     let events = targets.map(t => t.event).filter(t => !!t) as EventTemplate[]
     let gateways = targets.map(t => t.gateway).filter(t => !!t) as GatewayTemplate[]
 
+    // let x = await Promise.all(tasks.map(task => {
+    //   switch (task.class) {
+    //     case TaskTemplate.name:
+    //       return this.initTask(processInstance, [task])
+    //     case ScriptTaskTemplate.name:
+    //       return this.initScriptTask(processInstance, [task])
+    //   }
+    //   return undefined
+    // }))
+    // let y = x.reduce((acc: BasicTaskInstance[], task)=>{
+    //   return (task)?[...acc, ...task]: acc
+    // }, [])
+
     // Vytvorit a ulozit instance pro ziskane ulohy.
-    await Promise.all(tasks.map(task => {
+    let tasksI = await Promise.all(tasks.map(task => {
       switch (task.class) {
         case TaskTemplate.name:
-          return this.initTask(processInstance, task)
+          return this.initTask(processInstance, [task])
         case ScriptTaskTemplate.name:
-          return this.initScriptTask(processInstance, task)
+          return this.initScriptTask(processInstance, [task])
       }
       return Promise.resolve(undefined)
     }))
-    await Promise.all(events.map(event => {
+    let eventsI = await Promise.all(events.map(event => {
       switch (event.class) {
         case StartEventTemplate.name:
-          return this.initStartEvent(processInstance, event)
+          return this.initStartEvent(processInstance, [event])
         case EndEventTemplate.name:
-          return this.initEndEvent(processInstance, event)
+          return this.initEndEvent(processInstance, [event])
       }
       return Promise.resolve(undefined)
     }))
-    await Promise.all(gateways.map(gate => {
-      return this.initGateway(processInstance, gate)
+    let gatewaysI = await Promise.all(gateways.map(gate => {
+      return this.initGateway(processInstance, [gate])
     }))
 
+  }
 
+  async initNext(
+    options: {
+      processInstance: { id: number } | ProcessInstance,
+      selectedSequenceFlows: (number | { id: number } | SequenceFlowTemplate)[],
+      possibleSequenceFlows: (number | { id: number } | SequenceFlowTemplate)[],
+    }
+  ) {
+    // [x] Normalizovat vstupni sequenceFlows.id
+    // [x] Overit zda vybrane existuji v moznych
+    // [x] Inicializovat instance seqenci pokud neexistuji
+    // [ ] Inicializovat instance uzlu (cil seqenci) pokud neexistuji
+    const {
+      processInstance,
+      selectedSequenceFlows,
+      possibleSequenceFlows,
+    } = options
 
-    // new SequenceFlowTemplate().target?.task?.class
+    let normSelected = selectedSequenceFlows.map(seq => typeof seq === 'number' ? { id: seq } : seq)
+    let normPossibleIds = possibleSequenceFlows.map(seq => typeof seq === 'number' ? seq : seq.id)
+
+    let filteredSelected = normSelected.filter(seq => normPossibleIds.includes(seq.id))
+
+    // Instance sequenceFlow
+    let sequenceFlowInstances = await this.initSequenceFlow(processInstance, filteredSelected, true)
+
+    sequenceFlowInstances = await this.saveElement([...new Set(sequenceFlowInstances)])
+
+    // TODO vytvoreni instanci uzlu
+
   }
 
   //#endregion
