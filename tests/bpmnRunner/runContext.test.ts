@@ -1,9 +1,10 @@
 import 'jest-extended'
 
 import * as RunContext from '../../src/bpmnRunner/runContext'
-import { DataObjectInstance, DataObjectTemplate, SequenceFlowTemplate } from '../../src/entity/bpmn'
+import { DataObjectInstance, DataObjectTemplate, SequenceFlowInstance, SequenceFlowTemplate } from '../../src/entity/bpmn'
 
 describe('Testy s RunContext: synchronni funkce', () => {
+
   it('createEmptyContext', () => {
     let context = RunContext.createEmptyContext()
     expect(context.$GLOBAL).toMatchObject({})
@@ -13,6 +14,7 @@ describe('Testy s RunContext: synchronni funkce', () => {
   })
 
   describe('createContextInputs',()=>{
+
     it('Zdadny vstup',()=>{
       let context = RunContext.createContextInputs({
         inputsDataInstances: [],
@@ -138,6 +140,7 @@ describe('Testy s RunContext: synchronni funkce', () => {
   })
 
   describe('createContextIncoming', ()=>{
+
     it('Zadne prichozi sekvence', () => {
       let context = RunContext.createContextIncoming({
         incomingSequenceTemplates: [],
@@ -145,14 +148,64 @@ describe('Testy s RunContext: synchronni funkce', () => {
       })
       expect(context).toBeArrayOfSize(0)
     })
-
-    it('Vstup: TODO', () => {
-
+    it('Vstup: 2x SequenceTemplate', () => {
+      let sequences = [
+        new SequenceFlowTemplate({ id: 1 }),
+        new SequenceFlowTemplate({ id: 2 }),
+      ]
+      let context = RunContext.createContextIncoming({
+        incomingSequenceTemplates: [...sequences],
+        incomingSequenceInstances: [],
+      })
+      expect(context).toBeArrayOfSize(2)
+      expect(context).toMatchObject([
+        { id: 1, came: false },
+        { id: 2, came: false },
+      ])
+    })
+    it('Vstup: 2x SequenceTemplate s patrici 1x SequenceInstance', () => {
+      let sequences = [
+        new SequenceFlowTemplate({ id: 1 }),
+        new SequenceFlowTemplate({ id: 2 }),
+      ]
+      let instances = [
+        new SequenceFlowInstance({ id: 11, templateId: 2 }),
+      ]
+      let context = RunContext.createContextIncoming({
+        incomingSequenceTemplates: [...sequences],
+        incomingSequenceInstances: [...instances],
+      })
+      expect(context).toBeArrayOfSize(2)
+      expect(context).toMatchObject([
+        { id: 1, came: false },
+        { id: 2, came: true },
+      ])
+    })
+    it('Vstup: 2x SequenceTemplate s nepatrici 3x SequenceInstance', () => {
+      let sequences = [
+        new SequenceFlowTemplate({ id: 1 }),
+        new SequenceFlowTemplate({ id: 2 }),
+      ]
+      let instances = [
+        new SequenceFlowInstance({ id: 11, templateId: undefined }),
+        new SequenceFlowInstance({ id: 12, templateId: 11 }),
+        new SequenceFlowInstance({ id: 13, templateId: 22 }),
+      ]
+      let context = RunContext.createContextIncoming({
+        incomingSequenceTemplates: [...sequences],
+        incomingSequenceInstances: [...instances],
+      })
+      expect(context).toBeArrayOfSize(2)
+      expect(context).toMatchObject([
+        { id: 1, came: false },
+        { id: 2, came: false },
+      ])
     })
 
   })
 
   describe('createContextOutgoing', () => {
+
     it('Zadne odchozi sekvence',()=>{
       let context = RunContext.createContextOutgoing({
         outgoingSequenceTemplates: []
@@ -185,6 +238,7 @@ describe('Testy s RunContext: synchronni funkce', () => {
         { id: 2, expression: '2=="2"' }
       ])
     })
+
   })
 
   describe('createContextForStartEvent', () => {
