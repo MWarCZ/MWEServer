@@ -170,4 +170,77 @@ describe('Testy behove pipeline-y.', ()=>{
 
   })
 
+
+  describe('executeNode: Testy s neprazdnym kontextem',()=>{
+    let context: RunContext
+    let args: any
+    let nodeInstance: FlowElementInstance
+    let nodeImplementation: NodeImplementation
+    beforeEach(() => {
+      context = createEmptyContext()
+      args = {}
+      nodeInstance = new TaskInstance()
+    })
+
+    it('Lze pristoupit k datum v kontextu.', () => {
+      const outgoing = [{ id: 11, expression: 'true' }, { id: 22, expression: 'false' }]
+      context.$OUTGOING = JSON.parse(JSON.stringify(outgoing))
+      nodeImplementation = {
+        run({context}) {
+          return context
+        }
+      }
+      let result = executeNode({ context, nodeImplementation, nodeInstance, args })
+      expect(result).toBeArrayOfSize(0)
+      expect(nodeInstance.status).toBe(ActivityStatus.Completed)
+      expect(nodeInstance.returnValue).toMatchObject(context)
+      expect(context.$OUTGOING).toMatchObject(outgoing)
+    })
+
+    it('Lze menit data v kontextu.', () => {
+      context.$OUTPUT = { data: [11,22,33,44] }
+      nodeImplementation = {
+        run({ context }) {
+          let data = context.$OUTPUT.data
+          if (Array.isArray(data)){
+            data.push(1234)
+          }
+          return context
+        }
+      }
+      let result = executeNode({ context, nodeImplementation, nodeInstance, args })
+      expect(result).toBeArrayOfSize(0)
+      expect(nodeInstance.status).toBe(ActivityStatus.Completed)
+      expect(nodeInstance.returnValue).toMatchObject(context)
+      expect(context.$OUTPUT.data).toMatchObject([11,22,33,44,1234])
+    })
+
+    it('Kontext a argumenty jsou stejne pro vsechy implmentacni funkce.', () => {
+      let prevContext: any = context
+      let prevArgs: any = args
+      nodeImplementation = {
+        prerun({ context, args }) {
+          expect(context).toMatchObject(prevContext)
+          expect(args).toMatchObject(prevArgs)
+          prevContext = context
+          prevArgs = args
+        },
+        run({ context, args }) {
+          expect(context).toMatchObject(prevContext)
+          expect(args).toMatchObject(prevArgs)
+          prevContext = context
+          prevArgs = args
+        },
+        onCompleting({ context, args }) {
+          expect(context).toMatchObject(prevContext)
+          expect(args).toMatchObject(prevArgs)
+        }
+      }
+      let result = executeNode({ context, nodeImplementation, nodeInstance, args })
+      // Pokud nesedi tak doslo k chybe v implementaci (Ready - prerun, Failed - run)
+      expect(nodeInstance.status).toBe(ActivityStatus.Completed)
+    })
+
+  })
+
 })

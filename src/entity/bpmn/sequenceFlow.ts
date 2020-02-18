@@ -1,5 +1,6 @@
 import { Column, Entity, ManyToOne, OneToMany, OneToOne } from 'typeorm'
 
+import { fillElement, OptionsConstructor } from './baseElement'
 import { ConnectorNode2Sequence, ConnectorSequence2Node } from './connectorNodeAndSequence'
 import { FlowElementInstance, FlowElementTemplate } from './flowElement'
 import { GatewayTemplate } from './gateway'
@@ -41,6 +42,11 @@ export class SequenceFlowTemplate extends FlowElementTemplate {
   )
   instances?: SequenceFlowInstance[]
   // instances: undefined
+
+  constructor(options?: OptionsConstructor<SequenceFlowTemplate>) {
+    super()
+    fillElement(this, options)
+  }
 }
 
 @Entity()
@@ -51,5 +57,10 @@ export class SequenceFlowInstance extends FlowElementInstance {
     { onDelete: 'CASCADE' },
   )
   template?: SequenceFlowTemplate
+
+  constructor(options?: OptionsConstructor<SequenceFlowInstance>) {
+    super()
+    fillElement(this, options)
+  }
 }
 
