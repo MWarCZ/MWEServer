@@ -1,40 +1,32 @@
-import { options } from 'bpmnBuilder/fxp.config'
-import { gatewayImplementation } from 'bpmnRunnerPlugins/gateway'
 import { Connection, In } from 'typeorm'
-import { convertTemplate2Instance } from 'utils/entityHelpers'
 
+import {
+  exclusiveGatewayImplementation,
+  inclusiveGatewayImplementation,
+  parallelGatewayImplementation,
+} from '../bpmnRunnerPlugins/gateway'
 import { scriptTaskImplementation } from '../bpmnRunnerPlugins/scriptTask'
 import { taskImplementation } from '../bpmnRunnerPlugins/task'
 import {
-  BasicTaskInstance,
-  BasicTaskTemplate,
-  ConnectorSequence2Node,
   DataObjectInstance,
   DataObjectTemplate,
-  EndEventInstance,
-  EndEventTemplate,
-  EventTemplate,
   FlowElementInstance,
   FlowElementTemplate,
-  GatewayInstance,
-  GatewayTemplate,
+  NodeElementInstance,
+  NodeElementTemplate,
   ProcessInstance,
   ProcessTemplate,
-  ScriptTaskInstance,
-  ScriptTaskTemplate,
   SequenceFlowInstance,
   SequenceFlowTemplate,
-  StartEventInstance,
-  StartEventTemplate,
-  TaskInstance,
-  TaskTemplate,
 } from '../entity/bpmn'
 import { Constructor } from '../types/constructor'
+import { convertTemplate2Instance } from '../utils/entityHelpers'
 import { getInstance, getTemplate } from './anotherHelpers'
 import { executeNode } from './executeHelpers'
 import * as InitHelpers from './initHelpers'
 import { LibrariesWithNodeImplementations } from './pluginNodeImplementation'
-import { loadContextForBasicTask } from './runContext'
+import { loadContextForNodeElement } from './runContext'
+
 
 // import * as bpmn from '../entity/bpmn'
 /*
@@ -72,7 +64,9 @@ export class BpmnRunner {
     this.pluginsWithImplementations = {
       task: taskImplementation,
       scriptTask: scriptTaskImplementation,
-      gateway: gatewayImplementation,
+      exclusiveGateway: exclusiveGatewayImplementation,
+      inclusiveGateway: inclusiveGatewayImplementation,
+      parallelGateway: parallelGatewayImplementation,
     }
     if (typeof pluginsWithImplementations === 'object') {
       this.pluginsWithImplementations = {
@@ -178,7 +172,7 @@ export class BpmnRunner {
 
   async initAndSaveProcess(
     processTemplate: { id: number } | ProcessTemplate,
-    startEvent: { id: number } | StartEventTemplate,
+    startEvent: { id: number } | NodeElementTemplate,
   ): Promise<ProcessInstance> {
     // Vyhledani sablon
     let processT = await getTemplate({
@@ -187,7 +181,7 @@ export class BpmnRunner {
       typeormConnection: this.connection,
     })
     let startEventT = await getTemplate({
-      templateClass: StartEventTemplate,
+      templateClass: NodeElementTemplate,
       entityOrId: startEvent,
       typeormConnection: this.connection,
     })
@@ -197,78 +191,22 @@ export class BpmnRunner {
     processInstance = await this.connection.manager.save(processInstance)
 
     // Vytvoreni instance prvniho startovaciho eventu
-    let startEventI = await this.initStartEvent(processInstance, [startEventT])
+    let startEventI = await this.initNodeElement(processInstance, [startEventT])
     startEventI = await this.saveElement(startEventI)
 
     return processInstance
   }
 
-  initStartEvent(
+  initNodeElement(
     processInstance: { id: number } | ProcessInstance,
-    event: ({ id: number } | StartEventTemplate)[],
+    nodeElement: ({ id: number } | NodeElementTemplate)[],
     onlyIfUnexist: boolean = false,
-  ): Promise<StartEventInstance[]> {
+  ): Promise<NodeElementInstance[]> {
     let options = {
-      callInitNew: InitHelpers.initNewStartEvent,
+      callInitNew: InitHelpers.initNewNodeElement,
       processInstance,
-      elementTemplate: event,
-      templateClass: StartEventTemplate,
-    }
-    return (onlyIfUnexist) ? this.initIfUnexistElement(options) : this.initElement(options)
-  }
-
-  initEndEvent(
-    processInstance: { id: number } | ProcessInstance,
-    event: ({ id: number } | EndEventTemplate)[],
-    onlyIfUnexist: boolean = false,
-  ): Promise<EndEventInstance[]> {
-    let options = {
-      callInitNew: InitHelpers.initNewEndEvent,
-      processInstance,
-      elementTemplate: event,
-      templateClass: EndEventTemplate,
-    }
-    return (onlyIfUnexist) ? this.initIfUnexistElement(options) : this.initElement(options)
-  }
-
-  initGateway(
-    processInstance: { id: number } | ProcessInstance,
-    gateway: ({ id: number } | GatewayTemplate)[],
-    onlyIfUnexist: boolean = false,
-  ): Promise<GatewayInstance[]> {
-    let options = {
-      callInitNew: InitHelpers.initNewGateway,
-      processInstance,
-      elementTemplate: gateway,
-      templateClass: GatewayTemplate,
-    }
-    return (onlyIfUnexist) ? this.initIfUnexistElement(options) : this.initElement(options)
-  }
-
-  initTask(
-    processInstance: { id: number } | ProcessInstance,
-    task: ({ id: number } | TaskTemplate)[],
-    onlyIfUnexist: boolean = false,
-  ): Promise<TaskInstance[]> {
-    let options = {
-      callInitNew: InitHelpers.initNewTask,
-      processInstance,
-      elementTemplate: task,
-      templateClass: TaskTemplate,
-    }
-    return (onlyIfUnexist) ? this.initIfUnexistElement(options) : this.initElement(options)
-  }
-
-  initScriptTask(
-    processInstance: { id: number } | ProcessInstance,
-    task: ({ id: number } | ScriptTaskTemplate)[],
-    onlyIfUnexist: boolean = false,
-  ): Promise<ScriptTaskInstance[]> {
-    let options = {
-      callInitNew: InitHelpers.initNewScriptTask,
-      processInstance,
-      elementTemplate: task,
-      templateClass: ScriptTaskTemplate,
+      elementTemplate: nodeElement,
+      templateClass: NodeElementTemplate,
     }
     return (onlyIfUnexist) ? this.initIfUnexistElement(options) : this.initElement(options)
   }
@@ -314,58 +252,46 @@ export class BpmnRunner {
       selectedSequenceFlows,
     } = options
 
-    // ziskat vsechny cile (uzly) pro vsechny sablony spoju
-    let sequences = await Promise.all(selectedSequenceFlows.map(async seq => {
-      return await getTemplate({
-        typeormConnection: this.connection,
-        entityOrId: (typeof seq === 'number') ? { id: seq } : seq,
-        templateClass: SequenceFlowTemplate,
-        relations: ['target', 'target.task', 'target.gateway', 'target.event'],
-      })
-    }))
+    // // ziskat vsechny cile (uzly) pro vsechny sablony spoju
+    // let sequences = await Promise.all(selectedSequenceFlows.map(async seq => {
+    //   return await getTemplate({
+    //     typeormConnection: this.connection,
+    //     entityOrId: (typeof seq === 'number') ? { id: seq } : seq,
+    //     templateClass: SequenceFlowTemplate,
+    //     relations: ['target', 'target.task', 'target.gateway', 'target.event'],
+    //   })
+    // }))
 
-    // Prejit zkrze spoj na zaznamy o cilech
-    let targets = sequences.map(s => s.target).filter(s => !!s) as ConnectorSequence2Node[]
-    // Ziskat cile (uloha, udalost, brana)
-    let tasks = targets.map(t => t.task).filter(t => !!t) as BasicTaskTemplate[]
-    let events = targets.map(t => t.event).filter(t => !!t) as EventTemplate[]
-    let gateways = targets.map(t => t.gateway).filter(t => !!t) as GatewayTemplate[]
+    // // Prejit zkrze spoj na zaznamy o cilech
+    // let targets = sequences.map(s => s.target).filter(s => !!s) as ConnectorSequence2Node[]
+    // // Ziskat cile (uloha, udalost, brana)
+    // let tasks = targets.map(t => t.task).filter(t => !!t) as BasicTaskTemplate[]
+    // let events = targets.map(t => t.event).filter(t => !!t) as EventTemplate[]
+    // let gateways = targets.map(t => t.gateway).filter(t => !!t) as GatewayTemplate[]
 
-    // let x = await Promise.all(tasks.map(task => {
+
+    // // Vytvorit a ulozit instance pro ziskane ulohy.
+    // let tasksI = await Promise.all(tasks.map(task => {
     //   switch (task.class) {
     //     case TaskTemplate.name:
     //       return this.initTask(processInstance, [task])
     //     case ScriptTaskTemplate.name:
     //       return this.initScriptTask(processInstance, [task])
     //   }
-    //   return undefined
+    //   return Promise.resolve(undefined)
     // }))
-    // let y = x.reduce((acc: BasicTaskInstance[], task)=>{
-    //   return (task)?[...acc, ...task]: acc
-    // }, [])
-
-    // Vytvorit a ulozit instance pro ziskane ulohy.
-    let tasksI = await Promise.all(tasks.map(task => {
-      switch (task.class) {
-        case TaskTemplate.name:
-          return this.initTask(processInstance, [task])
-        case ScriptTaskTemplate.name:
-          return this.initScriptTask(processInstance, [task])
-      }
-      return Promise.resolve(undefined)
-    }))
-    let eventsI = await Promise.all(events.map(event => {
-      switch (event.class) {
-        case StartEventTemplate.name:
-          return this.initStartEvent(processInstance, [event])
-        case EndEventTemplate.name:
-          return this.initEndEvent(processInstance, [event])
-      }
-      return Promise.resolve(undefined)
-    }))
-    let gatewaysI = await Promise.all(gateways.map(gate => {
-      return this.initGateway(processInstance, [gate])
-    }))
+    // let eventsI = await Promise.all(events.map(event => {
+    //   switch (event.class) {
+    //     case StartEventTemplate.name:
+    //       return this.initStartEvent(processInstance, [event])
+    //     case EndEventTemplate.name:
+    //       return this.initEndEvent(processInstance, [event])
+    //   }
+    //   return Promise.resolve(undefined)
+    // }))
+    // let gatewaysI = await Promise.all(gateways.map(gate => {
+    //   return this.initGateway(processInstance, [gate])
+    // }))
 
   }
 
@@ -409,25 +335,25 @@ export class BpmnRunner {
   // RunXXX - asynchronni funkce
 
   async runIt(elementInstance: FlowElementInstance, args?: any) {
-    if (elementInstance instanceof StartEventInstance) {
+    // if (elementInstance instanceof StartEventInstance) {
 
-    } else if (elementInstance instanceof EndEventInstance) {
+    // } else if (elementInstance instanceof EndEventInstance) {
 
-    } else if (elementInstance instanceof GatewayInstance) {
+    // } else if (elementInstance instanceof GatewayInstance) {
 
-    } else if (elementInstance instanceof BasicTaskInstance) {
-      await this.runBasicTask({
-        taskInstance: elementInstance,
-        taskArgs: args,
-      })
-    } else {
-      throw new Error('Neznamou instanci nelze spustit.')
-    }
+    // } else if (elementInstance instanceof BasicTaskInstance) {
+    //   await this.runBasicTask({
+    //     taskInstance: elementInstance,
+    //     taskArgs: args,
+    //   })
+    // } else {
+    //   throw new Error('Neznamou instanci nelze spustit.')
+    // }
   }
 
 
-  async runBasicTask(options: {
-    taskInstance: BasicTaskInstance,
+  async runNodeElement(options: {
+    taskInstance: NodeElementInstance,
     taskArgs: any,
   }) {
     // [x] Ziskat implementaci k vykonani ulohy
@@ -445,7 +371,7 @@ export class BpmnRunner {
 
 
     let taskTemplate = await getTemplate({
-      templateClass: BasicTaskTemplate,
+      templateClass: NodeElementTemplate,
       entityOrId: taskInstance.template || { id: taskInstance.templateId as number },
       typeormConnection: this.connection,
       relations: ['outgoing', 'outgoing.sequenceFlow'],
@@ -455,7 +381,7 @@ export class BpmnRunner {
       throw new Error('Implementace ulohy nenalezena.')
     }
 
-    let context = await loadContextForBasicTask({ id: taskInstance.id as number }, this.connection)
+    let context = await loadContextForNodeElement({ id: taskInstance.id as number }, this.connection)
 
     try {
       // TODO Zavolat init next pro ziskane id sekvenci

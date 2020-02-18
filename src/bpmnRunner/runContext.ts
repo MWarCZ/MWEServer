@@ -1,17 +1,14 @@
-import { options } from 'bpmnBuilder/fxp.config'
 import { Connection, Equal, In } from 'typeorm'
 
+import { options } from '../bpmnBuilder/fxp.config'
 import {
   ActivityStatus,
-  BasicTaskInstance,
-  BasicTaskTemplate,
   DataObjectInstance,
   DataObjectTemplate,
-  EndEventInstance,
+  NodeElementInstance,
+  NodeElementTemplate,
   SequenceFlowInstance,
   SequenceFlowTemplate,
-  StartEventInstance,
-  StartEventTemplate,
 } from '../entity/bpmn'
 
 ////////////////////////////
@@ -30,7 +27,7 @@ export type RunContextOutput = RunContextMap
 export type RunContextIncoming = { id: number, came: boolean }[]
 export type RunContextOutgoing = { id: number, expression: string }[]
 
-export type RunContextTask = {
+export type RunContextNodeElement = {
   // Z instance
   startDateTime: Date,
   endDateTime: Date,
@@ -40,22 +37,14 @@ export type RunContextTask = {
   bpmnId: string,
   implementation: string,
 }
-export type RunContextStartEvent = {
-  // Z instance
-  startDateTime: Date,
-  endDateTime: Date,
-  status: ActivityStatus,
-  // Ze sablony
-  name: string,
-  bpmnId: string,
-}
+
 export type RunContext = {
   $GLOBAL: any,
   $INCOMING: RunContextIncoming,
   $OUTGOING: RunContextOutgoing,
   $INPUT: RunContextInput,
   $OUTPUT: RunContextOutput,
-  $SELF: Partial<RunContextTask> | Partial<RunContextStartEvent>,
+  $SELF: Partial<RunContextNodeElement>,
 }
 
 //#endregion
@@ -161,110 +150,10 @@ export function createContextOutgoing(
 }
 
 
-export function createContextForStartEvent(
-  options: {
-    eventTemplate: StartEventTemplate,
-    eventInstance: StartEventInstance,
-    outputsDataTemplates: DataObjectTemplate[],
-    outputsDataInstances: DataObjectInstance[],
-    outgoingSequenceTemplates: SequenceFlowTemplate[],
-    context?: RunContext,
-  },
-): RunContext {
-  const {
-    eventTemplate,
-    eventInstance,
-    outputsDataTemplates,
-    outputsDataInstances,
-    outgoingSequenceTemplates,
-    context = createEmptyContext(),
-  } = options
-  let {
-    startDateTime,
-    endDateTime,
-    status,
-  } = eventInstance
-  let {
-    name,
-    bpmnId,
-   } = eventTemplate
-
-  context.$SELF = {
-    startDateTime,
-    endDateTime,
-    status,
-    bpmnId,
-    name,
-  }
-
-  let outputsData = createContextOutputs({
-    outputsDataInstances,
-    outputsDataTemplates,
-  })
-  context.$OUTPUT = { ...context.$OUTPUT, ...outputsData }
-
-  let outgoing = createContextOutgoing({outgoingSequenceTemplates})
-  context.$OUTGOING = { ...context.$OUTGOING, ...outgoing }
-
-  return context
-}
-
-export function createContextForEndEvent(
-  options: {
-    eventTemplate: StartEventTemplate,
-    eventInstance: StartEventInstance,
-    inputsDataTemplates: DataObjectTemplate[],
-    inputsDataInstances: DataObjectInstance[],
-    incomingSequenceTemplates: SequenceFlowTemplate[],
-    incomingSequenceInstances: SequenceFlowInstance[],
-    context?: RunContext,
-  },
-): RunContext {
-  const {
-    eventTemplate,
-    eventInstance,
-    inputsDataTemplates,
-    inputsDataInstances,
-    incomingSequenceInstances,
-    incomingSequenceTemplates,
-    context = createEmptyContext(),
-  } = options
-
-  let {
-    startDateTime,
-    endDateTime,
-    status,
-  } = eventInstance
-  let {
-    name,
-    bpmnId,
-  } = eventTemplate
-
-  context.$SELF = {
-    startDateTime,
-    endDateTime,
-    status,
-    bpmnId,
-    name,
-  }
-
-  let inputsData = createContextInputs({
-    inputsDataInstances,
-    inputsDataTemplates,
-  })
-  context.$INPUT = { ...context.$INPUT, ...inputsData }
-
-  let incoming = createContextIncoming({ incomingSequenceInstances, incomingSequenceTemplates })
-  context.$INCOMING = { ...context.$INCOMING, ...incoming }
-
-  return context
-}
-
-
 export function createContextForBasicTask(
   options: {
-    taskTemplate: BasicTaskTemplate,
-    taskInstance: BasicTaskInstance,
+    nodeTemplate: NodeElementTemplate,
+    nodeInstance: NodeElementInstance,
     inputsDataTemplates: DataObjectTemplate[],
     inputsDataInstances: DataObjectInstance[],
     outputsDataTemplates: DataObjectTemplate[],
@@ -276,8 +165,8 @@ export function createContextForBasicTask(
   },
 ): RunContext {
   const {
-    taskTemplate,
-    taskInstance,
+    nodeTemplate,
+    nodeInstance,
     inputsDataTemplates,
     inputsDataInstances,
     outputsDataTemplates,
@@ -291,12 +180,12 @@ export function createContextForBasicTask(
     startDateTime,
     endDateTime,
     status,
-  } = taskInstance
+  } = nodeInstance
   let {
     name,
     bpmnId,
     implementation,
-  } = taskTemplate
+  } = nodeTemplate
 
   context.$SELF = {
     startDateTime,
@@ -372,7 +261,7 @@ export async function loadFilteredSequenceInstances(options: {
 }
 
 
-export async function loadContextForBasicTask(
+export async function loadContextForNodeElement(
   taskInstance: { id: number },
   typeormConnection: Connection,
 ): Promise<RunContext>  {
@@ -385,12 +274,11 @@ export async function loadContextForBasicTask(
   //
   let context: RunContext = createEmptyContext()
 
-  let taskI = await typeormConnection.getRepository(BasicTaskInstance).findOneOrFail(taskInstance.id, {
+  let taskI = await typeormConnection.getRepository(NodeElementInstance).findOneOrFail(taskInstance.id, {
     relations: [
       'template',
       'template.inputs', 'template.outputs',
       'template.outgoing', 'template.incoming',
-      'template.outgoing.sequenceFlow', 'template.incoming.sequenceFlow',
     ],
   })
   // console.log(JSON.stringify(taskI, null, 2))
@@ -423,14 +311,12 @@ export async function loadContextForBasicTask(
     }
 
     if (taskI.template.outgoing) {
-      outgoingSequenceTemplates = taskI.template.outgoing.map(
-        x => x.sequenceFlow
-      ).filter(x => !!x) as SequenceFlowTemplate[]
+      outgoingSequenceTemplates = taskI.template.outgoing
+        .filter(x => !!x) as SequenceFlowTemplate[]
     }
     if(taskI.template.incoming) {
-      incomingSequenceTemplates = taskI.template.incoming.map(
-        x => x.sequenceFlow
-      ).filter(x=>!!x) as SequenceFlowTemplate[]
+      incomingSequenceTemplates = taskI.template.incoming
+        .filter(x=>!!x) as SequenceFlowTemplate[]
       incomingSequenceInstances = await loadFilteredSequenceInstances({
         typeormConnection,
         processInstanceId: taskI.processInstanceId as number,
@@ -440,8 +326,8 @@ export async function loadContextForBasicTask(
 
     context = createContextForBasicTask({
       context,
-      taskTemplate: taskI.template,
-      taskInstance: taskI,
+      nodeTemplate: taskI.template,
+      nodeInstance: taskI,
       inputsDataTemplates,
       inputsDataInstances,
       outputsDataTemplates,
@@ -452,107 +338,6 @@ export async function loadContextForBasicTask(
     })
   }
   // console.log(JSON.stringify(context, null, 2))
-  return context
-}
-
-export async function loadContextForTask(
-  taskInstance: { id: number },
-  typeormConnection: Connection,
-): Promise<RunContext> {
-  return loadContextForBasicTask(taskInstance, typeormConnection)
-}
-
-export async function loadContextForScriptTask(
-  taskInstance: { id: number },
-  typeormConnection: Connection,
-): Promise<RunContext> {
-  return loadContextForBasicTask(taskInstance, typeormConnection)
-}
-
-export async function loadContextForStartEvent(
-  eventInstance: { id: number },
-  typeormConnection: Connection,
-): Promise<RunContext>  {
-  let context: RunContext = createEmptyContext()
-
-  let eventI = await typeormConnection.getRepository(StartEventInstance).findOneOrFail(eventInstance.id, {
-    relations: ['template', 'template.outputs'],
-  })
-  if (eventI && eventI.template) {
-    let outputsDataTemplates: DataObjectTemplate[] = []
-    let outputsDataInstances: DataObjectInstance[] = []
-    let outgoingSequenceTemplates: SequenceFlowTemplate[] = []
-
-    if (eventI.template.outputs) {
-      outputsDataTemplates = eventI.template.outputs
-      outputsDataInstances = await loadFilteredDataInstances({
-        typeormConnection,
-        processInstanceId: eventI.processInstanceId as number,
-        dataTemplates: outputsDataTemplates,
-      })
-    }eventI
-
-    if (eventI.template.outgoing) {
-      outgoingSequenceTemplates = eventI.template.outgoing.map(
-        x => x.sequenceFlow
-      ).filter(x => !!x) as SequenceFlowTemplate[]
-    }
-
-    context = createContextForStartEvent({
-      eventTemplate: eventI.template,
-      eventInstance: eventI,
-      outputsDataTemplates,
-      outputsDataInstances,
-      outgoingSequenceTemplates,
-    })
-  }
-  return context
-}
-
-export async function loadContextForEndEvent(
-  eventInstance: { id: number },
-  typeormConnection: Connection,
-): Promise<RunContext>  {
-  let context: RunContext = createEmptyContext()
-
-  let eventI = await typeormConnection.getRepository(EndEventInstance).findOneOrFail(eventInstance.id, {
-    relations: ['template', 'template.inputs'],
-  })
-  if (eventI && eventI.template) {
-    let inputsDataTemplates: DataObjectTemplate[] = []
-    let inputsDataInstances: DataObjectInstance[] = []
-    let incomingSequenceTemplates: SequenceFlowTemplate[] = []
-    let incomingSequenceInstances: SequenceFlowInstance[] = []
-
-    if (eventI.template.inputs) {
-      inputsDataTemplates = eventI.template.inputs
-      inputsDataInstances = await loadFilteredDataInstances({
-        typeormConnection,
-        processInstanceId: eventI.processInstanceId as number,
-        dataTemplates: inputsDataTemplates,
-      })
-    }
-
-    if (eventI.template.incoming) {
-      incomingSequenceTemplates = eventI.template.incoming.map(
-        x => x.sequenceFlow
-      ).filter(x => !!x) as SequenceFlowTemplate[]
-      incomingSequenceInstances = await loadFilteredSequenceInstances({
-        typeormConnection,
-        processInstanceId: eventI.processInstanceId as number,
-        sequenceTemplates: incomingSequenceTemplates,
-      })
-    }
-
-    context = createContextForEndEvent({
-      eventTemplate: eventI.template,
-      eventInstance: eventI,
-      inputsDataTemplates,
-      inputsDataInstances,
-      incomingSequenceTemplates,
-      incomingSequenceInstances,
-    })
-  }
   return context
 }
 

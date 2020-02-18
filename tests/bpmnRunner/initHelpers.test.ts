@@ -4,19 +4,12 @@ import * as InitHelpers from '../../src/bpmnRunner/initHelpers'
 import {
   DataObjectInstance,
   DataObjectTemplate,
-  EndEventInstance,
-  EndEventTemplate,
-  GatewayInstance,
-  GatewayTemplate,
+  NodeElementInstance,
+  NodeElementTemplate,
   ProcessInstance,
   ProcessTemplate,
-  ScriptTaskInstance,
   SequenceFlowInstance,
   SequenceFlowTemplate,
-  StartEventInstance,
-  StartEventTemplate,
-  TaskInstance,
-  TaskTemplate,
 } from '../../src/entity/bpmn'
 
 
@@ -45,63 +38,15 @@ describe('Testy funkci v InitHelpers: Se sablonou procesu.', () => {
       processInstance.id = 234
     })
 
-    it('initNewStartEvent', () => {
-      let startEvent = new StartEventTemplate()
+    it('initNewNodeElement', () => {
+      let startEvent = new NodeElementTemplate({implementation: 'startEvent'})
       startEvent.processTemplate = processTemplate
       startEvent.name = 'Start A'
       startEvent.id = 345
 
-      let instance = InitHelpers.initNewStartEvent(processInstance, startEvent)
-      expect(instance).toBeInstanceOf(StartEventInstance)
+      let instance = InitHelpers.initNewNodeElement(processInstance, startEvent)
+      expect(instance).toBeInstanceOf(NodeElementInstance)
       expect(instance.template).toMatchObject(startEvent)
-      expect(instance.processInstance).toMatchObject(processInstance)
-    })
-
-    it('initNewEndEvent', () => {
-      let endEvent = new EndEventTemplate()
-      endEvent.processTemplate = processTemplate
-      endEvent.name = 'End A'
-      endEvent.id = 345
-
-      let instance = InitHelpers.initNewEndEvent(processInstance, endEvent)
-      expect(instance).toBeInstanceOf(EndEventInstance)
-      expect(instance.template).toMatchObject(endEvent)
-      expect(instance.processInstance).toMatchObject(processInstance)
-    })
-
-    it('initNewGateway', () => {
-      let gateway = new GatewayTemplate()
-      gateway.processTemplate = processTemplate
-      gateway.name = 'Gateway A'
-      gateway.id = 345
-
-      let instance = InitHelpers.initNewGateway(processInstance, gateway)
-      expect(instance).toBeInstanceOf(GatewayInstance)
-      expect(instance.template).toMatchObject(gateway)
-      expect(instance.processInstance).toMatchObject(processInstance)
-    })
-
-    it('initNewTask', () => {
-      let task = new TaskTemplate()
-      task.processTemplate = processTemplate
-      task.name = 'Task A'
-      task.id = 345
-
-      let instance = InitHelpers.initNewTask(processInstance, task)
-      expect(instance).toBeInstanceOf(TaskInstance)
-      expect(instance.template).toMatchObject(task)
-      expect(instance.processInstance).toMatchObject(processInstance)
-    })
-
-    it('initNewScriptTask', () => {
-      let task = new TaskTemplate()
-      task.processTemplate = processTemplate
-      task.name = 'ScriptTask A'
-      task.id = 345
-
-      let instance = InitHelpers.initNewScriptTask(processInstance, task)
-      expect(instance).toBeInstanceOf(ScriptTaskInstance)
-      expect(instance.template).toMatchObject(task)
       expect(instance.processInstance).toMatchObject(processInstance)
     })
 

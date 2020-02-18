@@ -3,50 +3,26 @@ import { Constructor } from 'types/constructor'
 import {
   BaseElementInstance,
   BaseElementTemplate,
-  BasicTaskInstance,
-  BasicTaskTemplate,
   DataObjectInstance,
   DataObjectTemplate,
-  EndEventInstance,
-  EndEventTemplate,
-  EventInstance,
-  EventTemplate,
   FlowElementInstance,
   FlowElementTemplate,
-  GatewayInstance,
-  GatewayTemplate,
+  NodeElementInstance,
+  NodeElementTemplate,
   ProcessInstance,
   ProcessTemplate,
-  ScriptTaskInstance,
-  ScriptTaskTemplate,
   SequenceFlowInstance,
   SequenceFlowTemplate,
-  StartEventInstance,
-  StartEventTemplate,
-  TaskInstance,
-  TaskTemplate,
 } from '../entity/bpmn'
-import * as bpmn from '../entity/bpmn'
 
-
-
-const xxx = {...bpmn}
-
-let a = xxx['GatewayTemplate']
 
 export const ConvertTemplate2InstanceMap = {
   [BaseElementTemplate.name]: BaseElementInstance ,
-  [BasicTaskTemplate.name]: BasicTaskInstance,
   [DataObjectTemplate.name]: DataObjectInstance,
-  [EndEventTemplate.name]: EndEventInstance,
-  [EventTemplate.name]: EventInstance,
   [FlowElementTemplate.name]: FlowElementInstance,
-  [GatewayTemplate.name]: GatewayInstance,
   [ProcessTemplate.name]: ProcessInstance,
-  [ScriptTaskTemplate.name]: ScriptTaskInstance,
   [SequenceFlowTemplate.name]: SequenceFlowInstance,
-  [StartEventTemplate.name]: StartEventInstance,
-  [TaskTemplate.name]: TaskInstance,
+  [NodeElementTemplate.name]: NodeElementInstance,
 }
 // as {
 //   [x: string]: Constructor<BaseElementInstance> | undefined
@@ -54,48 +30,30 @@ export const ConvertTemplate2InstanceMap = {
 
 export const ConvertInstance2TemplateMap = {
   [BaseElementInstance.name]: BaseElementTemplate,
-  [BasicTaskInstance.name]: BasicTaskTemplate,
   [DataObjectInstance.name]: DataObjectTemplate,
-  [EndEventInstance.name]: EndEventTemplate,
-  [EventInstance.name]: EventTemplate,
   [FlowElementInstance.name]: FlowElementTemplate,
-  [GatewayInstance.name]: GatewayTemplate,
   [ProcessInstance.name]: ProcessTemplate,
-  [ScriptTaskInstance.name]: ScriptTaskTemplate,
   [SequenceFlowInstance.name]: SequenceFlowTemplate,
-  [StartEventInstance.name]: StartEventTemplate,
-  [TaskInstance.name]: TaskTemplate,
+  [NodeElementInstance.name]: NodeElementTemplate,
 }
 
 
 export const ConvertString2TemplateMap = {
   BaseElementTemplate,
-  BasicTaskTemplate,
   DataObjectTemplate,
-  EndEventTemplate,
-  EventTemplate,
   FlowElementTemplate,
-  GatewayTemplate,
   ProcessTemplate,
-  ScriptTaskTemplate,
   SequenceFlowTemplate,
-  StartEventTemplate,
-  TaskTemplate,
+  NodeElementTemplate,
 }
 
 export const ConvertString2InstanceMap = {
   BaseElementInstance,
-  BasicTaskInstance,
   DataObjectInstance,
-  EndEventInstance,
-  EventInstance,
   FlowElementInstance,
-  GatewayInstance,
   ProcessInstance,
-  ScriptTaskInstance,
   SequenceFlowInstance,
-  StartEventInstance,
-  TaskInstance,
+  NodeElementInstance,
 }
 
 export function convertTemplate2Instance<

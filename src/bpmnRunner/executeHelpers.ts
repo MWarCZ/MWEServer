@@ -1,4 +1,4 @@
-import { ActivityStatus, FlowElementInstance } from '../entity/bpmn'
+import { ActivityStatus, NodeElementInstance } from '../entity/bpmn'
 import { NodeImplementation } from './pluginNodeImplementation'
 import { RunContext } from './runContext'
 
@@ -8,7 +8,7 @@ import { RunContext } from './runContext'
  * @returns Vraci `true` pokud vse probeho OK nebo v pripade chyby vraci `false`.
  */
 export function executeNodePrerun(options: {
-  nodeInstance: FlowElementInstance,
+  nodeInstance: NodeElementInstance,
   nodeImplementation: NodeImplementation,
   context: RunContext,
   args: any,
@@ -48,7 +48,7 @@ export function executeNodePrerun(options: {
  * @returns Vraci `true` pokud vse probeho OK nebo v pripade chyby vraci `false`.
  */
 export function executeNodeRun(options: {
-  nodeInstance: FlowElementInstance,
+  nodeInstance: NodeElementInstance,
   nodeImplementation: NodeImplementation,
   context: RunContext,
   args: any,
@@ -90,7 +90,7 @@ export function executeNodeRun(options: {
  * @returns Vraci seznam s SequenceFlow.id, ktere maji byti provedeny.
  */
 export function executeNode(options: {
-  nodeInstance: FlowElementInstance,
+  nodeInstance: NodeElementInstance,
   nodeImplementation: NodeImplementation,
   context: RunContext,
   args: any,

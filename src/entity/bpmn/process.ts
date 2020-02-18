@@ -1,6 +1,6 @@
 import { Column, Entity, ManyToOne, OneToMany } from 'typeorm'
 
-import { ActivityStatus, BaseElementInstance, BaseElementTemplate, OptionsBaseElement } from './baseElement'
+import { BaseElementInstance, BaseElementTemplate, fillElement, OptionsConstructor, ProcessStatus } from './baseElement'
 
 export enum ProcessType {
   None = 'none',
@@ -13,7 +13,7 @@ export enum VersionType {
   semver = 'semver',
 }
 
-export interface OptionsProcess extends OptionsBaseElement {
+export interface OptionsProcess {
   isExecutable: boolean,
   processType: ProcessType,
   versionType: VersionType,
@@ -54,14 +54,18 @@ export class ProcessTemplate extends BaseElementTemplate {
   )
   processInstances?: ProcessInstance[]
 
+  // @OneToMany(type => DataObjectTemplate, entity => entity.processTemplate)
+  // dataObjects?: DataObjectTemplate[]
 
-  // @OneToMany(type => StartEventTemplate, event => event.processTemplate)
-  // startEvent?: StartEventTemplate[]
-  // @OneToMany(type => EndEventTemplate, event => event.processTemplate)
-  // endEvent?: EndEventTemplate[]
+  // @OneToMany(type => NodeElementTemplate, entity => entity.processTemplate)
+  // nodeElements?: NodeElementTemplate[]
 
-  constructor(options?: Partial<OptionsProcess>) {
-    super(options)
+  // @OneToMany(type => SequenceFlowTemplate, entity => entity.processTemplate)
+  // sequenceFlows?: SequenceFlowTemplate[]
+
+  constructor(options?: OptionsConstructor<ProcessTemplate>) {
+    super()
+    fillElement(this, options)
   }
 }
 
@@ -69,17 +73,11 @@ export class ProcessTemplate extends BaseElementTemplate {
 export class ProcessInstance extends BaseElementInstance {
 
   @Column('enum', {
-    enum: ActivityStatus,
-    default: ActivityStatus.None,
+    enum: ProcessStatus,
+    default: ProcessStatus.None,
     nullable: false,
   })
-  status?: ActivityStatus
-
-  @Column('datetime', { nullable: true })
-  startDateTime?: Date
-
-  @Column('datetime', { nullable: true })
-  endDateTime?: Date
+  status?: ProcessStatus
 
   @ManyToOne(
     type => ProcessTemplate,
@@ -93,13 +91,11 @@ export class ProcessInstance extends BaseElementInstance {
 
   // @OneToMany(type => DataObjectInstance, entity => entity.processInstance)
   // dataObjects?: DataObjectInstance[]
-  // @OneToMany(type => StartEventInstance, entity => entity.processInstance)
-  // startEvents?: StartEventInstance[]
-  // @OneToMany(type => EndEventInstance, entity => entity.processInstance)
-  // endEvents?: EndEventInstance[]
 
+  // @OneToMany(type => NodeElementInstance, entity => entity.processInstance)
+  // nodeElements?: NodeElementInstance[]
 
-  // @OneToMany(type => GatewayInstance, entity => entity.processInstance)
-  // gateways?: GatewayInstance[]
+  // @OneToMany(type => SequenceFlowInstance, entity => entity.processInstance)
+  // sequenceFlows?: SequenceFlowInstance[]
 
 }

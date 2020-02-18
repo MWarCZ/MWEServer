@@ -1,12 +1,7 @@
-import { RunContext } from 'bpmnRunner/runContext'
-import { GatewayType } from 'entity/bpmn'
 import { VM } from 'vm2'
 
 import { NodeImplementation } from '../bpmnRunner'
-
-interface GatewayImplementationArgs {
-  gatewayType: GatewayType,
-}
+import { RunContext } from '../bpmnRunner/runContext'
 
 
 function evalExpression(options: {
@@ -21,50 +16,6 @@ function evalExpression(options: {
   })
   let result = vm.run(expression)
   return !!result
-}
-
-/**
- * Gateway (spojuje vsechny do jedne)
- */
-export const gatewayImplementation: NodeImplementation = {
-  prerun(options) {
-    const {
-      gatewayType,
-    }: GatewayImplementationArgs = options.args || {}
-
-    switch (gatewayType) {
-      case GatewayType.Exclusive:
-        if (exclusiveGatewayImplementation.prerun)
-          return exclusiveGatewayImplementation.prerun(options)
-      case GatewayType.Inclusive:
-        if (inclusiveGatewayImplementation.prerun)
-          return inclusiveGatewayImplementation.prerun(options)
-      case GatewayType.Parallel:
-        if (parallelGatewayImplementation.prerun)
-          return parallelGatewayImplementation.prerun(options)
-      default:
-        throw new Error('Neco nesedi.')
-    }
-  },
-  run(options) {
-    const {
-      gatewayType,
-    }: GatewayImplementationArgs = options.args || {}
-
-    switch (gatewayType) {
-      case GatewayType.Exclusive:
-        if (exclusiveGatewayImplementation.run)
-          return exclusiveGatewayImplementation.run(options)
-      case GatewayType.Inclusive:
-        if (inclusiveGatewayImplementation.run)
-          return inclusiveGatewayImplementation.run(options)
-      case GatewayType.Parallel:
-        if (parallelGatewayImplementation.run)
-          return parallelGatewayImplementation.run(options)
-      default:
-        throw new Error('Neznamy typ brany.')
-    }
-  },
 }
 
 /**

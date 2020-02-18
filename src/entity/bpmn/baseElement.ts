@@ -1,11 +1,6 @@
 import { BeforeInsert, Column, PrimaryGeneratedColumn } from 'typeorm'
 import { v4 as uuid } from 'uuid'
 
-
-// export interface OptionsBaseElement {
-//   bpmnId: string,
-//   name: string,
-// }
 export type OptionsConstructor<T> = { [P in keyof T]?: any }
 
 export function fillElement<T>(element: any, options?: OptionsConstructor<T>) {
@@ -47,6 +42,12 @@ export abstract class BaseElementInstance {
   @PrimaryGeneratedColumn()
   id?: number
 
+  @Column('datetime', { nullable: true })
+  startDateTime?: Date
+
+  @Column('datetime', { nullable: true })
+  endDateTime?: Date
+
   constructor(options?: OptionsConstructor<BaseElementInstance>) {
     fillElement(this, options)
   }
@@ -57,6 +58,17 @@ export abstract class BaseElementInstance {
  * viz. diagram ve specifikaci BPMN Figure 13.2
  */
 export enum ActivityStatus {
+  None = 'None',
+  Ready = 'Ready', // Pri vytvoreni instance
+  Active = 'Active', // Pri dostupnosti vstupnich pozadavku (dat)
+  Waiting = 'Waiting', // Ceakani na dalsi oziveni
+  Completing = 'Completing', // Pri dokonceni akce (konec skriptu, ulohy)
+  Completed = 'Completed', // Pri ulozeni vystupu akce (ulozeni dat)
+  Falling = 'Falling', // Pri chybe (Aktivita byla prerusene nebo chyba pri provadeni aktivity)
+  Failled = 'Failled', // Akce skoncila s chybou
+}
+
+export enum ProcessStatus {
   None = 'None',
   Ready = 'Ready', // Pri vytvoreni instance
   Active = 'Active', // Pri dostupnosti vstupnich pozadavku (dat)

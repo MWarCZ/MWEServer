@@ -1,24 +1,16 @@
 import {
   ActivityStatus,
-  BaseElementTemplate,
   DataObjectInstance,
   DataObjectTemplate,
-  EndEventInstance,
-  EndEventTemplate,
   FlowElementInstance,
   FlowElementTemplate,
-  GatewayInstance,
-  GatewayTemplate,
+  NodeElementInstance,
+  NodeElementTemplate,
   ProcessInstance,
+  ProcessStatus,
   ProcessTemplate,
-  ScriptTaskInstance,
-  ScriptTaskTemplate,
   SequenceFlowInstance,
   SequenceFlowTemplate,
-  StartEventInstance,
-  StartEventTemplate,
-  TaskInstance,
-  TaskTemplate,
 } from '../entity/bpmn'
 import { Constructor } from '../types/constructor'
 import { convertTemplate2Instance } from '../utils/entityHelpers'
@@ -29,12 +21,12 @@ import { convertTemplate2Instance } from '../utils/entityHelpers'
 export function createProcess(process: ProcessTemplate): ProcessInstance {
   const processInstance = new ProcessInstance()
   processInstance.processTemplate = process
-  processInstance.status = ActivityStatus.Ready
+  processInstance.status = ProcessStatus.Ready
 
   return processInstance
 }
 
-export function createInstance<T extends BaseElementTemplate, I extends FlowElementInstance>(
+export function createInstance<T extends FlowElementTemplate, I extends FlowElementInstance>(
   instance: Constructor<I>,
   template: T,
   process: ProcessInstance,
@@ -42,7 +34,9 @@ export function createInstance<T extends BaseElementTemplate, I extends FlowElem
   const entityInstance = new instance()
   entityInstance.processInstance = process
   entityInstance.template = template
-  entityInstance.status = ActivityStatus.Ready
+  if (entityInstance instanceof NodeElementInstance) {
+    entityInstance.status = ActivityStatus.Ready
+  }
   return entityInstance
 }
 
@@ -121,57 +115,13 @@ export function initNewProcess(
   return processI
 }
 
-export function initNewStartEvent(
+export function initNewNodeElement(
   processInstance: ProcessInstance,
-  eventTemplate: StartEventTemplate,
-): StartEventInstance {
+  nodeTemplate: NodeElementTemplate,
+): NodeElementInstance {
   return initNewElement({
-    templateClass: StartEventTemplate,
-    elementTemplate: eventTemplate,
-    processInstance,
-  })
-}
-
-export function initNewEndEvent(
-  processInstance: ProcessInstance,
-  eventTemplate: EndEventTemplate,
-): EndEventInstance {
-  return initNewElement({
-    templateClass: EndEventTemplate,
-    elementTemplate: eventTemplate,
-    processInstance,
-  })
-}
-
-export function initNewGateway(
-  processInstance: ProcessInstance,
-  gatewayTemplate: GatewayTemplate,
-): GatewayInstance {
-  return initNewElement({
-    templateClass: GatewayTemplate,
-    elementTemplate: gatewayTemplate,
-    processInstance,
-  })
-}
-
-export function initNewTask(
-  processInstance: ProcessInstance,
-  taskTemplate: TaskTemplate,
-): TaskInstance {
-  return initNewElement({
-    templateClass: TaskTemplate,
-    elementTemplate: taskTemplate,
-    processInstance,
-  })
-}
-
-export function initNewScriptTask(
-  processInstance: ProcessInstance,
-  taskTemplate: ScriptTaskTemplate,
-): ScriptTaskInstance {
-  return initNewElement({
-    templateClass: ScriptTaskTemplate,
-    elementTemplate: taskTemplate,
+    templateClass: NodeElementTemplate,
+    elementTemplate: nodeTemplate,
     processInstance,
   })
 }
@@ -197,7 +147,6 @@ export function initNewSequenceFlow(
 ): SequenceFlowInstance {
   return initNewElement({
     templateClass: SequenceFlowTemplate,
-    // instanceClass: SequenceFlowInstance,
     elementTemplate: sequenceTemplate,
     processInstance,
   })

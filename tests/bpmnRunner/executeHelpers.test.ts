@@ -3,7 +3,7 @@ import 'jest-extended'
 import { executeNode } from '../../src/bpmnRunner/executeHelpers'
 import { NodeImplementation } from '../../src/bpmnRunner/pluginNodeImplementation'
 import { createEmptyContext, RunContext } from '../../src/bpmnRunner/runContext'
-import { ActivityStatus, FlowElementInstance, TaskInstance } from '../../src/entity/bpmn'
+import { ActivityStatus, NodeElementInstance } from '../../src/entity/bpmn'
 
 
 describe('Testy behove pipeline-y.', ()=>{
@@ -11,12 +11,12 @@ describe('Testy behove pipeline-y.', ()=>{
   describe('executeNode: Testy s prazndym kontextem a argumenty.', () => {
     let context: RunContext
     let args: any
-    let nodeInstance: FlowElementInstance
+    let nodeInstance: NodeElementInstance
     let nodeImplementation: NodeImplementation
     beforeEach(()=>{
       context = createEmptyContext()
       args = {}
-      nodeInstance = new TaskInstance()
+      nodeInstance = new NodeElementInstance()
     })
 
     it('Implementace: run():void', ()=>{
@@ -174,12 +174,12 @@ describe('Testy behove pipeline-y.', ()=>{
   describe('executeNode: Testy s neprazdnym kontextem',()=>{
     let context: RunContext
     let args: any
-    let nodeInstance: FlowElementInstance
+    let nodeInstance: NodeElementInstance
     let nodeImplementation: NodeImplementation
     beforeEach(() => {
       context = createEmptyContext()
       args = {}
-      nodeInstance = new TaskInstance()
+      nodeInstance = new NodeElementInstance()
     })
 
     it('Lze pristoupit k datum v kontextu.', () => {

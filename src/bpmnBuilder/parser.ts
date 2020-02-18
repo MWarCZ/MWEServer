@@ -1,21 +1,11 @@
 import {
   BaseElementTemplate,
-  BasicTaskTemplate,
-  ConnectorNode2Sequence,
-  ConnectorSequence2Node,
   DataObjectTemplate,
-  EndEventTemplate,
-  EventTemplate,
   FlowElementTemplate,
-  GatewayDirection,
-  GatewayTemplate,
-  GatewayType,
+  NodeElementTemplate,
   ProcessTemplate,
   ProcessType,
-  ScriptTaskTemplate,
   SequenceFlowTemplate,
-  StartEventTemplate,
-  TaskTemplate,
   VersionType,
 } from '../entity/bpmn'
 import { BpmnFxm } from './bpmnFxm'
@@ -167,10 +157,10 @@ export class Parser {
     }
   }
   parseTask(task: BpmnFxm.Task): BpmnLevel.Task {
-    let entity = new TaskTemplate()
+    let entity = new NodeElementTemplate()
     this.loadBaseElement(entity, task['#attr'])
     if (task['#attr']) {
-      entity.implementation = task['#attr'][`${this.ns.mwe}implementation` as 'implementation']
+      entity.implementation = task['#attr'][`${this.ns.mwe}implementation` as 'implementation'] || 'task'
     }
     return {
       entity,
@@ -179,11 +169,12 @@ export class Parser {
     }
   }
   parseScriptTask(task: BpmnFxm.ScriptTask): BpmnLevel.ScriptTask {
-    let entity = new ScriptTaskTemplate()
+    let entity = new NodeElementTemplate()
     this.loadBaseElement(entity, task['#attr'])
     if (task['#attr']) {
-      entity.implementation = task['#attr'][`${this.ns.mwe}implementation` as 'implementation']
-      entity.scriptFormat = task['#attr'].scriptFormat
+      entity.implementation = task['#attr'][`${this.ns.mwe}implementation` as 'implementation'] || 'scriptTask'
+      // entity.scriptFormat = task['#attr'].scriptFormat
+      entity.data['scriptFormat'] = task['#attr'].scriptFormat || 'js'
     }
     return {
       entity,
@@ -192,8 +183,11 @@ export class Parser {
     }
   }
   parseStartEvent(event: BpmnFxm.StartEvent): BpmnLevel.StartEvent {
-    let entity = new StartEventTemplate()
+    let entity = new NodeElementTemplate()
     this.loadBaseElement(entity, event['#attr'])
+    if (event['#attr']) {
+      entity.implementation = event['#attr'][`${this.ns.mwe}implementation` as 'implementation'] || 'startEvent'
+    }
     return {
       entity,
       data: event,
@@ -201,8 +195,11 @@ export class Parser {
     }
   }
   parseEndEvent(event: BpmnFxm.Task): BpmnLevel.EndEvent {
-    let entity = new EndEventTemplate()
+    let entity = new NodeElementTemplate()
     this.loadBaseElement(entity, event['#attr'])
+    if (event['#attr']) {
+      entity.implementation = event['#attr'][`${this.ns.mwe}implementation` as 'implementation'] || 'endEvent'
+    }
     return {
       entity,
       data: event,
@@ -219,12 +216,15 @@ export class Parser {
     }
   }
 
-  parseGateway(gateway: BpmnFxm.Gateway, gatewayType: GatewayType): BpmnLevel.Gateway {
-    let entity = new GatewayTemplate()
+  parseGateway(gateway: BpmnFxm.Gateway, implementation: string): BpmnLevel.Gateway {
+    let entity = new NodeElementTemplate()
     this.loadBaseElement(entity, gateway['#attr'])
     if (gateway['#attr']) {
-      entity.direction = gateway['#attr'].gatewayDirections as GatewayDirection
-      entity.type = gatewayType
+      entity.implementation = gateway['#attr'][`${this.ns.mwe}implementation` as 'implementation'] || implementation
+      // entity.direction = gateway['#attr'].gatewayDirections as GatewayDirection
+      // entity.type = gatewayType
+      entity.data['direction'] = gateway['#attr'].gatewayDirections || null
+      entity.data['type'] = implementation
     }
     return {
       entity,
@@ -282,19 +282,19 @@ export class Parser {
     let exclusiveGateways = process.data[`${this.ns.bpmn2}exclusiveGateway` as 'exclusiveGateway']
     if (typeof exclusiveGateways === 'object') {
       queues.Gateway.push(...exclusiveGateways.map(
-        g => this.parseGateway(g, GatewayType.Exclusive),
+        g => this.parseGateway(g, 'exclusiveGateway'),
       ))
     }
     let parallelGateways = process.data[`${this.ns.bpmn2}parallelGateway` as 'parallelGateway']
     if (typeof parallelGateways === 'object') {
       queues.Gateway.push(...parallelGateways.map(g =>
-        this.parseGateway(g, GatewayType.Parallel),
+        this.parseGateway(g, 'parallelGateway'),
       ))
     }
     let inclusiveGateways = process.data[`${this.ns.bpmn2}inclusiveGateway` as 'inclusiveGateway']
     if (typeof inclusiveGateways === 'object') {
       queues.Gateway.push(...inclusiveGateways.map(g =>
-        this.parseGateway(g, GatewayType.Inclusive),
+        this.parseGateway(g, 'inclusiveGateway'),
       ))
     }
 
@@ -367,41 +367,43 @@ export class Parser {
     return queues
   }
 
-  connectNode2SequenceFlow<T extends BaseElementTemplate>(
+  connectNode2SequenceFlow<T extends NodeElementTemplate>(
     sequenceFlowEntity: SequenceFlowTemplate, nodeEntity: T, referenceBpmnId: string,
   ): boolean {
     if (nodeEntity.bpmnId === referenceBpmnId) {
-      let n2s = new ConnectorNode2Sequence()
-      if (nodeEntity instanceof BasicTaskTemplate) {
-        n2s.task = nodeEntity
-      } else if (nodeEntity instanceof EventTemplate) {
-        n2s.event = nodeEntity
-      } else if (nodeEntity instanceof GatewayTemplate) {
-        n2s.gateway = nodeEntity
-      } else {
-        throw new Error('Entitu T not compatibile with NodeToSequenceFlow.')
-      }
-      sequenceFlowEntity.source = n2s
+      // let n2s = new ConnectorNode2Sequence()
+      // if (nodeEntity instanceof BasicTaskTemplate) {
+      //   n2s.task = nodeEntity
+      // } else if (nodeEntity instanceof EventTemplate) {
+      //   n2s.event = nodeEntity
+      // } else if (nodeEntity instanceof GatewayTemplate) {
+      //   n2s.gateway = nodeEntity
+      // } else {
+      //   throw new Error('Entitu T not compatibile with NodeToSequenceFlow.')
+      // }
+      // sequenceFlowEntity.source = n2s
+      sequenceFlowEntity.source = nodeEntity
       return true
     }
     return false
   }
 
-  connectSequenceFlow2Node<T extends BaseElementTemplate>(
+  connectSequenceFlow2Node<T extends NodeElementTemplate>(
     sequenceFlowEntity: SequenceFlowTemplate, nodeEntity: T, referenceBpmnId: string,
   ): boolean {
     if (nodeEntity.bpmnId === referenceBpmnId) {
-      let s2n = new ConnectorSequence2Node()
-      if (nodeEntity instanceof BasicTaskTemplate) {
-        s2n.task = nodeEntity
-      } else if (nodeEntity instanceof EventTemplate) {
-        s2n.event = nodeEntity
-      } else if (nodeEntity instanceof GatewayTemplate) {
-        s2n.gateway = nodeEntity
-      } else {
-        throw new Error('Entitu T not compatibile with SequenceFlowToNode.')
-      }
-      sequenceFlowEntity.target = s2n
+      // let s2n = new ConnectorSequence2Node()
+      // if (nodeEntity instanceof BasicTaskTemplate) {
+      //   s2n.task = nodeEntity
+      // } else if (nodeEntity instanceof EventTemplate) {
+      //   s2n.event = nodeEntity
+      // } else if (nodeEntity instanceof GatewayTemplate) {
+      //   s2n.gateway = nodeEntity
+      // } else {
+      //   throw new Error('Entitu T not compatibile with SequenceFlowToNode.')
+      // }
+      // sequenceFlowEntity.target = s2n
+      sequenceFlowEntity.target = nodeEntity
       return true
     }
     return false
@@ -454,7 +456,7 @@ export class Parser {
     return (obj) ? obj.entity : undefined
   }
 
-  loadTaskIO<T extends TaskTemplate>(
+  loadTaskIO<T extends NodeElementTemplate>(
     entity: T,
     attr: BpmnFxm.Task,
     queues: {
@@ -489,13 +491,14 @@ export class Parser {
     return entity
   }
 
-  loadScriptTask<T extends ScriptTaskTemplate>(
+  loadScriptTask<T extends NodeElementTemplate>(
     entity: T,
     attr: BpmnFxm.ScriptTask,
   ): T {
     let script = attr[`${this.ns.bpmn2}script` as 'script']
     if (typeof script === 'string') {
-      entity.script = script
+      // entity.script = script
+      entity.data['script'] = script
     }
     return entity
   }
@@ -524,7 +527,7 @@ export class Parser {
     return entity
   }
 
-  loadGateway<T extends GatewayTemplate>(
+  loadGateway<T extends NodeElementTemplate>(
     entity: T,
     attr: BpmnFxm.Gateway,
     queues: {
@@ -537,7 +540,8 @@ export class Parser {
         if (bpmnIdDefault === seqence.entity.bpmnId) {
           // NEPROHAZOVAT! Gateway bude ukladan drive nez sekvence
           // V dobe ukladani gateway neexistuji sekvence!
-          seqence.entity.default = entity
+          // seqence.entity.default = entity
+          seqence.entity.flag = 'default'
           return true
         }
         return false
@@ -561,6 +565,7 @@ export class Parser {
     // Source = Outgoing Propojeni Uzlu a odchoziho spoje
     if (attr && attr['#attr'] && attr['#attr'].sourceRef) {
       let sourceRef = attr['#attr'].sourceRef
+
       let okSource = queues.Task.find(task => {
         this.connectNode2SequenceFlow(entity, task.entity, sourceRef)
       }) || queues.StartEvent.find(event => {
@@ -588,11 +593,11 @@ export class Parser {
     return entity
   }
 
-  loadEvent<T extends EventTemplate>(
-    entity: EventTemplate,
-    attr: BpmnFxm.EndEvent,
-  ) {
+  // loadEvent<T extends EventTemplate>(
+  //   entity: EventTemplate,
+  //   attr: BpmnFxm.EndEvent,
+  // ) {
 
-  }
+  // }
 
 }

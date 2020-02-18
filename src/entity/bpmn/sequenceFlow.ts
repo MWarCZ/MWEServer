@@ -1,9 +1,8 @@
-import { Column, Entity, ManyToOne, OneToMany, OneToOne } from 'typeorm'
+import { Column, Entity, ManyToOne, OneToMany } from 'typeorm'
 
 import { fillElement, OptionsConstructor } from './baseElement'
-import { ConnectorNode2Sequence, ConnectorSequence2Node } from './connectorNodeAndSequence'
 import { FlowElementInstance, FlowElementTemplate } from './flowElement'
-import { GatewayTemplate } from './gateway'
+import { NodeElementTemplate } from './nodeElement'
 
 /**
  * Propopoj mezi uzly BPMN. SequenceFlow2FlowNode
@@ -12,28 +11,24 @@ import { GatewayTemplate } from './gateway'
 export class SequenceFlowTemplate extends FlowElementTemplate {
 
   @Column('text')
-  expression?: string = ''
+  expression: string = ''
 
-  @OneToOne(
-    type => ConnectorNode2Sequence,
-    entity => entity.sequenceFlow,
+  @Column()
+  flag: string = ''
+
+  @ManyToOne(
+    type => NodeElementTemplate,
+    entity => entity.outgoing,
     { cascade: true },
   )
-  source?: ConnectorNode2Sequence
+  source?: NodeElementTemplate
 
-  @OneToOne(
-    type => ConnectorSequence2Node,
-    entity => entity.sequenceFlow,
+  @ManyToOne(
+    type => NodeElementTemplate,
+    entity => entity.incoming,
     { cascade: true },
   )
-  target?: ConnectorSequence2Node
-
-  @OneToOne(
-    type => GatewayTemplate,
-    entity => entity.default,
-    { cascade: true },
-  )
-  default?: GatewayTemplate
+  target?: NodeElementTemplate
 
   @OneToMany(
     type => SequenceFlowInstance,
@@ -41,7 +36,6 @@ export class SequenceFlowTemplate extends FlowElementTemplate {
     { onDelete: 'CASCADE' },
   )
   instances?: SequenceFlowInstance[]
-  // instances: undefined
 
   constructor(options?: OptionsConstructor<SequenceFlowTemplate>) {
     super()
@@ -51,6 +45,7 @@ export class SequenceFlowTemplate extends FlowElementTemplate {
 
 @Entity()
 export class SequenceFlowInstance extends FlowElementInstance {
+
   @ManyToOne(
     type => SequenceFlowTemplate,
     entity => entity.instances,

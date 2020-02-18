@@ -6,6 +6,9 @@ export declare namespace BpmnFxm {
     id?: string,
     name?: string,
   }
+  type NodeElementAttr = {
+    implementation?: string,
+  } & BaseElementAttr
 
   type DefinitionsAttr = {
     [key: string]: string,
@@ -71,7 +74,7 @@ export declare namespace BpmnFxm {
 
   type TaskAttr = {
     implementation?: string,
-  } & BaseElementAttr
+  } & NodeElementAttr
   type Task = {
     '#attr'?: TaskAttr,
     dataOutputAssociation?: DataOutputAssociation[],
@@ -151,7 +154,7 @@ export declare namespace BpmnFxm {
 
   type StartEventAttr = {
     eventDefinitionRefs?: string,
-  } & BaseElementAttr
+  } & NodeElementAttr
   type StartEvent = {
     '#attr'?: StartEventAttr,
     outgoing?: string | string[], /** */
@@ -164,7 +167,7 @@ export declare namespace BpmnFxm {
   }
   type EndEventAttr = {
     eventDefinitionRefs?: string,
-  } & BaseElementAttr
+  } & NodeElementAttr
   type EndEvent = {
     '#attr'?: EndEventAttr,
     incoming?: string | string[], /** */
@@ -214,7 +217,7 @@ export declare namespace BpmnFxm {
   type GatewayAttr = {
     gatewayDirections?: string,
     default?: string,
-  } & BaseElementAttr
+  } & NodeElementAttr
   type Gateway = {
     '#attr'?: GatewayAttr,
     outgoing?: string | string[], /** */
