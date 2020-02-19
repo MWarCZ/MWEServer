@@ -6,6 +6,7 @@ import {
   parallelGatewayImplementation,
 } from '../bpmnRunnerPlugins/gateway'
 import { scriptTaskImplementation } from '../bpmnRunnerPlugins/scriptTask'
+import { startEventImplementation } from '../bpmnRunnerPlugins/startEvent'
 import { taskImplementation } from '../bpmnRunnerPlugins/task'
 import {
   ActivityStatus,
@@ -68,6 +69,7 @@ export class BpmnRunner {
       exclusiveGateway: exclusiveGatewayImplementation,
       inclusiveGateway: inclusiveGatewayImplementation,
       parallelGateway: parallelGatewayImplementation,
+      startEvent: startEventImplementation,
     }
     if (typeof pluginsWithImplementations === 'object') {
       this.pluginsWithImplementations = {
@@ -94,6 +96,11 @@ export class BpmnRunner {
       elementTemplate,
       callInitNew,
     } = options
+
+    // Neni co lulozit
+    if (elementTemplate.length<=0) {
+      return []
+    }
 
     let processI = await getInstance({
       instanceClass: ProcessInstance,
@@ -144,9 +151,13 @@ export class BpmnRunner {
     // [x] Vrat vsechny uspesne inicializovane instance elementu
     //
     const { templateClass, processInstance, elementTemplate} = options
+    // Neni nic k ulozeni
+    if (elementTemplate.length<=0) {
+      return []
+    }
     const instanceClass = convertTemplate2Instance(templateClass)
     if (instanceClass) {
-      let instanceRepo = this.connection.getRepository(instanceClass as Constructor<FlowElementInstance>)
+      let instanceRepo = await this.connection.getRepository(instanceClass as Constructor<FlowElementInstance>)
 
       let elementIds = elementTemplate.map(e=>e.id)
       // Najde vsechny instance elementu
@@ -164,7 +175,7 @@ export class BpmnRunner {
         })
       }))
       let elementInstances = tmpMatrixWithElementInstance.reduce((acc, value)=>{
-        return {...acc, ...value}
+        return [...acc, ...value]
       })
       return elementInstances
     }
@@ -246,13 +257,17 @@ export class BpmnRunner {
     selectedSequenceFlows: ({ id: number } | SequenceFlowTemplate)[],
   }) {
     // [x] Ziskat cilove uzly ze sekvence
-    // [ ] Ziskat existujici cilove uzly s status Waiting a nastavit na Ready
+    // [x] Ziskat existujici cilove uzly s status Waiting a nastavit na Ready
     // [x] Inicializovat cilove uzly pokud neexistuji
-    // [ ] Vratit vsechny cilove uzli (existujici i nove inicializovane)
+    // [x] Vratit vsechny cilove uzli (existujici i nove inicializovane)
     const {
       processInstance,
       selectedSequenceFlows,
     } = options
+
+    if(selectedSequenceFlows.length<=0){
+      return []
+    }
 
     let selectedSequences = await Promise.all(selectedSequenceFlows.map(seq=>getTemplate({
       typeormConnection: this.connection,
@@ -304,6 +319,9 @@ export class BpmnRunner {
     let normPossibleIds = possibleSequenceFlows.map(seq => typeof seq === 'number' ? seq : seq.id)
 
     let filteredSelected = normSelected.filter(seq => normPossibleIds.includes(seq.id))
+    if(filteredSelected.length<=1) {
+      return []
+    }
 
     // Instance vsech novych sequenceFlow pokud neexistuji
     let sequenceFlowInstances = await this.initSequenceFlow(processInstance, filteredSelected, true)
@@ -317,6 +335,7 @@ export class BpmnRunner {
     })
     nodeInstances = await this.saveElement([...new Set(nodeInstances)])
 
+    return nodeInstances
   }
 
   //#endregion
@@ -367,23 +386,36 @@ export class BpmnRunner {
       templateClass: NodeElementTemplate,
       entityOrId: taskInstance.template || { id: taskInstance.templateId as number },
       typeormConnection: this.connection,
-      relations: ['outgoing', 'outgoing.sequenceFlow'],
+      relations: ['outgoing'],
     })
     let implementation = this.pluginsWithImplementations[taskTemplate.implementation as string]
     if (typeof implementation !== 'object') {
-      throw new Error('Implementace ulohy nenalezena.')
+      throw new Error(`Implementace ulohy '${taskTemplate.implementation}' nenalezena.`)
     }
 
-    let context = await loadContextForNodeElement({ id: taskInstance.id as number }, this.connection)
+    console.log('1111111111', taskInstance)
+    let context = await loadContextForNodeElement(
+      { id: taskInstance.id as number },
+      this.connection,
+    )
+
+    let possibleSequenceFlows: SequenceFlowTemplate[] =
+      (taskTemplate.outgoing) ? taskTemplate.outgoing : []
+    console.log('222222222')
 
     try {
-      // TODO Zavolat init next pro ziskane id sekvenci
-      let nextSequences = executeNode({
+      let results = executeNode({
         nodeInstance: taskInstance,
         args: taskArgs,
         context,
         nodeImplementation: implementation,
       })
+      let xxx = await this.initNext({
+        processInstance: {id:1},
+        selectedSequenceFlows: [...results.initNext],
+        possibleSequenceFlows,
+      })
+      console.warn({xxx})
     } catch (e) {
       // TODO Osetrit validni vyjimky.
       console.error('runBasicTask:', e)
