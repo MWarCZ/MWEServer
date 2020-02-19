@@ -8,6 +8,7 @@ import {
 import { scriptTaskImplementation } from '../bpmnRunnerPlugins/scriptTask'
 import { taskImplementation } from '../bpmnRunnerPlugins/task'
 import {
+  ActivityStatus,
   DataObjectInstance,
   DataObjectTemplate,
   FlowElementInstance,
@@ -242,57 +243,42 @@ export class BpmnRunner {
   // TODO Nejtezsi funkce ;( nevim si rady
   async initNextNodes(options: {
     processInstance: { id: number } | ProcessInstance,
-    selectedSequenceFlows: (number | { id: number } | SequenceFlowTemplate)[],
+    selectedSequenceFlows: ({ id: number } | SequenceFlowTemplate)[],
   }) {
-    // [ ] Ziskat cilove uzly ze sekvence
-    // [ ] Inicializovat cilove uzly pokud neexistuji
-    // [ ] ...
+    // [x] Ziskat cilove uzly ze sekvence
+    // [ ] Ziskat existujici cilove uzly s status Waiting a nastavit na Ready
+    // [x] Inicializovat cilove uzly pokud neexistuji
+    // [ ] Vratit vsechny cilove uzli (existujici i nove inicializovane)
     const {
       processInstance,
       selectedSequenceFlows,
     } = options
 
-    // // ziskat vsechny cile (uzly) pro vsechny sablony spoju
-    // let sequences = await Promise.all(selectedSequenceFlows.map(async seq => {
-    //   return await getTemplate({
-    //     typeormConnection: this.connection,
-    //     entityOrId: (typeof seq === 'number') ? { id: seq } : seq,
-    //     templateClass: SequenceFlowTemplate,
-    //     relations: ['target', 'target.task', 'target.gateway', 'target.event'],
-    //   })
-    // }))
+    let selectedSequences = await Promise.all(selectedSequenceFlows.map(seq=>getTemplate({
+      typeormConnection: this.connection,
+      entityOrId: seq,
+      templateClass: SequenceFlowTemplate,
+      relations: ['target'],
+    })))
 
-    // // Prejit zkrze spoj na zaznamy o cilech
-    // let targets = sequences.map(s => s.target).filter(s => !!s) as ConnectorSequence2Node[]
-    // // Ziskat cile (uloha, udalost, brana)
-    // let tasks = targets.map(t => t.task).filter(t => !!t) as BasicTaskTemplate[]
-    // let events = targets.map(t => t.event).filter(t => !!t) as EventTemplate[]
-    // let gateways = targets.map(t => t.gateway).filter(t => !!t) as GatewayTemplate[]
+    let nodeTemplates = selectedSequences.map(seq => seq.target).filter(s => !!s) as NodeElementTemplate[]
+    let nodeTemplateIds = nodeTemplates.map(node=>node.id as number)
 
+    // Ziskani existujicich cekajicich uzlu spadajici pod danou instanci procesu
+    let waitingNodeInstances = await this.connection.getRepository(NodeElementInstance).find({
+      processInstanceId: processInstance.id,
+      status: ActivityStatus.Waiting,
+      templateId: In(nodeTemplateIds),
+    })
+    // Zmena z cekajici na pripraveny
+    waitingNodeInstances = waitingNodeInstances.map(node=>{
+      node.status = ActivityStatus.Ready
+      return node
+    })
+    // Vytvorit neexistujici instance uzlu
+    let newNodeInstances = await this.initNodeElement(processInstance, nodeTemplates, true)
 
-    // // Vytvorit a ulozit instance pro ziskane ulohy.
-    // let tasksI = await Promise.all(tasks.map(task => {
-    //   switch (task.class) {
-    //     case TaskTemplate.name:
-    //       return this.initTask(processInstance, [task])
-    //     case ScriptTaskTemplate.name:
-    //       return this.initScriptTask(processInstance, [task])
-    //   }
-    //   return Promise.resolve(undefined)
-    // }))
-    // let eventsI = await Promise.all(events.map(event => {
-    //   switch (event.class) {
-    //     case StartEventTemplate.name:
-    //       return this.initStartEvent(processInstance, [event])
-    //     case EndEventTemplate.name:
-    //       return this.initEndEvent(processInstance, [event])
-    //   }
-    //   return Promise.resolve(undefined)
-    // }))
-    // let gatewaysI = await Promise.all(gateways.map(gate => {
-    //   return this.initGateway(processInstance, [gate])
-    // }))
-
+    return [...newNodeInstances, ...waitingNodeInstances]
   }
 
   async initNext(
@@ -305,7 +291,9 @@ export class BpmnRunner {
     // [x] Normalizovat vstupni sequenceFlows.id
     // [x] Overit zda vybrane existuji v moznych
     // [x] Inicializovat instance seqenci pokud neexistuji
-    // [ ] Inicializovat instance uzlu (cil seqenci) pokud neexistuji
+    // [ ] Inicializovat cilove uzly sekvenci
+    //    [ ] Inicializovat neexistujici
+    //    [ ] Existujici se status==Waiting zmenit na Ready
     const {
       processInstance,
       selectedSequenceFlows,
@@ -317,12 +305,17 @@ export class BpmnRunner {
 
     let filteredSelected = normSelected.filter(seq => normPossibleIds.includes(seq.id))
 
-    // Instance sequenceFlow
+    // Instance vsech novych sequenceFlow pokud neexistuji
     let sequenceFlowInstances = await this.initSequenceFlow(processInstance, filteredSelected, true)
-
+    // Ulozeni techto instanci
     sequenceFlowInstances = await this.saveElement([...new Set(sequenceFlowInstances)])
 
-    // TODO vytvoreni instanci uzlu
+    // vytvoreni instanci uzlu
+    let nodeInstances = await this.initNextNodes({
+      processInstance,
+      selectedSequenceFlows: filteredSelected,
+    })
+    nodeInstances = await this.saveElement([...new Set(nodeInstances)])
 
   }
 

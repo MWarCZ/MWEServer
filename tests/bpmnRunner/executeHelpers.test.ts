@@ -24,7 +24,7 @@ describe('Testy behove pipeline-y.', ()=>{
         run() { }
       }
       let result = executeNode({ context, nodeImplementation, nodeInstance, args })
-      expect(result).toBeArrayOfSize(0)
+      expect(result.initNext).toBeArrayOfSize(0)
       expect(nodeInstance.status).toBe(ActivityStatus.Completed)
     })
 
@@ -33,7 +33,7 @@ describe('Testy behove pipeline-y.', ()=>{
         run() { throw new Error('TEST') }
       }
       let result = executeNode({ context, nodeImplementation, nodeInstance, args })
-      expect(result).toBeArrayOfSize(0)
+      expect(result.initNext).toBeArrayOfSize(0)
       expect(nodeInstance.status).toBe(ActivityStatus.Failled)
     })
 
@@ -43,7 +43,7 @@ describe('Testy behove pipeline-y.', ()=>{
         prerun() { }
       }
       let result = executeNode({ context, nodeImplementation, nodeInstance, args })
-      expect(result).toBeArrayOfSize(0)
+      expect(result.initNext).toBeArrayOfSize(0)
       expect(nodeInstance.status).toBe(ActivityStatus.Completed)
     })
 
@@ -53,8 +53,8 @@ describe('Testy behove pipeline-y.', ()=>{
         prerun() { throw new Error('test') }
       }
       let result = executeNode({ context, nodeImplementation, nodeInstance, args })
-      expect(result).toBeArrayOfSize(0)
-      expect(nodeInstance.status).toBe(ActivityStatus.Ready)
+      expect(result.initNext).toBeArrayOfSize(0)
+      expect(nodeInstance.status).toBe(ActivityStatus.Waiting)
     })
 
     it('Implementace: prerun():never, run():never', () => {
@@ -63,8 +63,8 @@ describe('Testy behove pipeline-y.', ()=>{
         prerun() { throw new Error('test')  }
       }
       let result = executeNode({ context, nodeImplementation, nodeInstance, args })
-      expect(result).toBeArrayOfSize(0)
-      expect(nodeInstance.status).toBe(ActivityStatus.Ready)
+      expect(result.initNext).toBeArrayOfSize(0)
+      expect(nodeInstance.status).toBe(ActivityStatus.Waiting)
     })
 
     it('Implementace: run(initNext(1)):void', () => {
@@ -73,8 +73,8 @@ describe('Testy behove pipeline-y.', ()=>{
       }
       let result = executeNode({ context, nodeImplementation, nodeInstance, args })
       expect(nodeInstance.status).toBe(ActivityStatus.Completed)
-      expect(result).toBeArrayOfSize(1)
-      expect(result).toMatchObject([23])
+      expect(result.initNext).toBeArrayOfSize(1)
+      expect(result.initNext).toMatchObject([23])
     })
     it('Implementace: run(initNext(5)):void', () => {
       nodeImplementation = {
@@ -82,8 +82,8 @@ describe('Testy behove pipeline-y.', ()=>{
       }
       let result = executeNode({ context, nodeImplementation, nodeInstance, args })
       expect(nodeInstance.status).toBe(ActivityStatus.Completed)
-      expect(result).toBeArrayOfSize(5)
-      expect(result).toMatchObject([11, 22, 33, 44, 55])
+      expect(result.initNext).toBeArrayOfSize(5)
+      expect(result.initNext).toMatchObject([11, 22, 33, 44, 55])
     })
     it('Implementace: run(initNext(2,3)):void', () => {
       nodeImplementation = {
@@ -91,8 +91,8 @@ describe('Testy behove pipeline-y.', ()=>{
       }
       let result = executeNode({ context, nodeImplementation, nodeInstance, args })
       expect(nodeInstance.status).toBe(ActivityStatus.Completed)
-      expect(result).toBeArrayOfSize(5)
-      expect(result).toMatchObject([11, 22, 33, 44, 55])
+      expect(result.initNext).toBeArrayOfSize(5)
+      expect(result.initNext).toMatchObject([11, 22, 33, 44, 55])
     })
     it('Implementace: run(initNext(2)):never', () => {
       nodeImplementation = {
@@ -100,8 +100,8 @@ describe('Testy behove pipeline-y.', ()=>{
       }
       let result = executeNode({ context, nodeImplementation, nodeInstance, args })
       expect(nodeInstance.status).toBe(ActivityStatus.Failled)
-      expect(result).toBeArrayOfSize(2)
-      expect(result).toMatchObject([11, 22])
+      expect(result.initNext).toBeArrayOfSize(2)
+      expect(result.initNext).toMatchObject([11, 22])
     })
 
     describe('Implementace: prerun(), run(), onCompleting, onFailing', () => {
@@ -115,8 +115,8 @@ describe('Testy behove pipeline-y.', ()=>{
         }
         let result = executeNode({ context, nodeImplementation, nodeInstance, args })
         expect(nodeInstance.status).toBe(ActivityStatus.Completed)
-        expect(result).toBeArrayOfSize(3)
-        expect(result).toMatchObject([1, 2, 3])
+        expect(result.initNext).toBeArrayOfSize(3)
+        expect(result.initNext).toMatchObject([1, 2, 3])
       })
       it('Prerun KO + vsude initNext', () => {
         nodeImplementation = {
@@ -126,9 +126,9 @@ describe('Testy behove pipeline-y.', ()=>{
           onFailing({ initNext }) { initNext([4]) }
         }
         let result = executeNode({ context, nodeImplementation, nodeInstance, args })
-        expect(nodeInstance.status).toBe(ActivityStatus.Ready)
-        expect(result).toBeArrayOfSize(1)
-        expect(result).toMatchObject([1])
+        expect(nodeInstance.status).toBe(ActivityStatus.Waiting)
+        expect(result.initNext).toBeArrayOfSize(1)
+        expect(result.initNext).toMatchObject([1])
       })
       it('Run KO + vsude initNext', () => {
         nodeImplementation = {
@@ -139,8 +139,8 @@ describe('Testy behove pipeline-y.', ()=>{
         }
         let result = executeNode({ context, nodeImplementation, nodeInstance, args })
         expect(nodeInstance.status).toBe(ActivityStatus.Failled)
-        expect(result).toBeArrayOfSize(3)
-        expect(result).toMatchObject([1, 2, 4])
+        expect(result.initNext).toBeArrayOfSize(3)
+        expect(result.initNext).toMatchObject([1, 2, 4])
       })
 
       it('OnCompleting KO + vsude initNext', () => {
@@ -191,7 +191,7 @@ describe('Testy behove pipeline-y.', ()=>{
         }
       }
       let result = executeNode({ context, nodeImplementation, nodeInstance, args })
-      expect(result).toBeArrayOfSize(0)
+      expect(result.initNext).toBeArrayOfSize(0)
       expect(nodeInstance.status).toBe(ActivityStatus.Completed)
       expect(nodeInstance.returnValue).toMatchObject(context)
       expect(context.$OUTGOING).toMatchObject(outgoing)
@@ -209,7 +209,7 @@ describe('Testy behove pipeline-y.', ()=>{
         }
       }
       let result = executeNode({ context, nodeImplementation, nodeInstance, args })
-      expect(result).toBeArrayOfSize(0)
+      expect(result.initNext).toBeArrayOfSize(0)
       expect(nodeInstance.status).toBe(ActivityStatus.Completed)
       expect(nodeInstance.returnValue).toMatchObject(context)
       expect(context.$OUTPUT.data).toMatchObject([11,22,33,44,1234])

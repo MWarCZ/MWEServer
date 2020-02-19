@@ -24,8 +24,8 @@ export type RunContextMap = {
 export type RunContextInput = RunContextMap
 export type RunContextOutput = RunContextMap
 
-export type RunContextIncoming = { id: number, came: boolean }[]
-export type RunContextOutgoing = { id: number, expression: string }[]
+export type RunContextIncoming = { id: number, came: boolean, flag: string }[]
+export type RunContextOutgoing = { id: number, expression: string, flag: string }[]
 
 export type RunContextNodeElement = {
   // Z instance
@@ -125,8 +125,8 @@ export function createContextIncoming(
   }).filter(x => !!x) as number[]
 
   let data: RunContextIncoming = incomingSequenceTemplates.map(incomingTemplate=>{
-    const {id = -1} = incomingTemplate
-    return { id, came: incomingIds.includes(id) }
+    const {id = -1, flag = ''} = incomingTemplate
+    return { id, came: incomingIds.includes(id), flag }
   })
 
   return data
@@ -142,8 +142,8 @@ export function createContextOutgoing(
   } = options
 
   let data: RunContextOutgoing = outgoingSequenceTemplates.map(outgoingTemplate => {
-    const { id = -1, expression = 'true' } = outgoingTemplate
-    return { id, expression }
+    const { id = -1, expression = 'true', flag = '' } = outgoingTemplate
+    return { id, expression, flag }
   })
 
   return data

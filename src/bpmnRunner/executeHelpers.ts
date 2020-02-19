@@ -94,7 +94,9 @@ export function executeNode(options: {
   nodeImplementation: NodeImplementation,
   context: RunContext,
   args: any,
-}): number[] {
+}): {
+  initNext: number[],
+} {
   const { nodeInstance, args, nodeImplementation, context } = options
   // Seznam obsahujici id sequenceFlow, ktere maji byt provedeny.
   const listOfinitNext: number[] = []
@@ -134,11 +136,13 @@ export function executeNode(options: {
     }
   } else {
     // status === Ready
-    nodeInstance.status = ActivityStatus.Ready
-    // TODO Zauvazovat zda nepridat novy stav Waiting // status = Waiting
+    nodeInstance.status = ActivityStatus.Waiting
+    // [x]  Zauvazovat zda nepridat novy stav Waiting // status = Waiting
     //      stejne jako Ready jen s rozlisenim Ready - ceka na zpracovani,
     //      Waiting - ceka na podminku pred zpracovanim.
-    // status === Ready
+    // status === Waiting
   }
-  return listOfinitNext
+  return {
+    initNext: listOfinitNext,
+  }
 }
