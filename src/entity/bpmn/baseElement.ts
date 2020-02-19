@@ -1,6 +1,3 @@
-import { BeforeInsert, Column, PrimaryGeneratedColumn } from 'typeorm'
-import { v4 as uuid } from 'uuid'
-
 export type OptionsConstructor<T> = { [P in keyof T]?: any }
 
 export function fillElement<T>(element: any, options?: OptionsConstructor<T>) {
@@ -14,43 +11,20 @@ export function fillElement<T>(element: any, options?: OptionsConstructor<T>) {
 /**
  * Zakladni entita obsahujici spolecne vlstnosti pro vsechny elementy sablony BPMN.
  */
-export abstract class BaseElementTemplate {
-  @PrimaryGeneratedColumn()
+export interface BaseElementTemplate {
   id?: number
-
-  @Column('text')
   bpmnId?: string
-
-  @Column('varchar', { length: 255, default: '' })
   name?: string
-
-  @BeforeInsert()
-  genBpmnId() {
-    if (!this.bpmnId)
-      this.bpmnId = uuid()
-  }
-
-  constructor(options?: OptionsConstructor<BaseElementTemplate> ) {
-    fillElement(this, options)
-  }
+  genBpmnId: ()=>void
 }
 
 /**
  * Zakladni entita obsahujici spolecne vlastnosti pro vsechny elementy instance BPMN.
  */
-export abstract class BaseElementInstance {
-  @PrimaryGeneratedColumn()
+export interface BaseElementInstance {
   id?: number
-
-  @Column('datetime', { nullable: true })
   startDateTime?: Date
-
-  @Column('datetime', { nullable: true })
   endDateTime?: Date
-
-  constructor(options?: OptionsConstructor<BaseElementInstance>) {
-    fillElement(this, options)
-  }
 }
 
 /**

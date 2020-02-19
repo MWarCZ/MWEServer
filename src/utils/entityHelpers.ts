@@ -5,8 +5,6 @@ import {
   BaseElementTemplate,
   DataObjectInstance,
   DataObjectTemplate,
-  FlowElementInstance,
-  FlowElementTemplate,
   NodeElementInstance,
   NodeElementTemplate,
   ProcessInstance,
@@ -17,43 +15,40 @@ import {
 
 
 export const ConvertTemplate2InstanceMap = {
-  [BaseElementTemplate.name]: BaseElementInstance ,
   [DataObjectTemplate.name]: DataObjectInstance,
-  [FlowElementTemplate.name]: FlowElementInstance,
   [ProcessTemplate.name]: ProcessInstance,
   [SequenceFlowTemplate.name]: SequenceFlowInstance,
   [NodeElementTemplate.name]: NodeElementInstance,
+} as {
+  [x: string]: Constructor<BaseElementInstance> | undefined
 }
-// as {
-//   [x: string]: Constructor<BaseElementInstance> | undefined
-// }
 
 export const ConvertInstance2TemplateMap = {
-  [BaseElementInstance.name]: BaseElementTemplate,
   [DataObjectInstance.name]: DataObjectTemplate,
-  [FlowElementInstance.name]: FlowElementTemplate,
   [ProcessInstance.name]: ProcessTemplate,
   [SequenceFlowInstance.name]: SequenceFlowTemplate,
   [NodeElementInstance.name]: NodeElementTemplate,
+} as {
+  [x: string]: Constructor<BaseElementTemplate> | undefined
 }
 
 
 export const ConvertString2TemplateMap = {
-  BaseElementTemplate,
   DataObjectTemplate,
-  FlowElementTemplate,
   ProcessTemplate,
   SequenceFlowTemplate,
   NodeElementTemplate,
+} as {
+  [x: string]: Constructor<BaseElementTemplate> | undefined
 }
 
 export const ConvertString2InstanceMap = {
-  BaseElementInstance,
   DataObjectInstance,
-  FlowElementInstance,
   ProcessInstance,
   SequenceFlowInstance,
   NodeElementInstance,
+} as {
+  [x: string]: Constructor<BaseElementInstance> | undefined
 }
 
 export function convertTemplate2Instance<
@@ -62,7 +57,7 @@ export function convertTemplate2Instance<
 >(
   templateClass: Constructor<T>,
 ) {
-  return ConvertTemplate2InstanceMap[templateClass.name] as Constructor<I> | undefined
+  return ConvertTemplate2InstanceMap[templateClass.name] //as Constructor<I> | undefined
 }
 
 export function convertInstance2Template<
@@ -71,7 +66,7 @@ export function convertInstance2Template<
 >(
   instanceClass: (new () => I),
 ) {
-  return ConvertInstance2TemplateMap[instanceClass.name] as Constructor<T> | undefined
+  return ConvertInstance2TemplateMap[instanceClass.name] //as Constructor<T> | undefined
 }
 
 export function convertString2Template<
@@ -80,7 +75,7 @@ export function convertString2Template<
 >(
   templateClass: string,
 ) {
-  return ConvertString2TemplateMap[templateClass as 'BaseElementTemplate'] as Constructor<T> | undefined
+  return ConvertString2TemplateMap[templateClass] //as Constructor<T> | undefined
 }
 
 export function convertString2Instance<
@@ -88,6 +83,6 @@ export function convertString2Instance<
   I extends BaseElementInstance,
 >(
   instanceClass: string,
-): undefined | typeof BaseElementInstance {
-  return ConvertString2InstanceMap[instanceClass as 'BaseElementInstance'] as Constructor<I> | undefined
+) {
+  return ConvertString2InstanceMap[instanceClass] //as Constructor<I> | undefined
 }

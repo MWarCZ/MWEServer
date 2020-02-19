@@ -50,8 +50,9 @@ export function checkIsElementInsideProcess<T extends FlowElementTemplate>(
   childClass: Constructor < T >,
 ) {
   let idFromChild: number | undefined = child.processTemplateId
-  if (child instanceof FlowElementTemplate && child.processTemplate) {
-    idFromChild = child.processTemplate.id
+  let tmpChild: FlowElementTemplate = child as FlowElementTemplate
+  if (tmpChild.processTemplate) {
+    idFromChild = tmpChild.processTemplate.id
   }
   if (typeof idFromChild === 'undefined') {
     throw new Error(`Element '${childClass.name}' nepatri do zadneho procesu.`)

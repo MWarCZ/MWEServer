@@ -1,16 +1,40 @@
-import { Column, Entity, JoinTable, ManyToMany, ManyToOne, OneToMany } from 'typeorm'
+import { BeforeInsert, Column, Entity, JoinTable, ManyToMany, ManyToOne, OneToMany, PrimaryGeneratedColumn } from 'typeorm'
+import { v4 as uuid } from 'uuid'
 
 import { Json, JsonMap } from '../../types/json'
 import { ActivityStatus, fillElement, OptionsConstructor } from './baseElement'
 import { DataObjectTemplate } from './dataObject'
 import { FlowElementInstance, FlowElementTemplate } from './flowElement'
+import { ProcessInstance, ProcessTemplate } from './process'
 import { SequenceFlowTemplate } from './sequenceFlow'
 
 /**
  * Propopoj mezi uzly BPMN. SequenceFlow2FlowNode
  */
 @Entity()
-export class NodeElementTemplate extends FlowElementTemplate {
+export class NodeElementTemplate implements FlowElementTemplate{
+  @PrimaryGeneratedColumn()
+  id?: number
+
+  @Column('text')
+  bpmnId?: string
+
+  @Column('varchar', { length: 255, default: '' })
+  name?: string
+
+  //=============
+
+  @ManyToOne(
+    type => ProcessTemplate,
+    entity => entity.nodeElements,
+    { onDelete: 'CASCADE' },
+  )
+  processTemplate?: ProcessTemplate
+
+  @Column({ nullable: true })
+  processTemplateId?: number
+
+  //============
 
   // @Column('text')
   @Column('varchar', { default: '', nullable: false, length: 200 })
@@ -41,13 +65,43 @@ export class NodeElementTemplate extends FlowElementTemplate {
   instances?: NodeElementInstance[]
 
   constructor(options?: OptionsConstructor<NodeElementTemplate>) {
-    super()
     fillElement(this, options)
+  }
+
+  @BeforeInsert()
+  genBpmnId() {
+    if (!this.bpmnId)
+      this.bpmnId = uuid()
   }
 }
 
 @Entity()
-export class NodeElementInstance extends FlowElementInstance {
+export class NodeElementInstance implements FlowElementInstance{
+  @PrimaryGeneratedColumn()
+  id?: number
+
+  @Column('datetime', { nullable: true })
+  startDateTime?: Date
+
+  @Column('datetime', { nullable: true })
+  endDateTime?: Date
+
+  //===============
+
+  @ManyToOne(
+    type => ProcessInstance,
+    entity => entity.nodeElements,
+    { onDelete: 'CASCADE' },
+  )
+  processInstance?: ProcessInstance
+
+  @Column({ nullable: true })
+  processInstanceId?: number
+
+  @Column({ nullable: true })
+  templateId?: number
+
+  //===============
 
   @Column('enum', {
     enum: ActivityStatus,
@@ -67,7 +121,6 @@ export class NodeElementInstance extends FlowElementInstance {
   template?: NodeElementTemplate
 
   constructor(options?: OptionsConstructor<NodeElementInstance>) {
-    super()
     fillElement(this, options)
   }
 }

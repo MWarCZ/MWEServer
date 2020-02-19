@@ -1,6 +1,10 @@
-import { Column, Entity, ManyToOne, OneToMany } from 'typeorm'
+import { BeforeInsert, Column, Entity, ManyToOne, OneToMany, PrimaryGeneratedColumn } from 'typeorm'
+import { v4 as uuid } from 'uuid'
 
 import { BaseElementInstance, BaseElementTemplate, fillElement, OptionsConstructor, ProcessStatus } from './baseElement'
+import { DataObjectInstance, DataObjectTemplate } from './dataObject'
+import { NodeElementInstance, NodeElementTemplate } from './nodeElement'
+import { SequenceFlowInstance, SequenceFlowTemplate } from './sequenceFlow'
 
 export enum ProcessType {
   None = 'none',
@@ -21,7 +25,17 @@ export interface OptionsProcess {
 }
 
 @Entity()
-export class ProcessTemplate extends BaseElementTemplate {
+export class ProcessTemplate implements BaseElementTemplate {
+  @PrimaryGeneratedColumn()
+  id?: number
+
+  @Column('text')
+  bpmnId?: string
+
+  @Column('varchar', { length: 255, default: '' })
+  name?: string
+
+  //===================
 
   @Column('boolean', { default: false, nullable: false })
   isExecutable?: boolean
@@ -54,23 +68,38 @@ export class ProcessTemplate extends BaseElementTemplate {
   )
   processInstances?: ProcessInstance[]
 
-  // @OneToMany(type => DataObjectTemplate, entity => entity.processTemplate)
-  // dataObjects?: DataObjectTemplate[]
+  @OneToMany(type => DataObjectTemplate, entity => entity.processTemplate)
+  dataObjects?: DataObjectTemplate[]
 
-  // @OneToMany(type => NodeElementTemplate, entity => entity.processTemplate)
-  // nodeElements?: NodeElementTemplate[]
+  @OneToMany(type => NodeElementTemplate, entity => entity.processTemplate)
+  nodeElements?: NodeElementTemplate[]
 
-  // @OneToMany(type => SequenceFlowTemplate, entity => entity.processTemplate)
-  // sequenceFlows?: SequenceFlowTemplate[]
+  @OneToMany(type => SequenceFlowTemplate, entity => entity.processTemplate)
+  sequenceFlows?: SequenceFlowTemplate[]
 
   constructor(options?: OptionsConstructor<ProcessTemplate>) {
-    super()
     fillElement(this, options)
+  }
+
+  @BeforeInsert()
+  genBpmnId() {
+    if (!this.bpmnId)
+      this.bpmnId = uuid()
   }
 }
 
 @Entity()
-export class ProcessInstance extends BaseElementInstance {
+export class ProcessInstance implements BaseElementInstance {
+  @PrimaryGeneratedColumn()
+  id?: number
+
+  @Column('datetime', { nullable: true })
+  startDateTime?: Date
+
+  @Column('datetime', { nullable: true })
+  endDateTime?: Date
+
+  //===============
 
   @Column('enum', {
     enum: ProcessStatus,
@@ -89,13 +118,13 @@ export class ProcessInstance extends BaseElementInstance {
   @Column({ nullable: true })
   processTemplateId?: number
 
-  // @OneToMany(type => DataObjectInstance, entity => entity.processInstance)
-  // dataObjects?: DataObjectInstance[]
+  @OneToMany(type => DataObjectInstance, entity => entity.processInstance)
+  dataObjects?: DataObjectInstance[]
 
-  // @OneToMany(type => NodeElementInstance, entity => entity.processInstance)
-  // nodeElements?: NodeElementInstance[]
+  @OneToMany(type => NodeElementInstance, entity => entity.processInstance)
+  nodeElements?: NodeElementInstance[]
 
-  // @OneToMany(type => SequenceFlowInstance, entity => entity.processInstance)
-  // sequenceFlows?: SequenceFlowInstance[]
+  @OneToMany(type => SequenceFlowInstance, entity => entity.processInstance)
+  sequenceFlows?: SequenceFlowInstance[]
 
 }
