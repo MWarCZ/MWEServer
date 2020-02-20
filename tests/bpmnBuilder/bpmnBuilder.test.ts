@@ -123,7 +123,7 @@ describe('Testy prevodu XML na interni entity DB', () => {
       relations: ['outgoing'],
       where: {
         implementation: 'startEvent',
-      }
+      },
     })
     expect(startEvent.outgoing).toBeArrayOfSize(1)
     expect(startEvent.processTemplateId).toBe(process.id)
@@ -132,7 +132,7 @@ describe('Testy prevodu XML na interni entity DB', () => {
       relations: ['incoming'],
       where: {
         implementation: 'endEvent',
-      }
+      },
     })
     expect(endEvent.incoming).toBeArrayOfSize(1)
     expect(endEvent.processTemplateId).toBe(process.id)
@@ -147,7 +147,7 @@ describe('Testy prevodu XML na interni entity DB', () => {
       relations: ['incoming', 'outgoing', 'inputs', 'outputs'],
       where: {
         implementation: 'task',
-      }
+      },
     })
     expect(task.incoming).toBeArrayOfSize(1)
     expect(task.outgoing).toBeArrayOfSize(1)
@@ -184,7 +184,7 @@ describe('Testy prevodu XML na interni entity DB', () => {
         relations: ['outgoing'],
         where: {
           implementation: 'startEvent',
-        }
+        },
       })
       expect(startEvent.outgoing).toBeArrayOfSize(1)
 
@@ -192,7 +192,7 @@ describe('Testy prevodu XML na interni entity DB', () => {
         relations: ['incoming'],
         where: {
           implementation: 'endEvent',
-        }
+        },
       })
       expect(endEvent.incoming).toBeArrayOfSize(1)
 
@@ -200,7 +200,7 @@ describe('Testy prevodu XML na interni entity DB', () => {
         relations: ['incoming', 'outgoing'],
         where: {
           implementation: 'task',
-        }
+        },
       })
       expect(task.incoming).toBeArrayOfSize(1)
       expect(task.outgoing).toBeArrayOfSize(1)
@@ -230,7 +230,7 @@ describe('Testy prevodu XML na interni entity DB', () => {
         relations: ['outgoing'],
         where: {
           implementation: 'startEvent',
-        }
+        },
       })
       expect(startEvent.outgoing && startEvent.outgoing.length).toBe(1)
 
@@ -238,7 +238,7 @@ describe('Testy prevodu XML na interni entity DB', () => {
         relations: ['incoming'],
         where: {
           implementation: 'endEvent',
-        }
+        },
       })
       expect(endEvent.incoming && endEvent.incoming.length).toBe(1)
 
@@ -246,7 +246,7 @@ describe('Testy prevodu XML na interni entity DB', () => {
         relations: ['incoming', 'outgoing'],
         where: {
           implementation: 'task',
-        }
+        },
       })
       expect(tasks).toBeArrayOfSize(3)
       tasks.forEach(task => {
@@ -260,7 +260,7 @@ describe('Testy prevodu XML na interni entity DB', () => {
           { implementation: 'parallelGateway' },
           {implementation: 'exclusiveGateway' },
           {implementation: 'inclusiveGateway' },
-        ]
+        ],
       })
       expect(gateways).toBeArrayOfSize(2)
       // expect(gateways[0].type).toBe(GatewayType.Parallel)
@@ -295,7 +295,7 @@ describe('Testy prevodu XML na interni entity DB', () => {
         relations: ['outgoing'],
         where: {
           implementation: 'startEvent',
-        }
+        },
       })
       expect(startEvent.outgoing).toBeArrayOfSize(1)
 
@@ -303,7 +303,7 @@ describe('Testy prevodu XML na interni entity DB', () => {
         relations: ['incoming'],
         where: {
           implementation: 'endEvent',
-        }
+        },
       })
       expect(endEvents).toBeArrayOfSize(7)
       endEvents.forEach(event => {
@@ -350,7 +350,7 @@ describe('Testy prevodu XML na interni entity DB', () => {
         relations: ['outgoing'],
         where: {
           implementation: 'startEvent',
-        }
+        },
       })
       expect(startEvent.outgoing).toBeArrayOfSize(1)
 
@@ -358,7 +358,7 @@ describe('Testy prevodu XML na interni entity DB', () => {
         relations: ['incoming'],
         where: {
           implementation: 'endEvent',
-        }
+        },
       })
       expect(endEvents).toBeArrayOfSize(3)
       endEvents.forEach(event => {
@@ -369,7 +369,7 @@ describe('Testy prevodu XML na interni entity DB', () => {
         relations: ['incoming', 'outgoing'],
         where: {
           implementation: 'task',
-        }
+        },
       })
       expect(tasks).toBeArrayOfSize(4)
       tasks.forEach(task => {
@@ -381,7 +381,7 @@ describe('Testy prevodu XML na interni entity DB', () => {
         relations: ['incoming', 'outgoing'],
         where: {
           implementation: 'scriptTask',
-        }
+        },
       })
       expect(scriptTasks).toBeArrayOfSize(3)
       scriptTasks.forEach(task => {

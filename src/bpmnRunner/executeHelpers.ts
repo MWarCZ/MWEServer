@@ -12,7 +12,8 @@ export function executeNodePrerun(options: {
   nodeImplementation: NodeImplementation,
   context: RunContext,
   args: any,
-  initNext: (x:any)=>void,
+  initNext: (x: any) => void,
+  finishProcess: (x: any) => void,
 }): boolean {
   const {
     nodeInstance,
@@ -20,6 +21,7 @@ export function executeNodePrerun(options: {
     context,
     args,
     initNext,
+    finishProcess,
   } = options
   // status === Ready
   try {
@@ -27,6 +29,7 @@ export function executeNodePrerun(options: {
       context,
       args,
       initNext,
+      finishProcess,
     }) : true
     nodeInstance.returnValue = result
     nodeInstance.status = ActivityStatus.Active
@@ -53,6 +56,7 @@ export function executeNodeRun(options: {
   context: RunContext,
   args: any,
   initNext: (x:any) => void,
+  finishProcess: (x:any) => void,
 }): boolean {
   const {
     nodeInstance,
@@ -60,6 +64,7 @@ export function executeNodeRun(options: {
     context,
     args,
     initNext,
+    finishProcess,
   } = options
   // status === Active
   try {
@@ -67,6 +72,7 @@ export function executeNodeRun(options: {
       context,
       args,
       initNext,
+      finishProcess,
     })
     nodeInstance.status = ActivityStatus.Completing
     nodeInstance.returnValue = result
@@ -102,14 +108,17 @@ export function executeNode(options: {
   const listOfinitNext: number[] = []
   // Pomocna funkce (callback), ktera pridava id sequenceFlow do seznamu pro provedeni.
   const initNext = (sequenceIds: (number | { id: number })[]) => {
-    let ids = sequenceIds.map(seq=>typeof seq === 'number' ? seq : seq.id)
+    let ids = sequenceIds.map(seq => typeof seq === 'number' ? seq : seq.id)
     listOfinitNext.push(...ids)
+  }
+  const finishProcess = (options?: { forced: boolean }) => {
+    if (options && options.forced) { }
   }
 
   // taskInstance.status === Ready
-  if (executeNodePrerun({ nodeInstance, args, context, nodeImplementation, initNext, })) {
+  if (executeNodePrerun({ nodeInstance, args, context, nodeImplementation, initNext, finishProcess })) {
     // status === Active
-    if (executeNodeRun({ nodeInstance, args, context, nodeImplementation, initNext, })) {
+    if (executeNodeRun({ nodeInstance, args, context, nodeImplementation, initNext, finishProcess })) {
       // status === completing
       if (typeof nodeImplementation.onCompleting === 'function') {
         // TODO - dovymislet onCompleting()
@@ -117,6 +126,7 @@ export function executeNode(options: {
           context: context,
           args: args,
           initNext,
+          finishProcess,
         })
       }
       nodeInstance.status = ActivityStatus.Completed
@@ -129,6 +139,7 @@ export function executeNode(options: {
           context: context,
           args: args,
           initNext,
+          finishProcess,
         })
       }
       nodeInstance.status = ActivityStatus.Failled

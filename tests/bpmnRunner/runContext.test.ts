@@ -13,9 +13,9 @@ describe('Testy s RunContext: synchronni funkce', () => {
     expect(context.$OUTPUT).toMatchObject({})
   })
 
-  describe('createContextInputs',()=>{
+  describe('createContextInputs', () => {
 
-    it('Zdadny vstup',()=>{
+    it('Zdadny vstup', () => {
       let context = RunContext.createContextInputs({
         inputsDataInstances: [],
         inputsDataTemplates: [],
@@ -26,13 +26,13 @@ describe('Testy s RunContext: synchronni funkce', () => {
       const dataT = new DataObjectTemplate({
         id: 1,
         name: 'Data1',
-        json: [11,22,33],
+        json: [11, 22, 33],
       })
       let context = RunContext.createContextInputs({
         inputsDataInstances: [],
         inputsDataTemplates: [dataT],
       })
-      expect(context).toMatchObject({ Data1: [11,22,33]})
+      expect(context).toMatchObject({ Data1: [11, 22, 33]})
     })
     it('Vstup: 3x DataObjectTemplate', () => {
       const dataT = [
@@ -66,7 +66,7 @@ describe('Testy s RunContext: synchronni funkce', () => {
         new DataObjectTemplate({ id: 11, name: 'Data1', json: 'ahoj'}),
       ]
       const dataI = [
-        new DataObjectInstance({ id: 1, templateId: 11, data: 'caw'})
+        new DataObjectInstance({ id: 1, templateId: 11, data: 'caw'}),
       ]
       let context = RunContext.createContextInputs({
         inputsDataInstances: [...dataI],
@@ -82,7 +82,7 @@ describe('Testy s RunContext: synchronni funkce', () => {
         new DataObjectTemplate({ id: 11, name: 'Data1', json: 'ahoj' }),
       ]
       const dataI = [
-        new DataObjectInstance({ id: 1, templateId: 11, data: 'caw' })
+        new DataObjectInstance({ id: 1, templateId: 11, data: 'caw' }),
       ]
       let context = RunContext.createContextInputs({
         inputsDataInstances: [...dataI],
@@ -113,7 +113,7 @@ describe('Testy s RunContext: synchronni funkce', () => {
     })
 
   })
-  describe('createContextOutputs', ()=>{
+  describe('createContextOutputs', () => {
     it('Komplexni test', () => {
       // prezije jen jedno
       const dataT = [
@@ -139,7 +139,7 @@ describe('Testy s RunContext: synchronni funkce', () => {
     })
   })
 
-  describe('createContextIncoming', ()=>{
+  describe('createContextIncoming', () => {
 
     it('Zadne prichozi sekvence', () => {
       let context = RunContext.createContextIncoming({
@@ -206,9 +206,9 @@ describe('Testy s RunContext: synchronni funkce', () => {
 
   describe('createContextOutgoing', () => {
 
-    it('Zadne odchozi sekvence',()=>{
+    it('Zadne odchozi sekvence', () => {
       let context = RunContext.createContextOutgoing({
-        outgoingSequenceTemplates: []
+        outgoingSequenceTemplates: [],
       })
       expect(context).toBeArrayOfSize(0)
     })
@@ -217,10 +217,10 @@ describe('Testy s RunContext: synchronni funkce', () => {
         new SequenceFlowTemplate({id:1, expression: 'true'}),
       ]
       let context = RunContext.createContextOutgoing({
-        outgoingSequenceTemplates: [...sequences]
+        outgoingSequenceTemplates: [...sequences],
       })
       expect(context).toBeArrayOfSize(1)
-      expect(context).toMatchObject([{id:1,expression:'true'}])
+      expect(context).toMatchObject([{id:1, expression:'true'}])
     })
     it('Vstup: 3x SequenceFlowTemplate', () => {
       let sequences: SequenceFlowTemplate[] = [
@@ -229,13 +229,13 @@ describe('Testy s RunContext: synchronni funkce', () => {
         new SequenceFlowTemplate({ id: 2, expression: '2=="2"' }),
       ]
       let context = RunContext.createContextOutgoing({
-        outgoingSequenceTemplates: [...sequences]
+        outgoingSequenceTemplates: [...sequences],
       })
       expect(context).toBeArrayOfSize(3)
       expect(context).toMatchObject([
         { id: 1, expression: 'true' },
         { id: 11, expression: '1===1' },
-        { id: 2, expression: '2=="2"' }
+        { id: 2, expression: '2=="2"' },
       ])
     })
 

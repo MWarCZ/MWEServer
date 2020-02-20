@@ -23,18 +23,18 @@ let runner: BpmnRunner
 
 describe('Testy s bpmnRunner', () => {
 
-  beforeEach(async () => {
+  beforeEach(async() => {
     connection = await createConn()
     await cleanDataInTables(connection, connection.entityMetadatas)
     builder = new BpmnBuilder(connection)
     runner = new BpmnRunner(connection)
   })
-  afterEach(async () => {
+  afterEach(async() => {
     await closeConn(connection)
   })
 
-  describe('Zakladni jednoduche testovani funkcnosti funkci',()=>{
-    beforeEach(async()=>{
+  describe('Zakladni jednoduche testovani funkcnosti funkci', () => {
+    beforeEach(async() => {
       let xml = readFileSync(joinPath(
         __dirname,
         '../resources/bpmn/simple.bpmn',
@@ -42,12 +42,12 @@ describe('Testy s bpmnRunner', () => {
       await builder.loadFromXml(xml)
     })
 
-    describe('initAndSaveProcess',()=>{
+    describe('initAndSaveProcess', () => {
 
-      it('initAndSaveProcess v1', async () => {
+      it('initAndSaveProcess v1', async() => {
         let startEvent = await connection.manager.findOneOrFail(NodeElementTemplate, {
           relations: ['outgoing'],
-          where: { implementation: 'startEvent', }
+          where: { implementation: 'startEvent' },
         })
         let processInstance = await runner.initAndSaveProcess(
           { id: startEvent.processTemplateId as number },
@@ -67,10 +67,10 @@ describe('Testy s bpmnRunner', () => {
         expect(eventInstance.status).toBe(ActivityStatus.Ready)
       })
 
-      it('initAndSaveProcess v2', async () => {
+      it('initAndSaveProcess v2', async() => {
         let startEvent = await connection.manager.findOneOrFail(NodeElementTemplate, {
           relations: ['outgoing'],
-          where: { implementation: 'startEvent', }
+          where: { implementation: 'startEvent' },
         })
         let processInstance = await runner.initAndSaveProcess(
           { id: startEvent.processTemplateId as number },
@@ -90,10 +90,10 @@ describe('Testy s bpmnRunner', () => {
         expect(eventInstance.status).toBe(ActivityStatus.Ready)
       })
 
-      it('initAndSaveProcess v3', async () => {
+      it('initAndSaveProcess v3', async() => {
         let startEvent = await connection.manager.findOneOrFail(NodeElementTemplate, {
           relations: ['outgoing', 'processTemplate'],
-          where: { implementation: 'startEvent', }
+          where: { implementation: 'startEvent' },
         })
         let processInstance = await runner.initAndSaveProcess(
           startEvent.processTemplate as {id:number},
@@ -119,11 +119,11 @@ describe('Testy s bpmnRunner', () => {
       let processInstance: ProcessInstance
       let nodeTemplates: NodeElementTemplate[]
 
-      beforeEach(async()=>{
+      beforeEach(async() => {
         nodeTemplates = []
         let xxx = await connection.manager.find(NodeElementTemplate)
-        xxx.forEach(x=>{
-          if(x.implementation === 'startEvent') nodeTemplates[0] = x
+        xxx.forEach(x => {
+          if (x.implementation === 'startEvent') nodeTemplates[0] = x
           else if (x.implementation === 'task') nodeTemplates[1] = x
           else if (x.implementation === 'endEvent') nodeTemplates[2] = x
           else throw new Error('Kix')
@@ -138,13 +138,13 @@ describe('Testy s bpmnRunner', () => {
         )
       })
 
-      describe('initNodeElement', ()=>{
+      describe('initNodeElement', () => {
 
-        it('Vlozeni zadneho elementu', async () => {
+        it('Vlozeni zadneho elementu', async() => {
           let xxx = await runner.initNodeElement(processInstance, [])
           expect(xxx).toBeArrayOfSize(0)
         })
-        it('Vlozeni jednoho elementu', async () => {
+        it('Vlozeni jednoho elementu', async() => {
           let startI = await runner.initNodeElement(processInstance, [nodeTemplates[0]])
           expect(startI).toBeArrayOfSize(1)
           expect(startI[0]).toBeInstanceOf(NodeElementInstance)
@@ -157,16 +157,16 @@ describe('Testy s bpmnRunner', () => {
           expect(endI).toBeArrayOfSize(1)
           expect(endI[0]).toBeInstanceOf(NodeElementInstance)
         })
-        it('Vlozeni vice elementu', async () => {
+        it('Vlozeni vice elementu', async() => {
           let nodesI = await runner.initNodeElement(processInstance, [...nodeTemplates])
           expect(nodesI).toBeArrayOfSize(nodeTemplates.length)
-          nodesI.forEach(nodeI=>{
+          nodesI.forEach(nodeI => {
             expect(nodeI).toBeInstanceOf(NodeElementInstance)
             expect(nodeI.status).toBe(ActivityStatus.Ready)
           })
         })
-        it('Vytvor pokud neexistuji (Neexistuje zadny)', async () => {
-          await connection.manager.delete(NodeElementInstance,{
+        it('Vytvor pokud neexistuji (Neexistuje zadny)', async() => {
+          await connection.manager.delete(NodeElementInstance, {
             processInstanceId: processInstance.id,
           })
 
@@ -177,7 +177,7 @@ describe('Testy s bpmnRunner', () => {
             expect(nodeI.status).toBe(ActivityStatus.Ready)
           })
         })
-        it('Vytvor pokud neexistuji (Existuje jeden - startevent)', async () => {
+        it('Vytvor pokud neexistuji (Existuje jeden - startevent)', async() => {
           let nodesI = await runner.initNodeElement(processInstance, [...nodeTemplates], true)
           expect(nodesI).toBeArrayOfSize(2)
           nodesI.forEach(nodeI => {
@@ -186,40 +186,40 @@ describe('Testy s bpmnRunner', () => {
           })
         })
       })
-      describe('initNextNodes',()=>{
+      describe('initNextNodes', () => {
 
-        it('Neni vybrana zadna sequence', async()=>{
+        it('Neni vybrana zadna sequence', async() => {
           let nodesI = await runner.initNextNodes({
             processInstance,
-            selectedSequenceFlows: []
+            selectedSequenceFlows: [],
           })
           expect(nodesI).toBeArrayOfSize(0)
         })
 
-        it('Je vybrana jedna sequence', async () => {
-          let seqT = await connection.manager.find(SequenceFlowTemplate)
-          expect(seqT).toBeArrayOfSize(2)
-          if(seqT.length < 2) throw new Error('xxx')
-
-          let nodesI = await runner.initNextNodes({
-            processInstance,
-            selectedSequenceFlows: [seqT[0]]
-          })
-          expect(nodesI).toBeArrayOfSize(1)
-          nodesI.forEach(node=>{
-            expect(node).toBeInstanceOf(NodeElementInstance)
-            expect(node.template && node.template.implementation).toBe('task')
-          })
-        })
-
-        it('Je vybrano vice sequenci', async () => {
+        it('Je vybrana jedna sequence', async() => {
           let seqT = await connection.manager.find(SequenceFlowTemplate)
           expect(seqT).toBeArrayOfSize(2)
           if (seqT.length < 2) throw new Error('xxx')
 
           let nodesI = await runner.initNextNodes({
             processInstance,
-            selectedSequenceFlows: [...seqT]
+            selectedSequenceFlows: [seqT[0]],
+          })
+          expect(nodesI).toBeArrayOfSize(1)
+          nodesI.forEach(node => {
+            expect(node).toBeInstanceOf(NodeElementInstance)
+            expect(node.template && node.template.implementation).toBe('task')
+          })
+        })
+
+        it('Je vybrano vice sequenci', async() => {
+          let seqT = await connection.manager.find(SequenceFlowTemplate)
+          expect(seqT).toBeArrayOfSize(2)
+          if (seqT.length < 2) throw new Error('xxx')
+
+          let nodesI = await runner.initNextNodes({
+            processInstance,
+            selectedSequenceFlows: [...seqT],
           })
           expect(nodesI).toBeArrayOfSize(seqT.length)
           nodesI.forEach((node, index) => {
@@ -229,18 +229,32 @@ describe('Testy s bpmnRunner', () => {
         })
 
       })
-      describe('initNext', ()=>{
-        it('', async()=>{
+      describe('initNext', () => {
+        it('', async() => {
 
         })
       })
+
+      it('Cyklus nekolika runNodeElement', async() => {
+
+        for (let i = 0; i < 2; i++) {
+          let nodeI = await connection.manager.findOneOrFail(NodeElementInstance, {
+            status: ActivityStatus.Ready,
+          })
+          await runner.runNodeElement({
+            nodeInstance: nodeI,
+            nodeArgs: {},
+          })
+        }
+      })
+
 
     })
 
 
   })
 
-  it('xxx', async()=>{
+  it.skip('xxx', async() => {
 
     let xml = readFileSync(joinPath(
       __dirname,
@@ -251,13 +265,13 @@ describe('Testy s bpmnRunner', () => {
 
     let startEvent = await connection.manager.findOneOrFail(NodeElementTemplate, {
       relations: ['outgoing'],
-      where: { implementation: 'startEvent', }
+      where: { implementation: 'startEvent' },
     })
     let processI = await runner.initAndSaveProcess(
       { id: startEvent.processTemplateId as number },
       startEvent,
     )
-    if(startEvent.outgoing) {
+    if (startEvent.outgoing) {
       // let seqI = await runner.initSequenceFlow(processI, startEvent.outgoing, true)
       // console.log(seqI)
       // let seqI = await runner.initNext({
@@ -274,8 +288,8 @@ describe('Testy s bpmnRunner', () => {
     let startI = await connection.manager.findOneOrFail(NodeElementInstance)
     console.log('xxxx')
     let aaa = await runner.runNodeElement({
-      taskInstance: startI,
-      taskArgs: {},
+      nodeInstance: startI,
+      nodeArgs: {},
     })
 
     // let startEventI = await connection.manager.findOneOrFail(StartEventInstance)

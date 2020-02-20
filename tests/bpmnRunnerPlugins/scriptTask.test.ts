@@ -3,13 +3,13 @@ import 'jest-extended'
 import { createEmptyContext } from '../../src/bpmnRunner/runContext'
 import { scriptTaskImplementation as scriptTask } from '../../src/bpmnRunnerPlugins/scriptTask'
 
-describe('Zakladni testy pro scriptTaskImplementation.', ()=>{
+describe('Zakladni testy pro scriptTaskImplementation.', () => {
   it('Spravnost struktury pluginu.', () => {
     expect(scriptTask).toBeObject()
     expect(scriptTask.prerun).toBeUndefined()
     expect(scriptTask.run).toBeFunction()
   })
-  it('Skript obsahuje jednoduchy aritmeticky vyraz.', ()=>{
+  it('Skript obsahuje jednoduchy aritmeticky vyraz.', () => {
     let context = createEmptyContext()
     let args = { script: `(5+6*2)*3` }
     let result = scriptTask.run({context, args, initNext: () => { }})

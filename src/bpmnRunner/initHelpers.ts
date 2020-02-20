@@ -97,7 +97,7 @@ export function initNewElement<T extends FlowElementTemplate, I extends FlowElem
     )
   }
   const instanceClass = convertTemplate2Instance(templateClass) as Constructor<I>
-  if(!instanceClass) {
+  if (!instanceClass) {
     throw new Error('Instance nenalezena')
   }
 

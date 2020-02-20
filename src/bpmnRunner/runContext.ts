@@ -1,6 +1,5 @@
 import { Connection, Equal, In } from 'typeorm'
 
-import { options } from '../bpmnBuilder/fxp.config'
 import {
   ActivityStatus,
   DataObjectInstance,
@@ -10,6 +9,7 @@ import {
   SequenceFlowInstance,
   SequenceFlowTemplate,
 } from '../entity/bpmn'
+import { JsonMap } from '../types/json'
 
 ////////////////////////////
 // createXXX - synchroni funkce, ktere nepracuji primo s databazi.
@@ -124,7 +124,7 @@ export function createContextIncoming(
     return id
   }).filter(x => !!x) as number[]
 
-  let data: RunContextIncoming = incomingSequenceTemplates.map(incomingTemplate=>{
+  let data: RunContextIncoming = incomingSequenceTemplates.map(incomingTemplate => {
     const {id = -1, flag = ''} = incomingTemplate
     return { id, came: incomingIds.includes(id), flag }
   })
@@ -150,7 +150,7 @@ export function createContextOutgoing(
 }
 
 
-export function createContextForBasicTask(
+export function createContextForNode(
   options: {
     nodeTemplate: NodeElementTemplate,
     nodeInstance: NodeElementInstance,
@@ -209,10 +209,10 @@ export function createContextForBasicTask(
   context.$OUTPUT = { ...context.$OUTPUT, ...outputsData }
 
   let outgoing = createContextOutgoing({ outgoingSequenceTemplates })
-  context.$OUTGOING = { ...context.$OUTGOING, ...outgoing }
+  context.$OUTGOING = [ ...context.$OUTGOING, ...outgoing ]
 
   let incoming = createContextIncoming({incomingSequenceInstances, incomingSequenceTemplates})
-  context.$INCOMING = { ...context.$INCOMING, ...incoming }
+  context.$INCOMING = [ ...context.$INCOMING, ...incoming ]
 
   return context
 }
@@ -232,6 +232,9 @@ export async function loadFilteredDataInstances(options: {
     dataTemplates,
     processInstanceId,
   } = options
+
+  if (dataTemplates.length <= 0) return []
+
   let dataTemplatesIds = dataTemplates.map(d => d.id)
   // DataObjectInstance patrici do instance procesu a zaroven do mnoziny vstupu ulohy
   let dataInstances = await typeormConnection.getRepository(DataObjectInstance).find({
@@ -251,6 +254,9 @@ export async function loadFilteredSequenceInstances(options: {
     sequenceTemplates,
     processInstanceId,
   } = options
+
+  if (sequenceTemplates.length <= 0) return []
+
   let sequenceTemplatesIds = sequenceTemplates.map(d => d.id)
   // DataObjectInstance patrici do instance procesu a zaroven do mnoziny vstupu ulohy
   let sequenceInstances = await typeormConnection.getRepository(SequenceFlowInstance).find({
@@ -273,7 +279,6 @@ export async function loadContextForNodeElement(
   //    [x] Instance datoveho objektu je vytvorena dle sablon datovych vstupu sablony ulohy.
   //
   let context: RunContext = createEmptyContext()
-
   let taskI = await typeormConnection.getRepository(NodeElementInstance).findOneOrFail(taskInstance.id, {
     relations: [
       'template',
@@ -314,9 +319,9 @@ export async function loadContextForNodeElement(
       outgoingSequenceTemplates = taskI.template.outgoing
         .filter(x => !!x) as SequenceFlowTemplate[]
     }
-    if(taskI.template.incoming) {
+    if (taskI.template.incoming) {
       incomingSequenceTemplates = taskI.template.incoming
-        .filter(x=>!!x) as SequenceFlowTemplate[]
+        .filter(x => !!x) as SequenceFlowTemplate[]
       incomingSequenceInstances = await loadFilteredSequenceInstances({
         typeormConnection,
         processInstanceId: taskI.processInstanceId as number,
@@ -324,7 +329,7 @@ export async function loadContextForNodeElement(
       })
     }
 
-    context = createContextForBasicTask({
+    context = createContextForNode({
       context,
       nodeTemplate: taskI.template,
       nodeInstance: taskI,
@@ -343,3 +348,22 @@ export async function loadContextForNodeElement(
 
 
 //#endregion
+
+
+export function createArgs(options:{
+  nodeTemplate: NodeElementTemplate,
+  nodeInstance: NodeElementInstance,
+  otherArgs: JsonMap,
+}) {
+  const {
+    nodeInstance, nodeTemplate, otherArgs,
+  } = options
+  let x = nodeTemplate.data
+  let y = nodeInstance.returnValue
+  let z = otherArgs
+  let xyz = {
+    ...x,
+    ...z,
+    $RETURN: y,
+  }
+}

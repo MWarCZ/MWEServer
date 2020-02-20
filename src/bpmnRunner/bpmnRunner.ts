@@ -22,6 +22,7 @@ import {
   SequenceFlowTemplate,
 } from '../entity/bpmn'
 import { Constructor } from '../types/constructor'
+import { JsonMap } from '../types/json'
 import { convertTemplate2Instance } from '../utils/entityHelpers'
 import { getInstance, getTemplate } from './anotherHelpers'
 import { executeNode } from './executeHelpers'
@@ -98,7 +99,7 @@ export class BpmnRunner {
     } = options
 
     // Neni co lulozit
-    if (elementTemplate.length<=0) {
+    if (elementTemplate.length <= 0) {
       return []
     }
 
@@ -107,7 +108,7 @@ export class BpmnRunner {
       entityOrId: processInstance,
       typeormConnection: this.connection,
     })
-    let elementIs = await Promise.all(elementTemplate.map(async entityOrId=>{
+    let elementIs = await Promise.all(elementTemplate.map(async entityOrId => {
       let elementT = await getTemplate({
         templateClass,
         entityOrId,
@@ -152,29 +153,29 @@ export class BpmnRunner {
     //
     const { templateClass, processInstance, elementTemplate} = options
     // Neni nic k ulozeni
-    if (elementTemplate.length<=0) {
+    if (elementTemplate.length <= 0) {
       return []
     }
     const instanceClass = convertTemplate2Instance(templateClass)
     if (instanceClass) {
       let instanceRepo = await this.connection.getRepository(instanceClass as Constructor<FlowElementInstance>)
 
-      let elementIds = elementTemplate.map(e=>e.id)
+      let elementIds = elementTemplate.map(e => e.id)
       // Najde vsechny instance elementu
       let result = await instanceRepo.find({
         processInstanceId: processInstance.id,
         templateId: In(elementIds),
       })
-      let resultIds = result.map(r=>r.templateId)
+      let resultIds = result.map(r => r.templateId)
 
-      let tmpMatrixWithElementInstance = await Promise.all(elementTemplate.map(template=>{
+      let tmpMatrixWithElementInstance = await Promise.all(elementTemplate.map(template => {
         let isIn = resultIds.includes(template.id)
         return (isIn) ? [] : this.initElement({
           ...options,
           elementTemplate: [template],
         })
       }))
-      let elementInstances = tmpMatrixWithElementInstance.reduce((acc, value)=>{
+      let elementInstances = tmpMatrixWithElementInstance.reduce((acc, value) => {
         return [...acc, ...value]
       })
       return elementInstances
@@ -265,11 +266,11 @@ export class BpmnRunner {
       selectedSequenceFlows,
     } = options
 
-    if(selectedSequenceFlows.length<=0){
+    if (selectedSequenceFlows.length <= 0) {
       return []
     }
 
-    let selectedSequences = await Promise.all(selectedSequenceFlows.map(seq=>getTemplate({
+    let selectedSequences = await Promise.all(selectedSequenceFlows.map(seq => getTemplate({
       typeormConnection: this.connection,
       entityOrId: seq,
       templateClass: SequenceFlowTemplate,
@@ -277,7 +278,7 @@ export class BpmnRunner {
     })))
 
     let nodeTemplates = selectedSequences.map(seq => seq.target).filter(s => !!s) as NodeElementTemplate[]
-    let nodeTemplateIds = nodeTemplates.map(node=>node.id as number)
+    let nodeTemplateIds = nodeTemplates.map(node => node.id as number)
 
     // Ziskani existujicich cekajicich uzlu spadajici pod danou instanci procesu
     let waitingNodeInstances = await this.connection.getRepository(NodeElementInstance).find({
@@ -286,7 +287,7 @@ export class BpmnRunner {
       templateId: In(nodeTemplateIds),
     })
     // Zmena z cekajici na pripraveny
-    waitingNodeInstances = waitingNodeInstances.map(node=>{
+    waitingNodeInstances = waitingNodeInstances.map(node => {
       node.status = ActivityStatus.Ready
       return node
     })
@@ -301,7 +302,7 @@ export class BpmnRunner {
       processInstance: { id: number } | ProcessInstance,
       selectedSequenceFlows: (number | { id: number } | SequenceFlowTemplate)[],
       possibleSequenceFlows: (number | { id: number } | SequenceFlowTemplate)[],
-    }
+    },
   ) {
     // [x] Normalizovat vstupni sequenceFlows.id
     // [x] Overit zda vybrane existuji v moznych
@@ -319,7 +320,8 @@ export class BpmnRunner {
     let normPossibleIds = possibleSequenceFlows.map(seq => typeof seq === 'number' ? seq : seq.id)
 
     let filteredSelected = normSelected.filter(seq => normPossibleIds.includes(seq.id))
-    if(filteredSelected.length<=1) {
+    console.error(JSON.stringify(filteredSelected, null, 2 ))
+    if (filteredSelected.length <= 0) {
       return []
     }
 
@@ -365,8 +367,8 @@ export class BpmnRunner {
 
 
   async runNodeElement(options: {
-    taskInstance: NodeElementInstance,
-    taskArgs: any,
+    nodeInstance: NodeElementInstance,
+    nodeArgs: JsonMap,
   }) {
     // [x] Ziskat implementaci k vykonani ulohy
     // [x] Ziskat kontext pro danou instanci urceni pro implementaci
@@ -379,50 +381,57 @@ export class BpmnRunner {
     //    [ ] Osetrit necekane chybove stavy
     // [x] Ulozit danou instanci s jejimi novymi stavy (hodnotami)
 
-    const { taskInstance, taskArgs } = options
+    const { nodeInstance, nodeArgs } = options
 
 
-    let taskTemplate = await getTemplate({
+    let nodeTemplate = await getTemplate({
       templateClass: NodeElementTemplate,
-      entityOrId: taskInstance.template || { id: taskInstance.templateId as number },
+      entityOrId: nodeInstance.template || { id: nodeInstance.templateId as number },
       typeormConnection: this.connection,
       relations: ['outgoing'],
     })
-    let implementation = this.pluginsWithImplementations[taskTemplate.implementation as string]
+    let implementation = this.pluginsWithImplementations[nodeTemplate.implementation as string]
     if (typeof implementation !== 'object') {
-      throw new Error(`Implementace ulohy '${taskTemplate.implementation}' nenalezena.`)
+      throw new Error(`Implementace ulohy '${nodeTemplate.implementation}' nenalezena.`)
     }
 
-    console.log('1111111111', taskInstance)
+    // console.log('1111111111', nodeInstance)
     let context = await loadContextForNodeElement(
-      { id: taskInstance.id as number },
+      { id: nodeInstance.id as number },
       this.connection,
     )
+    // console.log('222222222', nodeTemplate)
 
     let possibleSequenceFlows: SequenceFlowTemplate[] =
-      (taskTemplate.outgoing) ? taskTemplate.outgoing : []
-    console.log('222222222')
+      (nodeTemplate.outgoing) ? nodeTemplate.outgoing : []
+    // console.log('33333333')
+
+    let args = {
+      ...nodeTemplate.data,
+      ...nodeArgs,
+    }
 
     try {
       let results = executeNode({
-        nodeInstance: taskInstance,
-        args: taskArgs,
+        nodeInstance,
+        args,
         context,
         nodeImplementation: implementation,
       })
+      nodeInstance.endDateTime = new Date()
+
       let xxx = await this.initNext({
-        processInstance: {id:1},
+        processInstance: {id: nodeInstance.processInstanceId},
         selectedSequenceFlows: [...results.initNext],
         possibleSequenceFlows,
       })
-      console.warn({xxx})
     } catch (e) {
-      // TODO Osetrit validni vyjimky.
+      // TODO Osetrit vyjimky.
       console.error('runBasicTask:', e)
     }
 
     // Uloz instanci ktera prosla zpracovanim
-    await this.connection.manager.save(taskInstance)
+    await this.connection.manager.save(nodeInstance)
   }
 
   //#endregion

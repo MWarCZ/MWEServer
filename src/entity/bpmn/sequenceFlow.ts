@@ -20,7 +20,7 @@ export class SequenceFlowTemplate implements FlowElementTemplate {
   @Column('varchar', { length: 255, default: '' })
   name?: string
 
-  //=============
+  // =============
 
   @ManyToOne(
     type => ProcessTemplate,
@@ -32,7 +32,7 @@ export class SequenceFlowTemplate implements FlowElementTemplate {
   @Column({ nullable: true })
   processTemplateId?: number
 
-  //============
+  // ============
 
   @Column('text')
   expression: string = ''
@@ -83,7 +83,7 @@ export class SequenceFlowInstance implements FlowElementInstance {
   @Column('datetime', { nullable: true })
   endDateTime?: Date
 
-  //===============
+  // ===============
 
   @ManyToOne(
     type => ProcessInstance,
@@ -98,7 +98,7 @@ export class SequenceFlowInstance implements FlowElementInstance {
   @Column({ nullable: true })
   templateId?: number
 
-  //===============
+  // ===============
 
   @ManyToOne(
     type => SequenceFlowTemplate,

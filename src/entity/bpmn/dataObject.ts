@@ -17,7 +17,7 @@ export class DataObjectTemplate implements FlowElementTemplate {
   @Column('varchar', { length: 255, default: '' })
   name?: string
 
-  //=============
+  // =============
 
   @ManyToOne(
     type => ProcessTemplate,
@@ -29,7 +29,7 @@ export class DataObjectTemplate implements FlowElementTemplate {
   @Column({ nullable: true })
   processTemplateId?: number
 
-  //============
+  // ============
 
   @Column('boolean', { default: false })
   strict?: boolean
@@ -66,7 +66,7 @@ export class DataObjectInstance implements FlowElementInstance {
   @Column('datetime', { nullable: true })
   endDateTime?: Date
 
-  //===============
+  // ===============
 
   @ManyToOne(
     type => ProcessInstance,
@@ -81,7 +81,7 @@ export class DataObjectInstance implements FlowElementInstance {
   @Column({ nullable: true })
   templateId?: number
 
-  //===============
+  // ===============
 
   @Column('simple-json')
   data: Json = {}

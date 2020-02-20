@@ -19,7 +19,7 @@ import {
 let parser: Parser
 
 describe('Testy zakladnich funkci parseru (ploche parsovani).', () => {
-  beforeEach(()=>{
+  beforeEach(() => {
     parser = new Parser()
   })
 
@@ -41,7 +41,7 @@ describe('Testy zakladnich funkci parseru (ploche parsovani).', () => {
 
       let definitions = parser.parseDefinitions(data)
       expect(definitions).toBeDefined()
-      expect(definitions["#attr"]).toBeDefined()
+      expect(definitions['#attr']).toBeDefined()
 
       let ns = parser.parseNamespaces(definitions)
       expect(ns).toMatchObject(NS)
@@ -71,7 +71,7 @@ describe('Testy zakladnich funkci parseru (ploche parsovani).', () => {
 
       let definitions = parser.parseDefinitions(data)
       expect(definitions).toBeDefined()
-      expect(definitions["#attr"]).toBeDefined()
+      expect(definitions['#attr']).toBeDefined()
 
       let ns = parser.parseNamespaces(definitions)
       expect(ns).toMatchObject(NS)
@@ -103,7 +103,7 @@ describe('Testy zakladnich funkci parseru (ploche parsovani).', () => {
 
       let definitions = parser.parseDefinitions(data)
       expect(definitions).toBeDefined()
-      expect(definitions["#attr"]).toBeDefined()
+      expect(definitions['#attr']).toBeDefined()
 
       let ns = parser.parseNamespaces(definitions)
       expect(ns).toMatchObject(NS)
@@ -371,8 +371,8 @@ describe('Testy zakladnich funkci parseru (ploche parsovani).', () => {
       let test = {
         id: 'abcd',
         name: 'ABCDE',
-        type: '', //GatewayType.Exclusive,
-        direction: '',//GatewayDirection.Mixed,
+        type: '', // GatewayType.Exclusive,
+        direction: '', // GatewayDirection.Mixed,
       }
       let data = fxpParse(`
         <bpmn:exclusiveGateway
@@ -434,7 +434,7 @@ describe('Testy pro parsovani dle urovne (L1, L2, aj.).', () => {
           processType: ProcessType.Private,
           versionType: VersionType.semver,
           version: '1.1.1',
-        }
+        },
       }
       let data = fxpParse(`
         <bpmn:process id="${test.process.id}"
@@ -466,7 +466,7 @@ describe('Testy pro parsovani dle urovne (L1, L2, aj.).', () => {
           { id: 'C1', name: 'ccc' },
         ],
       }
-      let xml = test.processes.reduce((acc, process)=>{
+      let xml = test.processes.reduce((acc, process) => {
         return acc + `
         <bpmn:process id="${process.id}"
           name="${process.name}">
@@ -501,7 +501,7 @@ describe('Testy pro parsovani dle urovne (L1, L2, aj.).', () => {
     })
     it('Process without childs.', () => {
       let queues = parser.parseLevel2(process)
-      let arr = Object.keys(queues).map(key => (queues as any)[key]).reduce((acc:any[], value)=>{
+      let arr = Object.keys(queues).map(key => (queues as any)[key]).reduce((acc:any[], value) => {
         return [...acc, ...value]
       }, [])
       expect(arr).toBeArrayOfSize(0)
@@ -515,8 +515,8 @@ describe('Testy pro parsovani dle urovne (L1, L2, aj.).', () => {
             pozdrav: 'ahojda',
             cislo: 12,
             existuje: true,
-          }
-        }
+          },
+        },
       }
       let data = fxpParse(`
         <bpmn:dataObject name='${test.dataObject.name}' id="${test.dataObject.id}">
@@ -553,7 +553,7 @@ describe('Testy pro parsovani dle urovne (L1, L2, aj.).', () => {
               pozdrav: 'ahojda',
               cislo: 12,
               existuje: true,
-            }
+            },
           }, {
             id: 'd2',
             name: 'nameX2',
@@ -561,8 +561,8 @@ describe('Testy pro parsovani dle urovne (L1, L2, aj.).', () => {
               pozdrav: 'caw',
               cislo: 33,
               existuje: false,
-            }
-          }
+            },
+          },
         ],
         dataObjectReference: [
           { id: 'dr1', name: '', dataObjectRef: 'd1'},
@@ -658,14 +658,14 @@ describe('Testy pro parsovani dle urovne (L1, L2, aj.).', () => {
       }, '') + test.scriptTask.reduce((acc, obj) => {
         return acc + `
           <bpmn:scriptTask id="${obj.id}" name="${obj.name}">
-          ${ (!obj.script)?'':
+          ${ (!obj.script) ? '' :
             `<bpmn:script>
               ${obj.script}
             </bpmn:script>`}
-            ${ (!obj.inputs)?'':
+            ${ (!obj.inputs) ? '' :
             `<bpmn:dataInputAssociation>
               ${
-                obj.inputs.reduce((acc, input)=>{
+                obj.inputs.reduce((acc, input) => {
                   return acc + `
                     <bpmn:sourceRef>${input}</bpmn:sourceRef>`
                 }, '')
@@ -734,7 +734,7 @@ describe('Testy pro parsovani dle urovne (L1, L2, aj.).', () => {
         expect(obj.entity.processTemplate).toBe(process.entity)
         expect(obj.entity.bpmnId).toBe(test.task[index].id)
         if (obj.entity.inputs) {
-          let idMap = obj.entity.inputs.map(d=>d.bpmnId)
+          let idMap = obj.entity.inputs.map(d => d.bpmnId)
           expect(idMap).toEqual(test.task[index].inputs)
         }
       })

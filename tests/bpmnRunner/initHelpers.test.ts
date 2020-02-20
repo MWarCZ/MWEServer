@@ -16,7 +16,7 @@ import {
 describe('Testy funkci v InitHelpers: Se sablonou procesu.', () => {
   let processTemplate: ProcessTemplate
 
-  beforeEach(async () => {
+  beforeEach(async() => {
     processTemplate = new ProcessTemplate({
       isExecutable: true,
       name: 'Process A',
@@ -33,7 +33,7 @@ describe('Testy funkci v InitHelpers: Se sablonou procesu.', () => {
   describe('Testy s instanci procesu.', () => {
     let processInstance: ProcessInstance
 
-    beforeEach(async () => {
+    beforeEach(async() => {
       processInstance = InitHelpers.initNewProcess(processTemplate)
       processInstance.id = 234
     })
@@ -76,9 +76,9 @@ describe('Testy funkci v InitHelpers: Se sablonou procesu.', () => {
       expect(instance.processInstance).toMatchObject(processInstance)
     })
 
-    describe('Testy chybovych stavu.', ()=>{
+    describe('Testy chybovych stavu.', () => {
       // TODO Predelat tyto podtesty!
-      it('Chyba: Sablone elementu chybi odkaz na sablonu procesu.', ()=>{
+      it('Chyba: Sablone elementu chybi odkaz na sablonu procesu.', () => {
         let dataObject = new DataObjectTemplate()
         dataObject.name = 'DataObject A'
         dataObject.id = 345

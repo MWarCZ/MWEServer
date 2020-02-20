@@ -15,7 +15,7 @@ export interface BaseElementTemplate {
   id?: number
   bpmnId?: string
   name?: string
-  genBpmnId: ()=>void
+  genBpmnId: () => void
 }
 
 /**

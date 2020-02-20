@@ -12,7 +12,7 @@ import { SequenceFlowTemplate } from './sequenceFlow'
  * Propopoj mezi uzly BPMN. SequenceFlow2FlowNode
  */
 @Entity()
-export class NodeElementTemplate implements FlowElementTemplate{
+export class NodeElementTemplate implements FlowElementTemplate {
   @PrimaryGeneratedColumn()
   id?: number
 
@@ -22,7 +22,7 @@ export class NodeElementTemplate implements FlowElementTemplate{
   @Column('varchar', { length: 255, default: '' })
   name?: string
 
-  //=============
+  // =============
 
   @ManyToOne(
     type => ProcessTemplate,
@@ -34,7 +34,7 @@ export class NodeElementTemplate implements FlowElementTemplate{
   @Column({ nullable: true })
   processTemplateId?: number
 
-  //============
+  // ============
 
   // @Column('text')
   @Column('varchar', { default: '', nullable: false, length: 200 })
@@ -76,17 +76,17 @@ export class NodeElementTemplate implements FlowElementTemplate{
 }
 
 @Entity()
-export class NodeElementInstance implements FlowElementInstance{
+export class NodeElementInstance implements FlowElementInstance {
   @PrimaryGeneratedColumn()
   id?: number
 
   @Column('datetime', { nullable: true })
-  startDateTime?: Date
+  startDateTime?: Date = new Date()
 
   @Column('datetime', { nullable: true })
   endDateTime?: Date
 
-  //===============
+  // ===============
 
   @ManyToOne(
     type => ProcessInstance,
@@ -101,7 +101,7 @@ export class NodeElementInstance implements FlowElementInstance{
   @Column({ nullable: true })
   templateId?: number
 
-  //===============
+  // ===============
 
   @Column('enum', {
     enum: ActivityStatus,

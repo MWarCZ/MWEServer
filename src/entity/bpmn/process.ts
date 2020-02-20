@@ -35,31 +35,31 @@ export class ProcessTemplate implements BaseElementTemplate {
   @Column('varchar', { length: 255, default: '' })
   name?: string
 
-  //===================
+  // ===================
 
-  @Column('boolean', { default: false, nullable: false })
-  isExecutable?: boolean
+  @Column('boolean', { default: true, nullable: false })
+  isExecutable?: boolean = true
 
   @Column('enum', {
     enum: ProcessType,
     default: ProcessType.None,
     nullable: false,
   })
-  processType?: ProcessType
+  processType?: ProcessType = ProcessType.None
 
   @Column('varchar', {
     length: 50,
     default: '1',
     nullable: false,
   })
-  version?: string
+  version?: string = '1'
 
   @Column('enum', {
     enum: VersionType,
     default: VersionType.number,
     nullable: false,
   })
-  versionType?: VersionType
+  versionType?: VersionType = VersionType.number
 
   @OneToMany(
     type => ProcessInstance,
@@ -94,19 +94,19 @@ export class ProcessInstance implements BaseElementInstance {
   id?: number
 
   @Column('datetime', { nullable: true })
-  startDateTime?: Date
+  startDateTime?: Date = new Date()
 
   @Column('datetime', { nullable: true })
   endDateTime?: Date
 
-  //===============
+  // ===============
 
   @Column('enum', {
     enum: ProcessStatus,
     default: ProcessStatus.None,
     nullable: false,
   })
-  status?: ProcessStatus
+  status?: ProcessStatus = ProcessStatus.None
 
   @ManyToOne(
     type => ProcessTemplate,
