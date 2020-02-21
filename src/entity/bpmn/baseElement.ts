@@ -40,6 +40,8 @@ export enum ActivityStatus {
   Completed = 'Completed', // Pri ulozeni vystupu akce (ulozeni dat)
   Falling = 'Falling', // Pri chybe (Aktivita byla prerusene nebo chyba pri provadeni aktivity)
   Failled = 'Failled', // Akce skoncila s chybou
+
+  Withdrawn = 'Withdrawn',  // Pri ukoncovani/ruseni akce (pr. Klient stornoval obednavku)
 }
 
 export enum ProcessStatus {

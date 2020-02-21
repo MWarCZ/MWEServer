@@ -100,19 +100,29 @@ export function executeNode(options: {
   nodeImplementation: NodeImplementation,
   context: RunContext,
   args: any,
-}): {
-  initNext: number[],
-} {
+}) {
   const { nodeInstance, args, nodeImplementation, context } = options
-  // Seznam obsahujici id sequenceFlow, ktere maji byt provedeny.
-  const listOfinitNext: number[] = []
+  let returnValues: {
+    // Seznam obsahujici id sequenceFlow, ktere maji byt provedeny.
+    initNext: number[],
+    // Informace o ukoceni procesu.
+    finishProcess: { finished: boolean, forced: boolean, },
+  } = {
+    initNext: [],
+    finishProcess: { finished: false, forced: false },
+  }
+
   // Pomocna funkce (callback), ktera pridava id sequenceFlow do seznamu pro provedeni.
   const initNext = (sequenceIds: (number | { id: number })[]) => {
     let ids = sequenceIds.map(seq => typeof seq === 'number' ? seq : seq.id)
-    listOfinitNext.push(...ids)
+    returnValues.initNext.push(...ids)
   }
+  // Pomocna funkce (callback), pro nastaveni priznaku pro pripadny konec procesu.
   const finishProcess = (options?: { forced: boolean }) => {
-    if (options && options.forced) { }
+    returnValues.finishProcess.finished = true
+    if (options) {
+      returnValues.finishProcess.forced = !!options.forced
+    }
   }
 
   // taskInstance.status === Ready
@@ -153,7 +163,5 @@ export function executeNode(options: {
     //      Waiting - ceka na podminku pred zpracovanim.
     // status === Waiting
   }
-  return {
-    initNext: listOfinitNext,
-  }
+  return returnValues
 }

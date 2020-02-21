@@ -18,6 +18,7 @@ describe('Test zakladni implamantace ulohy', () => {
     let result = taskImplementation.run({
       context: createEmptyContext(),
       initNext: () => {},
+      finishProcess: () => {},
     })
     expect(result).toBeTrue()
   })

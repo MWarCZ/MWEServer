@@ -420,11 +420,23 @@ export class BpmnRunner {
       })
       nodeInstance.endDateTime = new Date()
 
-      let xxx = await this.initNext({
-        processInstance: {id: nodeInstance.processInstanceId},
-        selectedSequenceFlows: [...results.initNext],
-        possibleSequenceFlows,
-      })
+      if (results.finishProcess.finished) {
+        if (results.finishProcess.forced) {
+          // ukonci process a vsechny instance Ready a Waiting zmeni na Withdrawn.
+
+        } else {
+          // Pokud existuji instance Read nebo Waiting tak nedelej nic.
+          // V opacnen pripade ukonci process.
+        }
+        // Ulozeni ukonceneho procesu.
+      } else {
+        // Proces nebude ukoncen, tak vytvor nasledniky.
+        let xxx = await this.initNext({
+          processInstance: {id: nodeInstance.processInstanceId},
+          selectedSequenceFlows: [...results.initNext],
+          possibleSequenceFlows,
+        })
+      }
     } catch (e) {
       // TODO Osetrit vyjimky.
       console.error('runBasicTask:', e)
