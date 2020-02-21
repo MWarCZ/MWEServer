@@ -17,6 +17,7 @@ import {
   NodeElementInstance,
   NodeElementTemplate,
   ProcessInstance,
+  ProcessStatus,
   ProcessTemplate,
   SequenceFlowInstance,
   SequenceFlowTemplate,
@@ -28,7 +29,7 @@ import { getInstance, getTemplate } from './anotherHelpers'
 import { executeNode } from './executeHelpers'
 import * as InitHelpers from './initHelpers'
 import { LibrariesWithNodeImplementations, NodeImplementation } from './pluginNodeImplementation'
-import { createContextForNode, createEmptyContext, loadContextForNodeElement } from './runContext'
+import { createContextForNode, createEmptyContext } from './runContext'
 
 
 // import * as bpmn from '../entity/bpmn'
@@ -364,27 +365,27 @@ export class BpmnRunner {
   //    [x] oncomplete
   //    [x] onfailling
   //    [ ] osetreni vsech vyjimek zpusobenych implementaci
-  // [ ] Ulozit vystupni data
-  //    [ ] Ziskej instance datovych objekt; pokud existuji
-  //    [ ] Neexistuje instance datoveho objektu, tak ji vytvo5
-  //    [ ] Prochazet vzstupni data v kontextu (obj key = dT name)
+  // [x] Ulozit vystupni data
+  //    [x] Ziskej instance datovych objekt; pokud existuji
+  //    [x] Neexistuje instance datoveho objektu, tak ji vytvo5
+  //    [x] Prochazet vzstupni data v kontextu (obj key = dT name)
   // [ ] Ukoncuje uzel proces?
   //    [ ] Ukoncuje nasilne? (Neceka se na dokonceni ostatnich)
   //        [ ] Ano:
   //            [ ] Nastav proces jako ukonceny
   //            [ ] U vsech existujicich instanci uzlu nastav stav jako preruseny
   //            (Ready, Waiting -> Widraw) -> Zmena se musi projevit ve fronte X
-  //        [ ] Ne:
-  //            [ ] Kontrola zda existuje jina aktivni instance v procesu.
-  //            [ ] Existuje: tak pokracovat dal.
-  //            [ ] Neexistuje: Ukoncist proces.
+  //        [x] Ne:
+  //            [x] Kontrola zda existuje jina aktivni instance v procesu.
+  //            [x] Existuje: tak pokracovat dal.
+  //            [x] Neexistuje: Ukoncist proces.
   // [ ] Spusti uzel dalsi uzly?
-  //    [ ] Ziskat sablonu uzlu
+  //    [x] Ziskat sablonu uzlu
   //    [ ] Ziskat implementaci uzlu
   //    [ ] Vyhodnotit podminky stanovene v nastaveni implementace
-  //    [ ] Vytvorit ci najit instanci uzlu a nastavit status na ready
+  //    [x] Vytvorit novou ci najit cekajici instanci uzlu a nastavit status na ready
   //        [ ] Vlozit instance do fronty Y
-  //    [ ] Vytvorit instance sekvenci seqI(seqT, sourceNodeI, targetNodeI)
+  //    [x] Vytvorit instance sekvenci seqI(seqT, sourceNodeI, targetNodeI)
   // [ ] Ulozit vse do databaze
   // [ ] Naplanovat zpracovani dalsich uzlu
   //    [ ] Uzly z fronty Y do fronty X
@@ -393,7 +394,7 @@ export class BpmnRunner {
 
   }
   async runNode(options: {
-    instance: FlowElementInstance,
+    instance: NodeElementInstance,
     args?: JsonMap,
   }) {
     //#region Find and load data from DB.
@@ -452,6 +453,16 @@ export class BpmnRunner {
         targetId: Equal(nodeInstance.id),
       })
     }
+    let outgoingSequenceInstances: SequenceFlowInstance[] = []
+    if (outgoingSequenceTemplates.length > 0) {
+      // sekvence ktere prichazi do aktuani instance uzlu
+      let templatesIds = outgoingSequenceTemplates.map(d => d.id)
+      outgoingSequenceInstances = await this.connection.getRepository(SequenceFlowInstance).find({
+        // processInstanceId: Equal(processInstance.id),
+        templateId: In([...templatesIds]),
+        targetId: Equal(nodeInstance.id),
+      })
+    }
 
     //#endregion
 
@@ -489,9 +500,75 @@ export class BpmnRunner {
     })
 
     // Uloz data z results.outputs do DataObject Instance
+    outputsDataInstances = this.storeDataToDataObject({
+      dataObject: results.outputs,
+      outputsDataTemplates,
+      outputsDataInstances,
+      processInstance,
+    })
+
+    // Ukoncit proces? TODO
+    // TODO Zamyslet se nad ukoncovanim procesu
+    if (results.finishProcess.finished) {
+      let unfinishedNodes = await this.connection.manager.find(NodeElementInstance, {
+        processInstanceId: processInstance.id,
+        status: In([ActivityStatus.Waiting, ActivityStatus.Ready])
+      })
+      if (results.finishProcess.forced) {
+        // Ukoncit proces a vsechny cekajici a pripravene uzly
+        processInstance.status = ProcessStatus.Terminated
+        // TODO ukoncit pripravene/cekajici uzly
+      } else {
+        // Existuje nejaky cekajici nebo pripraveny uzel?
+        // Pokud ne ukonci process.
+        if (unfinishedNodes.length>0) {
+          processInstance.status = ProcessStatus.Completed
+        }
+      }
+    }
+
+    // Spustit dalsi instance uzlu + instance seqenci
     // TODO
 
+    // Najit sablony uzlu, ktere maji byt vytvoreny
+    let targetNodeTemplates: NodeElementTemplate[] = []
+    if (results.initNext.length>0) {
+      targetNodeTemplates = await this.connection.manager.find(NodeElementTemplate, {
+        id: In([...results.initNext])
+      })
+    }
+    // Najit nedokoncene instance uzlu pro dany proces
+    let unfinishedNodeInstances: NodeElementInstance[] = []
+    unfinishedNodeInstances = await this.connection.manager.find(NodeElementInstance, {
+      processInstanceId: processInstance.id,
+      status: In([ActivityStatus.Ready, ActivityStatus.Waiting]),
+    })
+    let targetNodeInstances = this.prepareTargetNodeInstances({
+      processInstance,
+      nodeTemplates: targetNodeTemplates,
+      unfinishedNodeInstances: unfinishedNodeInstances,
+    })
+    // TODO instance sekvenci
+    let targetSequenceInstances = this.prepareTargetSequenceInstances({
+      processInstance,
+      sourceNodeInstance: nodeInstance,
+      targetNodeInstances,
+      outgoingSequenceTemplates,
+      outgoingSequenceInstances,
+    })
+    // ...
 
+    // Ulozit do DB
+    await this.connection.manager.save(nodeInstance) // aktualni instance
+    await this.connection.manager.save(outputsDataInstances) // Nova data
+    await this.connection.manager.save(targetNodeInstances) // Nove pripravene instance uzlu
+    await this.connection.manager.save(targetSequenceInstances) // Nove pripravene instance seqenci
+    await this.connection.manager.save(processInstance) // Proces mohl skoncit
+
+    return {
+      processInstance,
+      readyNodeInstances: targetNodeInstances,
+    }
   }
   getImplementation(name: string): NodeImplementation {
     let implementation = this.pluginsWithImplementations[name]
@@ -500,7 +577,7 @@ export class BpmnRunner {
     }
     return implementation
   }
-  createAdditionsArgs(options:{
+  createAdditionsArgs(options: {
     nodeTemplate?: NodeElementTemplate,
     nodeInstance?: NodeElementInstance,
     otherArgs?: JsonMap
@@ -519,87 +596,96 @@ export class BpmnRunner {
 
     return { ...templateArgs, ...instanceArgs,  ...someArgs }
   }
+  storeDataToDataObject(options: {
+    dataObject?: JsonMap,
+    outputsDataTemplates: DataObjectTemplate[],
+    outputsDataInstances: DataObjectInstance[],
+    processInstance: ProcessInstance,
+  }): DataObjectInstance[] {
+    const { dataObject, outputsDataInstances, outputsDataTemplates, processInstance } = options
+    if(typeof dataObject !== 'object') return outputsDataInstances
 
+    for(let dataKey in dataObject) {
 
-  async runNodeElement(options: {
-    nodeInstance: NodeElementInstance,
-    nodeArgs: JsonMap,
-  }) {
-    // [x] Ziskat implementaci k vykonani ulohy
-    // [x] Ziskat kontext pro danou instanci urceni pro implementaci
-    // [ ] Ziskani argumentu pro implementaci (kombinace prichozich a vnitrnitch)
-    //    - args napr.: Vyplneny form od uzivatele, Nactene vnitrni data (skript, jazyk, aj.), ...
-    // [ ] Vykonta implementaci
-    //    [x] Zavolat vykonani implementace
-    //    [ ] Vytvorit instance vracenych sequenceFlow
-    //    [ ] Vytvorit cilove uzly vracenych sequenceFlow
-    //    [ ] Osetrit necekane chybove stavy
-    // [x] Ulozit danou instanci s jejimi novymi stavy (hodnotami)
+      let dataTemplate = outputsDataTemplates.find(d=>d.name===dataKey)
+      // Vystupni objekt daneho jmena nenalezen -> preskoc dal
+      if(!dataTemplate) continue
 
-    const { nodeInstance, nodeArgs } = options
-
-
-    let nodeTemplate = await getTemplate({
-      templateClass: NodeElementTemplate,
-      entityOrId: nodeInstance.template || { id: nodeInstance.templateId as number },
-      typeormConnection: this.connection,
-      relations: ['outgoing'],
-    })
-    let implementation = this.pluginsWithImplementations[nodeTemplate.implementation as string]
-    if (typeof implementation !== 'object') {
-      throw new Error(`Implementace ulohy '${nodeTemplate.implementation}' nenalezena.`)
-    }
-
-    // console.log('1111111111', nodeInstance)
-    let context = await loadContextForNodeElement(
-      { id: nodeInstance.id as number },
-      this.connection,
-    )
-    // console.log('222222222', nodeTemplate)
-
-    let possibleSequenceFlows: SequenceFlowTemplate[] =
-      (nodeTemplate.outgoing) ? nodeTemplate.outgoing : []
-    // console.log('33333333')
-
-    let args = {
-      ...nodeTemplate.data,
-      ...nodeArgs,
-    }
-
-    try {
-      let results = executeNode({
-        nodeInstance,
-        args,
-        context,
-        nodeImplementation: implementation,
-      })
-      nodeInstance.endDateTime = new Date()
-
-      if (results.finishProcess.finished) {
-        if (results.finishProcess.forced) {
-          // ukonci process a vsechny instance Ready a Waiting zmeni na Withdrawn.
-
-        } else {
-          // Pokud existuji instance Read nebo Waiting tak nedelej nic.
-          // V opacnen pripade ukonci process.
-        }
-        // Ulozeni ukonceneho procesu.
-      } else {
-        // Proces nebude ukoncen, tak vytvor nasledniky.
-        let xxx = await this.initNext({
-          processInstance: {id: nodeInstance.processInstanceId},
-          selectedSequenceFlows: [...results.initNext],
-          possibleSequenceFlows,
-        })
+      let dataInstance = outputsDataInstances.find(
+        d => d.templateId === (dataTemplate && dataTemplate.id)
+      )
+      // Instance neexistuje? -> Pokud ne vytvor novou a pridej ji do seznamu instanci
+      if(!dataInstance) {
+        dataInstance = InitHelpers.initNewDataObject(processInstance, dataTemplate)
+        outputsDataInstances.push(dataInstance)
       }
-    } catch (e) {
-      // TODO Osetrit vyjimky.
-      console.error('runBasicTask:', e)
+
+      // V datech nic neni ulozeno - preskoc
+      let data = dataObject[dataKey]
+      if (typeof data !== 'undefined' && data === null) continue
+      dataInstance.data = data
     }
 
-    // Uloz instanci ktera prosla zpracovanim
-    await this.connection.manager.save(nodeInstance)
+    return outputsDataInstances
   }
+  prepareTargetNodeInstances(options: {
+    processInstance: ProcessInstance,
+    nodeTemplates: NodeElementTemplate[],
+    unfinishedNodeInstances: NodeElementInstance[],
+  }): NodeElementInstance[] {
+    const { processInstance, nodeTemplates, unfinishedNodeInstances } = options
+
+    let result = nodeTemplates.map(nodeTemplate=>{
+      let nodeInstance = unfinishedNodeInstances.find(n=>n.templateId === nodeTemplate.id)
+      if (!nodeInstance) {
+        nodeInstance = InitHelpers.initNewNodeElement(processInstance, nodeTemplate)
+      }
+      nodeInstance.status = ActivityStatus.Ready
+      return nodeInstance
+    })
+    return result
+  }
+  prepareTargetSequenceInstances(options: {
+    outgoingSequenceTemplates: SequenceFlowTemplate[],
+    outgoingSequenceInstances: SequenceFlowInstance[],
+    targetNodeInstances: NodeElementInstance[],
+    sourceNodeInstance: NodeElementInstance,
+    processInstance: ProcessInstance,
+  }): SequenceFlowInstance[] {
+    const {
+      outgoingSequenceInstances,
+      outgoingSequenceTemplates,
+      targetNodeInstances,
+      sourceNodeInstance,
+      processInstance,
+    } = options
+    if (targetNodeInstances.length <= 0) return outgoingSequenceInstances
+    // Pouze jiz existujici cilove uzly (Do neexistujiciho nemohlo nic vest)
+    let targetIds = targetNodeInstances.map(n=>n.id).filter(n=>!n) as number[]
+
+    let sequenceInstances = outgoingSequenceTemplates.map(sequenceTemplate=>{
+      // Existuje instance patrici sablone a zaroven ukazujici na cil?
+      let sequenceInstance = outgoingSequenceInstances.find(
+        seq=> seq.templateId === sequenceTemplate.id && targetIds.includes(seq.targetId as number)
+      )
+      // Neexistuje tak vytvor
+      if (!sequenceInstance) {
+        // najdi instanci cile => id cile sekvence sablony musi bit stejne jako id instance cile
+        let targetNodeInstance = targetNodeInstances.find(targetNode=>{
+          return (targetNode.templateId === sequenceTemplate.targetId) ||
+            (targetNode.template && targetNode.template.id === sequenceTemplate.targetId)
+        })
+        sequenceInstance = InitHelpers.initNewSequenceFlow(
+          processInstance,
+          sequenceTemplate,
+          { sourceNodeInstance, targetNodeInstance },
+        )
+      }
+      return sequenceInstance
+    })
+    return sequenceInstances
+  }
+
 
   //#endregion
 

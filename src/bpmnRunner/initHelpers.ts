@@ -145,11 +145,26 @@ export function initNewDataObject(
 export function initNewSequenceFlow(
   processInstance: ProcessInstance,
   sequenceTemplate: SequenceFlowTemplate,
+  options?: {
+    sourceNodeInstance?: NodeElementInstance,
+    targetNodeInstance?: NodeElementInstance,
+  },
 ): SequenceFlowInstance {
   return initNewElement({
     templateClass: SequenceFlowTemplate,
     elementTemplate: sequenceTemplate,
-    processInstance,
+    processInstance: processInstance,
+    callSetup: (instance, template) => {
+      if (options) {
+        if (options.sourceNodeInstance) {
+          instance.source = options.sourceNodeInstance
+        }
+        if (options.targetNodeInstance) {
+          instance.target = options.targetNodeInstance
+        }
+      }
+      return instance
+    }
   })
 }
 

@@ -241,9 +241,9 @@ describe('Testy s bpmnRunner', () => {
           let nodeI = await connection.manager.findOneOrFail(NodeElementInstance, {
             status: ActivityStatus.Ready,
           })
-          await runner.runNodeElement({
-            nodeInstance: nodeI,
-            nodeArgs: {},
+          await runner.runNode({
+            instance: nodeI,
+            args: {},
           })
         }
       })
@@ -287,9 +287,9 @@ describe('Testy s bpmnRunner', () => {
     // ==========
     let startI = await connection.manager.findOneOrFail(NodeElementInstance)
     console.log('xxxx')
-    let aaa = await runner.runNodeElement({
-      nodeInstance: startI,
-      nodeArgs: {},
+    let aaa = await runner.runNode({
+      instance: startI,
+      args: {},
     })
 
     // let startEventI = await connection.manager.findOneOrFail(StartEventInstance)

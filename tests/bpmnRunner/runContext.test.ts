@@ -214,28 +214,28 @@ describe('Testy s RunContext: synchronni funkce', () => {
     })
     it('Vstup: 1x SequenceFlowTemplate', () => {
       let sequences: SequenceFlowTemplate[] = [
-        new SequenceFlowTemplate({id:1, expression: 'true'}),
+        new SequenceFlowTemplate({id:1, expression: 'true', targetId: 22}),
       ]
       let context = RunContext.createContextOutgoing({
         outgoingSequenceTemplates: [...sequences],
       })
       expect(context).toBeArrayOfSize(1)
-      expect(context).toMatchObject([{id:1, expression:'true'}])
+      expect(context).toMatchObject([{id:22, expression:'true'}])
     })
     it('Vstup: 3x SequenceFlowTemplate', () => {
       let sequences: SequenceFlowTemplate[] = [
-        new SequenceFlowTemplate({ id: 1, expression: 'true' }),
-        new SequenceFlowTemplate({ id: 11, expression: '1===1' }),
-        new SequenceFlowTemplate({ id: 2, expression: '2=="2"' }),
+        new SequenceFlowTemplate({ id: 1, expression: 'true', targetId: 22 }),
+        new SequenceFlowTemplate({ id: 11, expression: '1===1', targetId: 33 }),
+        new SequenceFlowTemplate({ id: 2, expression: '2=="2"', targetId: 44 }),
       ]
       let context = RunContext.createContextOutgoing({
         outgoingSequenceTemplates: [...sequences],
       })
       expect(context).toBeArrayOfSize(3)
       expect(context).toMatchObject([
-        { id: 1, expression: 'true' },
-        { id: 11, expression: '1===1' },
-        { id: 2, expression: '2=="2"' },
+        { id: 22, expression: 'true' },
+        { id: 33, expression: '1===1' },
+        { id: 44, expression: '2=="2"' },
       ])
     })
 

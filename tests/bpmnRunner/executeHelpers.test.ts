@@ -193,7 +193,7 @@ describe('Testy behove pipeline-y.', () => {
       let result = executeNode({ context, nodeImplementation, nodeInstance, args })
       expect(result.initNext).toBeArrayOfSize(0)
       expect(nodeInstance.status).toBe(ActivityStatus.Completed)
-      expect(nodeInstance.returnValue).toMatchObject(context)
+      expect(nodeInstance.returnValue).toMatchObject(context.$OUTPUT)
       expect(context.$OUTGOING).toMatchObject(outgoing)
     })
 
@@ -211,7 +211,7 @@ describe('Testy behove pipeline-y.', () => {
       let result = executeNode({ context, nodeImplementation, nodeInstance, args })
       expect(result.initNext).toBeArrayOfSize(0)
       expect(nodeInstance.status).toBe(ActivityStatus.Completed)
-      expect(nodeInstance.returnValue).toMatchObject(context)
+      expect(nodeInstance.returnValue).toMatchObject(context.$OUTPUT)
       expect(context.$OUTPUT.data).toMatchObject([11, 22, 33, 44, 1234])
     })
 
