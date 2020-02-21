@@ -142,7 +142,7 @@ export function createContextOutgoing(
   } = options
 
   let data: RunContextOutgoing = outgoingSequenceTemplates.map(outgoingTemplate => {
-    const { id = -1, expression = 'true', flag = '' } = outgoingTemplate
+    const { targetId: id = -1, expression = 'true', flag = '' } = outgoingTemplate
     return { id, expression, flag }
   })
 

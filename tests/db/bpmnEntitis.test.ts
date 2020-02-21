@@ -31,7 +31,7 @@ describe('Testovani entit ', () => {
       expect(res.version).toBe('1')
       expect(res.versionType).toBe(VersionType.number)
       expect(res.processType).toBe(ProcessType.None)
-      expect(res.isExecutable).toBeFalsy()
+      expect(res.isExecutable).toBeTrue()
       expect(typeof res.bpmnId).toBe('string')
     })
 

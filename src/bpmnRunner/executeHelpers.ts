@@ -1,4 +1,5 @@
 import { ActivityStatus, NodeElementInstance } from '../entity/bpmn'
+import { JsonMap } from '../types/json'
 import { NodeImplementation } from './pluginNodeImplementation'
 import { RunContext } from './runContext'
 
@@ -11,7 +12,7 @@ export function executeNodePrerun(options: {
   nodeInstance: NodeElementInstance,
   nodeImplementation: NodeImplementation,
   context: RunContext,
-  args: any,
+  args: JsonMap,
   initNext: (x: any) => void,
   finishProcess: (x: any) => void,
 }): boolean {
@@ -31,7 +32,8 @@ export function executeNodePrerun(options: {
       initNext,
       finishProcess,
     }) : true
-    nodeInstance.returnValue = result
+    // nodeInstance.returnValue = result
+    nodeInstance.returnValue = context.$OUTPUT
     nodeInstance.status = ActivityStatus.Active
     // status === Active
     return true
@@ -54,7 +56,7 @@ export function executeNodeRun(options: {
   nodeInstance: NodeElementInstance,
   nodeImplementation: NodeImplementation,
   context: RunContext,
-  args: any,
+  args: JsonMap,
   initNext: (x:any) => void,
   finishProcess: (x:any) => void,
 }): boolean {
@@ -74,8 +76,9 @@ export function executeNodeRun(options: {
       initNext,
       finishProcess,
     })
+    nodeInstance.returnValue = context.$OUTPUT
     nodeInstance.status = ActivityStatus.Completing
-    nodeInstance.returnValue = result
+    // nodeInstance.returnValue = result
     // status === Completing
     return true
   } catch (e) {
@@ -99,7 +102,7 @@ export function executeNode(options: {
   nodeInstance: NodeElementInstance,
   nodeImplementation: NodeImplementation,
   context: RunContext,
-  args: any,
+  args: JsonMap,
 }) {
   const { nodeInstance, args, nodeImplementation, context } = options
   let returnValues: {
@@ -107,6 +110,7 @@ export function executeNode(options: {
     initNext: number[],
     // Informace o ukoceni procesu.
     finishProcess: { finished: boolean, forced: boolean, },
+    outputs?: JsonMap,
   } = {
     initNext: [],
     finishProcess: { finished: false, forced: false },
@@ -155,13 +159,13 @@ export function executeNode(options: {
       nodeInstance.status = ActivityStatus.Failled
       // status === Failed
     }
+    nodeInstance.endDateTime = new Date()
   } else {
     // status === Ready
     nodeInstance.status = ActivityStatus.Waiting
-    // [x]  Zauvazovat zda nepridat novy stav Waiting // status = Waiting
-    //      stejne jako Ready jen s rozlisenim Ready - ceka na zpracovani,
-    //      Waiting - ceka na podminku pred zpracovanim.
-    // status === Waiting
+    // status == Waiting
   }
+  returnValues.outputs = nodeInstance.returnValue
+
   return returnValues
 }

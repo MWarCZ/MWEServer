@@ -1,7 +1,7 @@
 import { BeforeInsert, Column, Entity, JoinTable, ManyToMany, ManyToOne, OneToMany, PrimaryGeneratedColumn } from 'typeorm'
 import { v4 as uuid } from 'uuid'
 
-import { Json, JsonMap } from '../../types/json'
+import { JsonMap } from '../../types/json'
 import { ActivityStatus, fillElement, OptionsConstructor } from './baseElement'
 import { DataObjectTemplate } from './dataObject'
 import { FlowElementInstance, FlowElementTemplate } from './flowElement'
@@ -111,7 +111,10 @@ export class NodeElementInstance implements FlowElementInstance {
   status?: ActivityStatus
 
   @Column('simple-json')
-  returnValue: Json = false
+  data: JsonMap = {}
+
+  @Column('simple-json')
+  returnValue: JsonMap = {}
 
   @ManyToOne(
     type => NodeElementTemplate,

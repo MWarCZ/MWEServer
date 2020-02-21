@@ -1,4 +1,4 @@
-import { Connection, In } from 'typeorm'
+import { Connection, Equal, In } from 'typeorm'
 
 import {
   exclusiveGatewayImplementation,
@@ -27,8 +27,8 @@ import { convertTemplate2Instance } from '../utils/entityHelpers'
 import { getInstance, getTemplate } from './anotherHelpers'
 import { executeNode } from './executeHelpers'
 import * as InitHelpers from './initHelpers'
-import { LibrariesWithNodeImplementations } from './pluginNodeImplementation'
-import { loadContextForNodeElement } from './runContext'
+import { LibrariesWithNodeImplementations, NodeImplementation } from './pluginNodeImplementation'
+import { createContextForNode, createEmptyContext, loadContextForNodeElement } from './runContext'
 
 
 // import * as bpmn from '../entity/bpmn'
@@ -348,21 +348,176 @@ export class BpmnRunner {
   // ExecuteXXX - synchronni funkce
   // RunXXX - asynchronni funkce
 
+  // [ ] Vzit instanci uzlu z fronty X
+  // [x] Najit implementaci uzlu
+  //    [x] Pokud neexistuje vyhod chybu
+  // [x] Vytvo5it kontext pro uzel
+  //    [x] incoming: [{idSeq: int, came: bool}, ...]
+  //    [x] outgoing: [{idTargetNode: int, expression: string, flag: string}]
+  // [x] Poskladat dodatky/argumenty pro uzel
+  //    [x] Nacist data ze sablony uzlu
+  //    [x] Nacist data z instance uzlu
+  //    [x] Spojit data ze sablony, instance a jine.
+  // [ ] Spustit instanci uzlu
+  //    [x] prerun
+  //    [x] run
+  //    [x] oncomplete
+  //    [x] onfailling
+  //    [ ] osetreni vsech vyjimek zpusobenych implementaci
+  // [ ] Ulozit vystupni data
+  //    [ ] Ziskej instance datovych objekt; pokud existuji
+  //    [ ] Neexistuje instance datoveho objektu, tak ji vytvo5
+  //    [ ] Prochazet vzstupni data v kontextu (obj key = dT name)
+  // [ ] Ukoncuje uzel proces?
+  //    [ ] Ukoncuje nasilne? (Neceka se na dokonceni ostatnich)
+  //        [ ] Ano:
+  //            [ ] Nastav proces jako ukonceny
+  //            [ ] U vsech existujicich instanci uzlu nastav stav jako preruseny
+  //            (Ready, Waiting -> Widraw) -> Zmena se musi projevit ve fronte X
+  //        [ ] Ne:
+  //            [ ] Kontrola zda existuje jina aktivni instance v procesu.
+  //            [ ] Existuje: tak pokracovat dal.
+  //            [ ] Neexistuje: Ukoncist proces.
+  // [ ] Spusti uzel dalsi uzly?
+  //    [ ] Ziskat sablonu uzlu
+  //    [ ] Ziskat implementaci uzlu
+  //    [ ] Vyhodnotit podminky stanovene v nastaveni implementace
+  //    [ ] Vytvorit ci najit instanci uzlu a nastavit status na ready
+  //        [ ] Vlozit instance do fronty Y
+  //    [ ] Vytvorit instance sekvenci seqI(seqT, sourceNodeI, targetNodeI)
+  // [ ] Ulozit vse do databaze
+  // [ ] Naplanovat zpracovani dalsich uzlu
+  //    [ ] Uzly z fronty Y do fronty X
+  //
   async runIt(elementInstance: FlowElementInstance, args?: any) {
-    // if (elementInstance instanceof StartEventInstance) {
 
-    // } else if (elementInstance instanceof EndEventInstance) {
+  }
+  async runNode(options: {
+    instance: FlowElementInstance,
+    args?: JsonMap,
+  }) {
+    //#region Find and load data from DB.
 
-    // } else if (elementInstance instanceof GatewayInstance) {
+    let nodeInstance = await this.connection.manager.findOneOrFail(NodeElementInstance, {
+      relations: [
+        'template',
+          'template.incoming', 'template.outgoing',
+          'template.inputs', 'template.outputs',
+        'processInstance',
+          'processInstance.processTemplate',
+      ],
+      where: {
+        id: options.instance.id
+      }
+    })
+    if (!nodeInstance.template) throw new Error('Instance uzelu nema sablonu')
+    let nodeTemplate = nodeInstance.template
+    if(!nodeTemplate.incoming) throw new Error('Sablona uzelu nema vstupni seqence')
+    let incomingSequenceTemplates = nodeTemplate.incoming
+    if (!nodeTemplate.outgoing) throw new Error('Sablona uzelu nema vystupni seqence')
+    let outgoingSequenceTemplates = nodeTemplate.outgoing
+    if (!nodeTemplate.inputs) throw new Error('Sablona uzelu nema vstupni data')
+    let inputsDataTemplates = nodeTemplate.inputs
+    if (!nodeTemplate.outputs) throw new Error('Sablona uzelu nema vystupni data')
+    let outputsDataTemplates = nodeTemplate.outputs
+    if (!nodeInstance.processInstance) throw new Error('Instance uzelu nema instanci procesu')
+    let processInstance = nodeInstance.processInstance
+    if (!processInstance.processTemplate) throw new Error('Instance procesu nema sablonu procesu')
+    let processTemplate = processInstance.processTemplate
 
-    // } else if (elementInstance instanceof BasicTaskInstance) {
-    //   await this.runBasicTask({
-    //     taskInstance: elementInstance,
-    //     taskArgs: args,
-    //   })
-    // } else {
-    //   throw new Error('Neznamou instanci nelze spustit.')
-    // }
+
+    let inputsDataInstances: DataObjectInstance[] = []
+    if (inputsDataTemplates.length > 0) {
+      let templatesIds = inputsDataTemplates.map(d => d.id)
+      inputsDataInstances = await this.connection.getRepository(DataObjectInstance).find({
+        processInstanceId: Equal(processInstance.id),
+        templateId: In([...templatesIds]),
+      })
+    }
+    let outputsDataInstances: DataObjectInstance[] = []
+    if (outputsDataTemplates.length > 0) {
+      let templatesIds = outputsDataTemplates.map(d => d.id)
+      outputsDataInstances = await this.connection.getRepository(DataObjectInstance).find({
+        processInstanceId: Equal(processInstance.id),
+        templateId: In([...templatesIds]),
+      })
+    }
+    let incomingSequenceInstances: SequenceFlowInstance[] = []
+    if (incomingSequenceTemplates.length > 0) {
+      // sekvence ktere prichazi do aktuani instance uzlu
+      let templatesIds = incomingSequenceTemplates.map(d => d.id)
+      incomingSequenceInstances = await this.connection.getRepository(SequenceFlowInstance).find({
+        // processInstanceId: Equal(processInstance.id),
+        templateId: In([...templatesIds]),
+        targetId: Equal(nodeInstance.id),
+      })
+    }
+
+    //#endregion
+
+    // Nalezt implementaci
+    let implementation = this.getImplementation(nodeTemplate.implementation as string)
+
+    // Sestavit kontext
+    let context = createEmptyContext()
+    context = createContextForNode({
+      context,
+      nodeTemplate,
+      nodeInstance,
+      incomingSequenceTemplates,
+      incomingSequenceInstances,
+      outgoingSequenceTemplates,
+      inputsDataTemplates,
+      inputsDataInstances,
+      outputsDataTemplates,
+      outputsDataInstances,
+    })
+
+    // Sestavit dodatky/argumenty
+    let allArgs = this.createAdditionsArgs({
+      nodeTemplate,
+      nodeInstance,
+      otherArgs: options.args,
+    })
+
+    // Spustit uzel
+    let results = executeNode({
+      nodeInstance,
+      args: allArgs,
+      context,
+      nodeImplementation: implementation,
+    })
+
+    // Uloz data z results.outputs do DataObject Instance
+    // TODO
+
+
+  }
+  getImplementation(name: string): NodeImplementation {
+    let implementation = this.pluginsWithImplementations[name]
+    if (typeof implementation !== 'object') {
+      throw new Error(`Implementace ulohy '${name}' nenalezena.`)
+    }
+    return implementation
+  }
+  createAdditionsArgs(options:{
+    nodeTemplate?: NodeElementTemplate,
+    nodeInstance?: NodeElementInstance,
+    otherArgs?: JsonMap
+  }): JsonMap {
+    const { nodeInstance, nodeTemplate, otherArgs } = options
+    let instanceArgs: JsonMap = {}, templateArgs: JsonMap = {}, someArgs: JsonMap = {}
+    if (typeof nodeTemplate === 'object' && typeof nodeTemplate.data === 'object') {
+      instanceArgs = nodeTemplate.data
+    }
+    if (typeof nodeInstance === 'object' && typeof nodeInstance.data === 'object') {
+      instanceArgs = nodeInstance.data
+    }
+    if (typeof otherArgs === 'object') {
+      instanceArgs = otherArgs
+    }
+
+    return { ...templateArgs, ...instanceArgs,  ...someArgs }
   }
 
 

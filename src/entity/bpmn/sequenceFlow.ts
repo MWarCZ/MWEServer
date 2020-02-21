@@ -3,7 +3,7 @@ import { v4 as uuid } from 'uuid'
 
 import { fillElement, OptionsConstructor } from './baseElement'
 import { FlowElementInstance, FlowElementTemplate } from './flowElement'
-import { NodeElementTemplate } from './nodeElement'
+import { NodeElementInstance, NodeElementTemplate } from './nodeElement'
 import { ProcessInstance, ProcessTemplate } from './process'
 
 /**
@@ -47,12 +47,18 @@ export class SequenceFlowTemplate implements FlowElementTemplate {
   )
   source?: NodeElementTemplate
 
+  @Column({ nullable: true })
+  sourceId?: number
+
   @ManyToOne(
     type => NodeElementTemplate,
     entity => entity.incoming,
     { cascade: true },
   )
   target?: NodeElementTemplate
+
+  @Column({ nullable: true })
+  targetId?: number
 
   @OneToMany(
     type => SequenceFlowInstance,
@@ -74,6 +80,7 @@ export class SequenceFlowTemplate implements FlowElementTemplate {
 
 @Entity()
 export class SequenceFlowInstance implements FlowElementInstance {
+
   @PrimaryGeneratedColumn()
   id?: number
 
@@ -99,6 +106,24 @@ export class SequenceFlowInstance implements FlowElementInstance {
   templateId?: number
 
   // ===============
+
+  @ManyToOne(
+    type => NodeElementInstance,
+    { onDelete: 'CASCADE' }
+  )
+  source?: NodeElementInstance
+
+  @Column({ nullable: true })
+  sourceId?: number
+
+  @ManyToOne(
+    type => NodeElementInstance,
+    { onDelete: 'CASCADE' }
+  )
+  target?: NodeElementInstance
+
+  @Column({ nullable: true })
+  targetId?: number
 
   @ManyToOne(
     type => SequenceFlowTemplate,
