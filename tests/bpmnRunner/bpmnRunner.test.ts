@@ -229,22 +229,20 @@ describe('Testy s bpmnRunner', () => {
         })
 
       })
-      describe('initNext', () => {
-        it('', async() => {
 
-        })
-      })
+      it.only('Cyklus nekolika runNodeElement', async() => {
 
-      it('Cyklus nekolika runNodeElement', async() => {
-
-        for (let i = 0; i < 2; i++) {
+        for (let i = 0; i < 3; i++) {
+          console.log('==========', i, '=========')
           let nodeI = await connection.manager.findOneOrFail(NodeElementInstance, {
             status: ActivityStatus.Ready,
           })
-          await runner.runNode({
+          // console.warn(nodeI)
+          await runner.runIt({
             instance: nodeI,
             args: {},
           })
+          console.log('--------', i, '----------')
         }
       })
 
@@ -287,7 +285,7 @@ describe('Testy s bpmnRunner', () => {
     // ==========
     let startI = await connection.manager.findOneOrFail(NodeElementInstance)
     console.log('xxxx')
-    let aaa = await runner.runNode({
+    let aaa = await runner.runIt({
       instance: startI,
       args: {},
     })

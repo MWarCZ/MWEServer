@@ -1,5 +1,6 @@
 import { Connection, Equal, In } from 'typeorm'
 
+import { endEventImplementation } from '../bpmnRunnerPlugins/endEvent'
 import {
   exclusiveGatewayImplementation,
   inclusiveGatewayImplementation,
@@ -72,6 +73,7 @@ export class BpmnRunner {
       inclusiveGateway: inclusiveGatewayImplementation,
       parallelGateway: parallelGatewayImplementation,
       startEvent: startEventImplementation,
+      endEvent: endEventImplementation,
     }
     if (typeof pluginsWithImplementations === 'object') {
       this.pluginsWithImplementations = {
@@ -390,41 +392,59 @@ export class BpmnRunner {
   // [ ] Naplanovat zpracovani dalsich uzlu
   //    [ ] Uzly z fronty Y do fronty X
   //
-  async runIt(elementInstance: FlowElementInstance, args?: any) {
-
-  }
-  async runNode(options: {
+  async runIt(options: {
     instance: NodeElementInstance,
     args?: JsonMap,
   }) {
+
     //#region Find and load data from DB.
 
     let nodeInstance = await this.connection.manager.findOneOrFail(NodeElementInstance, {
       relations: [
         'template',
-          'template.incoming', 'template.outgoing',
-          'template.inputs', 'template.outputs',
+        'template.incoming', 'template.outgoing',
+        'template.inputs', 'template.outputs',
         'processInstance',
-          'processInstance.processTemplate',
+        'processInstance.nodeElements',
+        'processInstance.processTemplate',
+        'processInstance.processTemplate.nodeElements',
       ],
       where: {
         id: options.instance.id
       }
     })
-    if (!nodeInstance.template) throw new Error('Instance uzelu nema sablonu')
+    // 1) Overit zda polozka existuje.
+    // 2) Ulozit objekt v polozce do samostatne promenne.
+    // 3) Odstranit polozku z puvodniho objektu.
+    //    Proc? Problem pri ukladani -> vyrazne zretezeni zpusobuje problemy.
+    if (!nodeInstance.template) {throw new Error('Instance uzelu nema sablonu')}
     let nodeTemplate = nodeInstance.template
-    if(!nodeTemplate.incoming) throw new Error('Sablona uzelu nema vstupni seqence')
+    delete nodeInstance.template
+    if (!nodeTemplate.incoming) {throw new Error('Sablona uzelu nema vstupni seqence')}
     let incomingSequenceTemplates = nodeTemplate.incoming
-    if (!nodeTemplate.outgoing) throw new Error('Sablona uzelu nema vystupni seqence')
+    delete nodeTemplate.incoming
+    if (!nodeTemplate.outgoing) {throw new Error('Sablona uzelu nema vystupni seqence')}
     let outgoingSequenceTemplates = nodeTemplate.outgoing
-    if (!nodeTemplate.inputs) throw new Error('Sablona uzelu nema vstupni data')
+    delete nodeTemplate.outgoing
+    if (!nodeTemplate.inputs) {throw new Error('Sablona uzelu nema vstupni data')}
     let inputsDataTemplates = nodeTemplate.inputs
-    if (!nodeTemplate.outputs) throw new Error('Sablona uzelu nema vystupni data')
+    delete nodeTemplate.inputs
+    if (!nodeTemplate.outputs) {throw new Error('Sablona uzelu nema vystupni data')}
     let outputsDataTemplates = nodeTemplate.outputs
-    if (!nodeInstance.processInstance) throw new Error('Instance uzelu nema instanci procesu')
+    delete nodeTemplate.outputs
+    if (!nodeInstance.processInstance) {throw new Error('Instance uzelu nema instanci procesu')}
     let processInstance = nodeInstance.processInstance
-    if (!processInstance.processTemplate) throw new Error('Instance procesu nema sablonu procesu')
+    delete nodeInstance.processInstance
+    if (!processInstance.processTemplate) {throw new Error('Instance procesu nema sablonu procesu')}
     let processTemplate = processInstance.processTemplate
+    delete processInstance.processTemplate
+
+    if (!processTemplate.nodeElements) {throw new Error('Sablona procesu neobsahuje seznam sablon uzlu')}
+    let nodeTemplates = processTemplate.nodeElements
+    delete processTemplate.nodeElements
+    if (!processInstance.nodeElements) {throw new Error('Instance procesu neobsahuje seznam instanci uzlu')}
+    let nodeInstances = processInstance.nodeElements
+    delete processInstance.nodeElements
 
 
     let inputsDataInstances: DataObjectInstance[] = []
@@ -466,10 +486,78 @@ export class BpmnRunner {
 
     //#endregion
 
-    // Nalezt implementaci
+    let result = this.runNode({
+      incomingSequenceInstances,
+      incomingSequenceTemplates,
+      inputsDataInstances,
+      inputsDataTemplates,
+      nodeInstance,
+      nodeTemplate,
+      outgoingSequenceInstances,
+      outgoingSequenceTemplates,
+      outputsDataInstances,
+      outputsDataTemplates,
+      processInstance,
+      processTemplate,
+      args: options.args,
+      nodeTemplates,
+      nodeInstances,
+    })
+
+    //#region Save data to DB
+
+    // Ulozit do DB
+    await this.connection.manager.save(result.nodeInstance) // aktualni instance
+    await this.connection.manager.save(result.outputsDataInstances) // Nova data
+    await this.connection.manager.save(result.targetNodeInstances) // Nove pripravene instance uzlu
+    await this.connection.manager.save(result.targetSequenceInstances) // Nove pripravene instance seqenci
+    await this.connection.manager.save(result.processInstance) // Proces mohl skoncit
+
+
+    //#endregion
+
+  }
+  runNode(options: {
+    args?: JsonMap,
+    nodeInstance: NodeElementInstance,
+    nodeTemplate: NodeElementTemplate,
+    incomingSequenceTemplates: SequenceFlowTemplate[],
+    outgoingSequenceTemplates: SequenceFlowTemplate[],
+    inputsDataTemplates: DataObjectTemplate[],
+    outputsDataTemplates: DataObjectTemplate[],
+    processInstance: ProcessInstance,
+    processTemplate: ProcessTemplate,
+    inputsDataInstances: DataObjectInstance[],
+    outputsDataInstances: DataObjectInstance[],
+    incomingSequenceInstances: SequenceFlowInstance[],
+    outgoingSequenceInstances: SequenceFlowInstance[],
+    nodeTemplates: NodeElementTemplate[],
+    nodeInstances: NodeElementInstance[],
+  }) {
+    let {
+      incomingSequenceInstances,
+      inputsDataInstances,
+      outgoingSequenceInstances,
+      outgoingSequenceTemplates,
+      outputsDataTemplates,
+      processInstance,
+      incomingSequenceTemplates,
+      inputsDataTemplates,
+      nodeInstance,
+      nodeTemplate,
+      outputsDataInstances,
+      processTemplate,
+      args,
+      nodeTemplates,
+      nodeInstances,
+    } = options
+
+    //#region Predpripravy pro vykonani uzlu.
+
+    // Nalezeni implementace pro dany uzel.
     let implementation = this.getImplementation(nodeTemplate.implementation as string)
 
-    // Sestavit kontext
+    // Sestaveni kontextu pro dany uzel.
     let context = createEmptyContext()
     context = createContextForNode({
       context,
@@ -484,20 +572,24 @@ export class BpmnRunner {
       outputsDataInstances,
     })
 
-    // Sestavit dodatky/argumenty
+    // Sestaveni dodatku/argumentu pro dany uzel.
     let allArgs = this.createAdditionsArgs({
       nodeTemplate,
       nodeInstance,
       otherArgs: options.args,
     })
 
-    // Spustit uzel
+    //#endregion
+
+    // Vykonani uzlu nad pripravenymi daty a implementaci.
     let results = executeNode({
       nodeInstance,
       args: allArgs,
       context,
       nodeImplementation: implementation,
     })
+
+    //#region Zpracovani vysledku po vykonani uzlu.
 
     // Uloz data z results.outputs do DataObject Instance
     outputsDataInstances = this.storeDataToDataObject({
@@ -507,48 +599,23 @@ export class BpmnRunner {
       processInstance,
     })
 
-    // Ukoncit proces? TODO
-    // TODO Zamyslet se nad ukoncovanim procesu
-    if (results.finishProcess.finished) {
-      let unfinishedNodes = await this.connection.manager.find(NodeElementInstance, {
-        processInstanceId: processInstance.id,
-        status: In([ActivityStatus.Waiting, ActivityStatus.Ready])
-      })
-      if (results.finishProcess.forced) {
-        // Ukoncit proces a vsechny cekajici a pripravene uzly
-        processInstance.status = ProcessStatus.Terminated
-        // TODO ukoncit pripravene/cekajici uzly
-      } else {
-        // Existuje nejaky cekajici nebo pripraveny uzel?
-        // Pokud ne ukonci process.
-        if (unfinishedNodes.length>0) {
-          processInstance.status = ProcessStatus.Completed
-        }
-      }
-    }
-
-    // Spustit dalsi instance uzlu + instance seqenci
-    // TODO
-
-    // Najit sablony uzlu, ktere maji byt vytvoreny
-    let targetNodeTemplates: NodeElementTemplate[] = []
-    if (results.initNext.length>0) {
-      targetNodeTemplates = await this.connection.manager.find(NodeElementTemplate, {
-        id: In([...results.initNext])
-      })
-    }
-    // Najit nedokoncene instance uzlu pro dany proces
-    let unfinishedNodeInstances: NodeElementInstance[] = []
-    unfinishedNodeInstances = await this.connection.manager.find(NodeElementInstance, {
-      processInstanceId: processInstance.id,
-      status: In([ActivityStatus.Ready, ActivityStatus.Waiting]),
-    })
+    // Najit sablony uzlu, ktere maji byt spusteny dale.
+    let targetNodeTemplates = nodeTemplates.filter(
+      node=>results.initNext.includes(node.id as number)
+    )
+    // Najit nedokoncene instance uzlu pro dany proces.
+    let unfinishedNodeInstances = nodeInstances.filter(
+      node => [ActivityStatus.Ready, ActivityStatus.Waiting].includes(node.status as ActivityStatus)
+    )
+    // Odstraneni prave zpracovavane instance uzlu ze seznamu nedokoncenych instanci uzlu.
+    unfinishedNodeInstances = unfinishedNodeInstances.filter(node=>node.id !== nodeInstance.id)
+    // Pripravit instance uzlu pro pristi spusteni.
     let targetNodeInstances = this.prepareTargetNodeInstances({
       processInstance,
       nodeTemplates: targetNodeTemplates,
-      unfinishedNodeInstances: unfinishedNodeInstances,
+      unfinishedNodeInstances,
     })
-    // TODO instance sekvenci
+    // Pripravit instance sekvenci, ktere vedou k uzlum pro pristi spusteni.
     let targetSequenceInstances = this.prepareTargetSequenceInstances({
       processInstance,
       sourceNodeInstance: nodeInstance,
@@ -556,18 +623,38 @@ export class BpmnRunner {
       outgoingSequenceTemplates,
       outgoingSequenceInstances,
     })
-    // ...
+    // console.error(JSON.stringify(targetNodeInstances,null,2))
 
-    // Ulozit do DB
-    await this.connection.manager.save(nodeInstance) // aktualni instance
-    await this.connection.manager.save(outputsDataInstances) // Nova data
-    await this.connection.manager.save(targetNodeInstances) // Nove pripravene instance uzlu
-    await this.connection.manager.save(targetSequenceInstances) // Nove pripravene instance seqenci
-    await this.connection.manager.save(processInstance) // Proces mohl skoncit
+    // Ukoncit proces? TODO
+    // TODO Zamyslet se nad ukoncovanim procesu
+    if (results.finishProcess.finished) {
+      if (results.finishProcess.forced) {
+        // Ukoncit proces a vsechny cekajici a pripravene uzly
+        processInstance.status = ProcessStatus.Terminated
+        // Ukoncit pripravene/cekajici uzly
+        targetNodeInstances = unfinishedNodeInstances.map(node=>{
+          node.status = ActivityStatus.Withdrawn
+          return node
+        })
+      } else {
+        // Ukonci proces kdyz:
+        // Neexistuje cekajici/pripraveny uzel a ani nebyl pripraven zadny novy uzel.
+        console.log(unfinishedNodeInstances.length, targetNodeInstances.length)
+        if (unfinishedNodeInstances.length === 0 && targetNodeInstances.length === 0) {
+          processInstance.status = ProcessStatus.Completed
+        }
+      }
+    }
+
+
+    //#endregion
 
     return {
+      nodeInstance,
+      outputsDataInstances,
+      targetNodeInstances,
+      targetSequenceInstances,
       processInstance,
-      readyNodeInstances: targetNodeInstances,
     }
   }
   getImplementation(name: string): NodeImplementation {
