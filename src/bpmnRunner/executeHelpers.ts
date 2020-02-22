@@ -109,7 +109,7 @@ export function executeNode(options: {
     // Seznam obsahujici id sequenceFlow, ktere maji byt provedeny.
     initNext: number[],
     // Informace o ukoceni procesu.
-    finishProcess: { finished: boolean, forced: boolean, },
+    finishProcess: { finished: boolean, forced: boolean },
     outputs?: JsonMap,
   } = {
     initNext: [],

@@ -255,94 +255,6 @@ export class BpmnRunner {
     return (onlyIfUnexist) ? this.initIfUnexistElement(options) : this.initElement(options)
   }
 
-  // TODO Nejtezsi funkce ;( nevim si rady
-  async initNextNodes(options: {
-    processInstance: { id: number } | ProcessInstance,
-    selectedSequenceFlows: ({ id: number } | SequenceFlowTemplate)[],
-  }) {
-    // [x] Ziskat cilove uzly ze sekvence
-    // [x] Ziskat existujici cilove uzly s status Waiting a nastavit na Ready
-    // [x] Inicializovat cilove uzly pokud neexistuji
-    // [x] Vratit vsechny cilove uzli (existujici i nove inicializovane)
-    const {
-      processInstance,
-      selectedSequenceFlows,
-    } = options
-
-    if (selectedSequenceFlows.length <= 0) {
-      return []
-    }
-
-    let selectedSequences = await Promise.all(selectedSequenceFlows.map(seq => getTemplate({
-      typeormConnection: this.connection,
-      entityOrId: seq,
-      templateClass: SequenceFlowTemplate,
-      relations: ['target'],
-    })))
-
-    let nodeTemplates = selectedSequences.map(seq => seq.target).filter(s => !!s) as NodeElementTemplate[]
-    let nodeTemplateIds = nodeTemplates.map(node => node.id as number)
-
-    // Ziskani existujicich cekajicich uzlu spadajici pod danou instanci procesu
-    let waitingNodeInstances = await this.connection.getRepository(NodeElementInstance).find({
-      processInstanceId: processInstance.id,
-      status: ActivityStatus.Waiting,
-      templateId: In(nodeTemplateIds),
-    })
-    // Zmena z cekajici na pripraveny
-    waitingNodeInstances = waitingNodeInstances.map(node => {
-      node.status = ActivityStatus.Ready
-      return node
-    })
-    // Vytvorit neexistujici instance uzlu
-    let newNodeInstances = await this.initNodeElement(processInstance, nodeTemplates, true)
-
-    return [...newNodeInstances, ...waitingNodeInstances]
-  }
-
-  async initNext(
-    options: {
-      processInstance: { id: number } | ProcessInstance,
-      selectedSequenceFlows: (number | { id: number } | SequenceFlowTemplate)[],
-      possibleSequenceFlows: (number | { id: number } | SequenceFlowTemplate)[],
-    },
-  ) {
-    // [x] Normalizovat vstupni sequenceFlows.id
-    // [x] Overit zda vybrane existuji v moznych
-    // [x] Inicializovat instance seqenci pokud neexistuji
-    // [ ] Inicializovat cilove uzly sekvenci
-    //    [ ] Inicializovat neexistujici
-    //    [ ] Existujici se status==Waiting zmenit na Ready
-    const {
-      processInstance,
-      selectedSequenceFlows,
-      possibleSequenceFlows,
-    } = options
-
-    let normSelected = selectedSequenceFlows.map(seq => typeof seq === 'number' ? { id: seq } : seq)
-    let normPossibleIds = possibleSequenceFlows.map(seq => typeof seq === 'number' ? seq : seq.id)
-
-    let filteredSelected = normSelected.filter(seq => normPossibleIds.includes(seq.id))
-    console.error(JSON.stringify(filteredSelected, null, 2 ))
-    if (filteredSelected.length <= 0) {
-      return []
-    }
-
-    // Instance vsech novych sequenceFlow pokud neexistuji
-    let sequenceFlowInstances = await this.initSequenceFlow(processInstance, filteredSelected, true)
-    // Ulozeni techto instanci
-    sequenceFlowInstances = await this.saveElement([...new Set(sequenceFlowInstances)])
-
-    // vytvoreni instanci uzlu
-    let nodeInstances = await this.initNextNodes({
-      processInstance,
-      selectedSequenceFlows: filteredSelected,
-    })
-    nodeInstances = await this.saveElement([...new Set(nodeInstances)])
-
-    return nodeInstances
-  }
-
   //#endregion
 
 
@@ -388,7 +300,7 @@ export class BpmnRunner {
   //    [x] Vytvorit novou ci najit cekajici instanci uzlu a nastavit status na ready
   //        [ ] Vlozit instance do fronty Y
   //    [x] Vytvorit instance sekvenci seqI(seqT, sourceNodeI, targetNodeI)
-  // [ ] Ulozit vse do databaze
+  // [x] Ulozit vse do databaze
   // [ ] Naplanovat zpracovani dalsich uzlu
   //    [ ] Uzly z fronty Y do fronty X
   //
@@ -402,17 +314,20 @@ export class BpmnRunner {
     let nodeInstance = await this.connection.manager.findOneOrFail(NodeElementInstance, {
       relations: [
         'template',
-        'template.incoming', 'template.outgoing',
-        'template.inputs', 'template.outputs',
+        'template.incoming',
+        'template.outgoing',
+        'template.inputs',
+        'template.outputs',
         'processInstance',
         'processInstance.nodeElements',
         'processInstance.processTemplate',
         'processInstance.processTemplate.nodeElements',
       ],
       where: {
-        id: options.instance.id
-      }
+        id: options.instance.id,
+      },
     })
+
     // 1) Overit zda polozka existuje.
     // 2) Ulozit objekt v polozce do samostatne promenne.
     // 3) Odstranit polozku z puvodniho objektu.
@@ -445,6 +360,23 @@ export class BpmnRunner {
     if (!processInstance.nodeElements) {throw new Error('Instance procesu neobsahuje seznam instanci uzlu')}
     let nodeInstances = processInstance.nodeElements
     delete processInstance.nodeElements
+
+    // Implementace pro dany uzel => Zjistit nastavene predvolby
+    let implementation = this.getImplementation(nodeTemplate.implementation as string)
+    const { scope_inputs, scope_outputs } = implementation.options || {}
+    // Potrebuji data v globalnim meritku procesu?
+    if (scope_inputs === 'global') {
+      // Data dostupna v celem procesu jako vstupy
+      inputsDataTemplates = await this.connection.manager.find(DataObjectTemplate, {
+        processTemplateId: Equal(processTemplate.id),
+      })
+    }
+    if (scope_outputs === 'global') {
+      // Data dostupna v celem procesu jako vystupy
+      outputsDataTemplates = await this.connection.manager.find(DataObjectTemplate, {
+        processTemplateId: Equal(processTemplate.id),
+      })
+    }
 
 
     let inputsDataInstances: DataObjectInstance[] = []
@@ -601,14 +533,14 @@ export class BpmnRunner {
 
     // Najit sablony uzlu, ktere maji byt spusteny dale.
     let targetNodeTemplates = nodeTemplates.filter(
-      node=>results.initNext.includes(node.id as number)
+      node => results.initNext.includes(node.id as number),
     )
     // Najit nedokoncene instance uzlu pro dany proces.
     let unfinishedNodeInstances = nodeInstances.filter(
-      node => [ActivityStatus.Ready, ActivityStatus.Waiting].includes(node.status as ActivityStatus)
+      node => [ActivityStatus.Ready, ActivityStatus.Waiting].includes(node.status as ActivityStatus),
     )
     // Odstraneni prave zpracovavane instance uzlu ze seznamu nedokoncenych instanci uzlu.
-    unfinishedNodeInstances = unfinishedNodeInstances.filter(node=>node.id !== nodeInstance.id)
+    unfinishedNodeInstances = unfinishedNodeInstances.filter(node => node.id !== nodeInstance.id)
     // Pripravit instance uzlu pro pristi spusteni.
     let targetNodeInstances = this.prepareTargetNodeInstances({
       processInstance,
@@ -632,7 +564,7 @@ export class BpmnRunner {
         // Ukoncit proces a vsechny cekajici a pripravene uzly
         processInstance.status = ProcessStatus.Terminated
         // Ukoncit pripravene/cekajici uzly
-        targetNodeInstances = unfinishedNodeInstances.map(node=>{
+        targetNodeInstances = unfinishedNodeInstances.map(node => {
           node.status = ActivityStatus.Withdrawn
           return node
         })
@@ -667,7 +599,7 @@ export class BpmnRunner {
   createAdditionsArgs(options: {
     nodeTemplate?: NodeElementTemplate,
     nodeInstance?: NodeElementInstance,
-    otherArgs?: JsonMap
+    otherArgs?: JsonMap,
   }): JsonMap {
     const { nodeInstance, nodeTemplate, otherArgs } = options
     let instanceArgs: JsonMap = {}, templateArgs: JsonMap = {}, someArgs: JsonMap = {}
@@ -690,19 +622,19 @@ export class BpmnRunner {
     processInstance: ProcessInstance,
   }): DataObjectInstance[] {
     const { dataObject, outputsDataInstances, outputsDataTemplates, processInstance } = options
-    if(typeof dataObject !== 'object') return outputsDataInstances
+    if (typeof dataObject !== 'object') return outputsDataInstances
 
-    for(let dataKey in dataObject) {
+    for (let dataKey in dataObject) {
 
-      let dataTemplate = outputsDataTemplates.find(d=>d.name===dataKey)
+      let dataTemplate = outputsDataTemplates.find(d => d.name === dataKey)
       // Vystupni objekt daneho jmena nenalezen -> preskoc dal
-      if(!dataTemplate) continue
+      if (!dataTemplate) continue
 
       let dataInstance = outputsDataInstances.find(
-        d => d.templateId === (dataTemplate && dataTemplate.id)
+        d => d.templateId === (dataTemplate && dataTemplate.id),
       )
       // Instance neexistuje? -> Pokud ne vytvor novou a pridej ji do seznamu instanci
-      if(!dataInstance) {
+      if (!dataInstance) {
         dataInstance = InitHelpers.initNewDataObject(processInstance, dataTemplate)
         outputsDataInstances.push(dataInstance)
       }
@@ -722,8 +654,8 @@ export class BpmnRunner {
   }): NodeElementInstance[] {
     const { processInstance, nodeTemplates, unfinishedNodeInstances } = options
 
-    let result = nodeTemplates.map(nodeTemplate=>{
-      let nodeInstance = unfinishedNodeInstances.find(n=>n.templateId === nodeTemplate.id)
+    let result = nodeTemplates.map(nodeTemplate => {
+      let nodeInstance = unfinishedNodeInstances.find(n => n.templateId === nodeTemplate.id)
       if (!nodeInstance) {
         nodeInstance = InitHelpers.initNewNodeElement(processInstance, nodeTemplate)
       }
@@ -748,17 +680,17 @@ export class BpmnRunner {
     } = options
     if (targetNodeInstances.length <= 0) return outgoingSequenceInstances
     // Pouze jiz existujici cilove uzly (Do neexistujiciho nemohlo nic vest)
-    let targetIds = targetNodeInstances.map(n=>n.id).filter(n=>!n) as number[]
+    let targetIds = targetNodeInstances.map(n => n.id).filter(n => !n) as number[]
 
-    let sequenceInstances = outgoingSequenceTemplates.map(sequenceTemplate=>{
+    let sequenceInstances = outgoingSequenceTemplates.map(sequenceTemplate => {
       // Existuje instance patrici sablone a zaroven ukazujici na cil?
       let sequenceInstance = outgoingSequenceInstances.find(
-        seq=> seq.templateId === sequenceTemplate.id && targetIds.includes(seq.targetId as number)
+        seq => seq.templateId === sequenceTemplate.id && targetIds.includes(seq.targetId as number),
       )
       // Neexistuje tak vytvor
       if (!sequenceInstance) {
         // najdi instanci cile => id cile sekvence sablony musi bit stejne jako id instance cile
-        let targetNodeInstance = targetNodeInstances.find(targetNode=>{
+        let targetNodeInstance = targetNodeInstances.find(targetNode => {
           return (targetNode.templateId === sequenceTemplate.targetId) ||
             (targetNode.template && targetNode.template.id === sequenceTemplate.targetId)
         })

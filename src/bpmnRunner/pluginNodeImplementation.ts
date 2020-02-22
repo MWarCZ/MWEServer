@@ -4,6 +4,10 @@ import { RunContext } from './runContext'
  * Rozhrani definujici podobu pluginu
  */
 export interface NodeImplementation {
+  options?: {
+    scope_inputs: 'local' | 'global',
+    scope_outputs: 'local' | 'global',
+  }
 
   // Akce doplnujici hodnoty (dodatky) pro predpokladany validni pruchod pres prerun.
   additions?: NodeImplementationFunction

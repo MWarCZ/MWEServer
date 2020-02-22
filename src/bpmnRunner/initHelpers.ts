@@ -164,7 +164,7 @@ export function initNewSequenceFlow(
         }
       }
       return instance
-    }
+    },
   })
 }
 

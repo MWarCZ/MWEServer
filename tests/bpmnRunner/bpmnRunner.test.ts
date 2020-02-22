@@ -13,7 +13,6 @@ import {
   ProcessInstance,
   ProcessStatus,
   ProcessTemplate,
-  SequenceFlowTemplate,
 } from '../../src/entity/bpmn'
 import { cleanDataInTables, closeConn, createConn } from '../../src/utils/db'
 
@@ -186,51 +185,8 @@ describe('Testy s bpmnRunner', () => {
           })
         })
       })
-      describe('initNextNodes', () => {
 
-        it('Neni vybrana zadna sequence', async() => {
-          let nodesI = await runner.initNextNodes({
-            processInstance,
-            selectedSequenceFlows: [],
-          })
-          expect(nodesI).toBeArrayOfSize(0)
-        })
-
-        it('Je vybrana jedna sequence', async() => {
-          let seqT = await connection.manager.find(SequenceFlowTemplate)
-          expect(seqT).toBeArrayOfSize(2)
-          if (seqT.length < 2) throw new Error('xxx')
-
-          let nodesI = await runner.initNextNodes({
-            processInstance,
-            selectedSequenceFlows: [seqT[0]],
-          })
-          expect(nodesI).toBeArrayOfSize(1)
-          nodesI.forEach(node => {
-            expect(node).toBeInstanceOf(NodeElementInstance)
-            expect(node.template && node.template.implementation).toBe('task')
-          })
-        })
-
-        it('Je vybrano vice sequenci', async() => {
-          let seqT = await connection.manager.find(SequenceFlowTemplate)
-          expect(seqT).toBeArrayOfSize(2)
-          if (seqT.length < 2) throw new Error('xxx')
-
-          let nodesI = await runner.initNextNodes({
-            processInstance,
-            selectedSequenceFlows: [...seqT],
-          })
-          expect(nodesI).toBeArrayOfSize(seqT.length)
-          nodesI.forEach((node, index) => {
-            expect(node).toBeInstanceOf(NodeElementInstance)
-            expect(node.template && node.template.implementation).toBe(['task', 'endEvent'][index])
-          })
-        })
-
-      })
-
-      it.only('Cyklus nekolika runNodeElement', async() => {
+      it('Cyklus nekolika runNodeElement', async() => {
 
         for (let i = 0; i < 3; i++) {
           console.log('==========', i, '=========')
@@ -249,8 +205,55 @@ describe('Testy s bpmnRunner', () => {
 
     })
 
-
   })
+  describe('Ocekavany beh procesu.', () => {
+    it.only('simple.bpmn', async() => {
+      let xml = readFileSync(joinPath(
+        __dirname,
+        '../resources/bpmn/simple.bpmn',
+      ), 'utf8').toString()
+      await builder.loadFromXml(xml)
+
+      let processTemplate = await connection.manager.findOneOrFail(ProcessTemplate, {
+        relations: ['nodeElements'],
+      })
+      let nodeElements = processTemplate.nodeElements as NodeElementTemplate[]
+      let startNode = nodeElements.find(n => `${n.implementation}`.includes('startEvent')) as NodeElementTemplate
+      let processInstance = await runner.initAndSaveProcess(
+        processTemplate as { id: number },
+        startNode,
+      )
+
+      let expected = [
+        { nodeInstances: 1, completedNodes: 0, readyNodes: 1, processStatus: ProcessStatus.Ready },
+        { nodeInstances: 2, completedNodes: 1, readyNodes: 1, processStatus: ProcessStatus.Ready },
+        { nodeInstances: 3, completedNodes: 2, readyNodes: 1, processStatus: ProcessStatus.Ready },
+        { nodeInstances: 3, completedNodes: 3, readyNodes: 0, processStatus: ProcessStatus.Completed },
+      ]
+      for (let exp of expected ) {
+        let processI = await connection.manager.findOneOrFail(ProcessInstance)
+        let nodeInstances = await connection.manager.find(NodeElementInstance)
+        let completedNodes = nodeInstances.filter(n => n.status === ActivityStatus.Completed)
+        let readyNodes = nodeInstances.filter(n => n.status === ActivityStatus.Ready)
+
+        expect(nodeInstances).toBeArrayOfSize(exp.nodeInstances)
+        expect(completedNodes).toBeArrayOfSize(exp.completedNodes)
+        expect(readyNodes).toBeArrayOfSize(exp.readyNodes)
+        expect(processI.status).toBe(exp.processStatus)
+
+        let readyNode = readyNodes.pop()
+        if (readyNode) {
+          await runner.runIt({
+            instance: readyNode,
+            args: {},
+          })
+        }
+
+      }
+
+    })
+  })
+
 
   it.skip('xxx', async() => {
 

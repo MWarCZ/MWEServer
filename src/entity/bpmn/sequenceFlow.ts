@@ -109,7 +109,7 @@ export class SequenceFlowInstance implements FlowElementInstance {
 
   @ManyToOne(
     type => NodeElementInstance,
-    { onDelete: 'CASCADE' }
+    { onDelete: 'CASCADE' },
   )
   source?: NodeElementInstance
 
@@ -118,7 +118,7 @@ export class SequenceFlowInstance implements FlowElementInstance {
 
   @ManyToOne(
     type => NodeElementInstance,
-    { onDelete: 'CASCADE' }
+    { onDelete: 'CASCADE' },
   )
   target?: NodeElementInstance
 
