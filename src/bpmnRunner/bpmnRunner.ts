@@ -571,10 +571,14 @@ export class BpmnRunner {
       } else {
         // Ukonci proces kdyz:
         // Neexistuje cekajici/pripraveny uzel a ani nebyl pripraven zadny novy uzel.
-        console.log(unfinishedNodeInstances.length, targetNodeInstances.length)
         if (unfinishedNodeInstances.length === 0 && targetNodeInstances.length === 0) {
           processInstance.status = ProcessStatus.Completed
         }
+      }
+    } else {
+      // Neni konec, ale jiz neni co dale vykonat => proces konci chybou
+      if (unfinishedNodeInstances.length === 0 && targetNodeInstances.length === 0) {
+        processInstance.status = ProcessStatus.Failled
       }
     }
 
@@ -604,13 +608,13 @@ export class BpmnRunner {
     const { nodeInstance, nodeTemplate, otherArgs } = options
     let instanceArgs: JsonMap = {}, templateArgs: JsonMap = {}, someArgs: JsonMap = {}
     if (typeof nodeTemplate === 'object' && typeof nodeTemplate.data === 'object') {
-      instanceArgs = nodeTemplate.data
+      templateArgs = nodeTemplate.data
     }
     if (typeof nodeInstance === 'object' && typeof nodeInstance.data === 'object') {
       instanceArgs = nodeInstance.data
     }
     if (typeof otherArgs === 'object') {
-      instanceArgs = otherArgs
+      someArgs = otherArgs
     }
 
     return { ...templateArgs, ...instanceArgs,  ...someArgs }

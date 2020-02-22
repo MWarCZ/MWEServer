@@ -144,10 +144,12 @@ export class Parser {
     let refObject = {
       bpmnId: '',
       dataObjectRef: '',
+      name: '',
     }
     if (dataObjectReference['#attr']) {
       refObject.bpmnId = dataObjectReference['#attr'].id as string
       refObject.dataObjectRef = dataObjectReference['#attr'].dataObjectRef as string
+      refObject.name = dataObjectReference['#attr'].name as string
     }
     return {
       entity: undefined,
@@ -329,6 +331,10 @@ export class Parser {
       })
       if (dataObject) {
         dataObjectReference.entity = dataObject.entity
+        if (!dataObjectReference.entity.name) {
+          // Pokud objekt nema jmeno pouzij jmeno z reference.
+          dataObjectReference.entity.name = dataObjectReference.refObject.name
+        }
       }
     })
     // Task

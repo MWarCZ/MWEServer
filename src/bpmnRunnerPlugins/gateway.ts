@@ -40,6 +40,8 @@ export const parallelGatewayImplementation: NodeImplementation = {
     const { $OUTGOING } = context
     let selectedOutgoing: number[] = []
 
+    console.warn('AND>', $OUTGOING)
+
     // Vsechny incoming musi biti prichozi
     selectedOutgoing = $OUTGOING.map(v => v.id)
     initNext(selectedOutgoing)
@@ -69,6 +71,7 @@ export const inclusiveGatewayImplementation: NodeImplementation = {
       })
       selectedOutgoing = (tmp) ? [tmp.id] : []
     }
+    console.warn('XOR>', $OUTGOING)
     initNext(selectedOutgoing)
 
     return true
@@ -93,6 +96,8 @@ export const exclusiveGatewayImplementation: NodeImplementation = {
       let result = evalExpression({ expression, context })
       return result
     }).map(v => v.id)
+
+    console.warn('XOR>',$OUTGOING)
     initNext(selectedOutgoing)
 
     return true

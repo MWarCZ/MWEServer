@@ -207,7 +207,7 @@ describe('Testy s bpmnRunner', () => {
 
   })
   describe('Ocekavany beh procesu.', () => {
-    it.only('simple.bpmn', async() => {
+    it('simple.bpmn', async() => {
       let xml = readFileSync(joinPath(
         __dirname,
         '../resources/bpmn/simple.bpmn',
@@ -242,6 +242,166 @@ describe('Testy s bpmnRunner', () => {
         expect(processI.status).toBe(exp.processStatus)
 
         let readyNode = readyNodes.pop()
+        if (readyNode) {
+          await runner.runIt({
+            instance: readyNode,
+            args: {},
+          })
+        }
+
+      }
+
+    })
+
+    it.each([
+      [
+        '../resources/bpmn/simple/simple_xor_outgoing.bpmn',
+        'fifo',
+        [
+          { nodeInstances: 1, completedNodes: 0, readyNodes: 1, processStatus: ProcessStatus.Ready },
+          { nodeInstances: 2, completedNodes: 1, readyNodes: 1, processStatus: ProcessStatus.Ready },
+          { nodeInstances: 4, completedNodes: 2, readyNodes: 2, processStatus: ProcessStatus.Ready },
+          { nodeInstances: 4, completedNodes: 3, readyNodes: 1, processStatus: ProcessStatus.Ready },
+          { nodeInstances: 4, completedNodes: 4, readyNodes: 0, processStatus: ProcessStatus.Completed },
+        ],
+      ],
+      [
+        '../resources/bpmn/simple/simple_and_outgoing.bpmn',
+        'fifo',
+        [
+          { nodeInstances: 1, completedNodes: 0, readyNodes: 1, processStatus: ProcessStatus.Ready },
+          { nodeInstances: 2, completedNodes: 1, readyNodes: 1, processStatus: ProcessStatus.Ready },
+          { nodeInstances: 4, completedNodes: 2, readyNodes: 2, processStatus: ProcessStatus.Ready },
+          { nodeInstances: 4, completedNodes: 3, readyNodes: 1, processStatus: ProcessStatus.Ready },
+          { nodeInstances: 4, completedNodes: 4, readyNodes: 0, processStatus: ProcessStatus.Completed },
+        ],
+      ],
+      [
+        '../resources/bpmn/simple/simple_or_outgoing.bpmn',
+        'fifo',
+        [
+          { nodeInstances: 1, completedNodes: 0, readyNodes: 1, processStatus: ProcessStatus.Ready },
+          { nodeInstances: 2, completedNodes: 1, readyNodes: 1, processStatus: ProcessStatus.Ready },
+          { nodeInstances: 3, completedNodes: 2, readyNodes: 1, processStatus: ProcessStatus.Ready },
+          { nodeInstances: 3, completedNodes: 3, readyNodes: 0, processStatus: ProcessStatus.Completed },
+        ],
+      ],
+      [
+        '../resources/bpmn/simple/simple_scripttask.bpmn',
+        'fifo',
+        [
+          { nodeInstances: 1, completedNodes: 0, readyNodes: 1, processStatus: ProcessStatus.Ready },
+          { nodeInstances: 2, completedNodes: 1, readyNodes: 1, processStatus: ProcessStatus.Ready },
+          { nodeInstances: 3, completedNodes: 2, readyNodes: 1, processStatus: ProcessStatus.Ready },
+          { nodeInstances: 3, completedNodes: 3, readyNodes: 0, processStatus: ProcessStatus.Completed },
+        ],
+      ],
+      [
+        '../resources/bpmn/simple/simple_and_incoming.bpmn',
+        'fifo',
+        [
+          { nodeInstances: 1, completedNodes: 0, readyNodes: 1, processStatus: ProcessStatus.Ready },
+          { nodeInstances: 2, completedNodes: 1, readyNodes: 1, processStatus: ProcessStatus.Ready },
+          { nodeInstances: 4, completedNodes: 2, readyNodes: 2, processStatus: ProcessStatus.Ready },
+          { nodeInstances: 5, completedNodes: 3, readyNodes: 2, processStatus: ProcessStatus.Ready },
+          { nodeInstances: 5, completedNodes: 4, readyNodes: 1, processStatus: ProcessStatus.Ready },
+          { nodeInstances: 6, completedNodes: 5, readyNodes: 1, processStatus: ProcessStatus.Ready },
+          { nodeInstances: 6, completedNodes: 6, readyNodes: 0, processStatus: ProcessStatus.Completed },
+        ],
+      ],
+      [
+        '../resources/bpmn/simple/simple_and_incoming.bpmn',
+        'lifo',
+        [
+          { nodeInstances: 1, completedNodes: 0, readyNodes: 1, processStatus: ProcessStatus.Ready },
+          { nodeInstances: 2, completedNodes: 1, readyNodes: 1, processStatus: ProcessStatus.Ready },
+          { nodeInstances: 4, completedNodes: 2, readyNodes: 2, processStatus: ProcessStatus.Ready },
+          { nodeInstances: 5, completedNodes: 3, readyNodes: 2, processStatus: ProcessStatus.Ready },
+          { nodeInstances: 5, completedNodes: 3, readyNodes: 1, processStatus: ProcessStatus.Ready },
+          { nodeInstances: 5, completedNodes: 4, readyNodes: 1, processStatus: ProcessStatus.Ready },
+          { nodeInstances: 6, completedNodes: 5, readyNodes: 1, processStatus: ProcessStatus.Ready },
+          { nodeInstances: 6, completedNodes: 6, readyNodes: 0, processStatus: ProcessStatus.Completed },
+        ],
+      ],
+      [
+        '../resources/bpmn/simple/simple_and_incoming_nested.bpmn',
+        'fifo',
+        [
+          { nodeInstances: 1, completedNodes: 0, readyNodes: 1, processStatus: ProcessStatus.Ready },
+          { nodeInstances: 2, completedNodes: 1, readyNodes: 1, processStatus: ProcessStatus.Ready },
+          { nodeInstances: 5, completedNodes: 2, readyNodes: 3, processStatus: ProcessStatus.Ready },
+          { nodeInstances: 6, completedNodes: 3, readyNodes: 3, processStatus: ProcessStatus.Ready },
+          { nodeInstances: 7, completedNodes: 4, readyNodes: 3, processStatus: ProcessStatus.Ready },
+          { nodeInstances: 7, completedNodes: 5, readyNodes: 2, processStatus: ProcessStatus.Ready },
+          { nodeInstances: 7, completedNodes: 5, readyNodes: 1, processStatus: ProcessStatus.Ready },
+          { nodeInstances: 7, completedNodes: 6, readyNodes: 1, processStatus: ProcessStatus.Ready },
+          { nodeInstances: 8, completedNodes: 7, readyNodes: 1, processStatus: ProcessStatus.Ready },
+          { nodeInstances: 8, completedNodes: 8, readyNodes: 0, processStatus: ProcessStatus.Completed },
+        ],
+      ],
+      [
+        '../resources/bpmn/simple/simple_and_incoming_nested.bpmn',
+        'lifo',
+        [
+          { nodeInstances: 1, completedNodes: 0, readyNodes: 1, processStatus: ProcessStatus.Ready },
+          { nodeInstances: 2, completedNodes: 1, readyNodes: 1, processStatus: ProcessStatus.Ready },
+          { nodeInstances: 5, completedNodes: 2, readyNodes: 3, processStatus: ProcessStatus.Ready },
+          { nodeInstances: 6, completedNodes: 3, readyNodes: 3, processStatus: ProcessStatus.Ready },
+          { nodeInstances: 6, completedNodes: 3, readyNodes: 2, processStatus: ProcessStatus.Ready },
+          { nodeInstances: 6, completedNodes: 4, readyNodes: 2, processStatus: ProcessStatus.Ready },
+          { nodeInstances: 7, completedNodes: 5, readyNodes: 2, processStatus: ProcessStatus.Ready },
+          { nodeInstances: 7, completedNodes: 5, readyNodes: 1, processStatus: ProcessStatus.Ready },
+          { nodeInstances: 7, completedNodes: 6, readyNodes: 1, processStatus: ProcessStatus.Ready },
+          { nodeInstances: 8, completedNodes: 7, readyNodes: 1, processStatus: ProcessStatus.Ready },
+          { nodeInstances: 8, completedNodes: 8, readyNodes: 0, processStatus: ProcessStatus.Completed },
+        ],
+      ],
+
+    ])('%s - %s', async (path, orderExucute, expected ) => {
+      let xml = readFileSync(joinPath(
+        __dirname,
+        path,
+      ), 'utf8').toString()
+      await builder.loadFromXml(xml)
+
+      let processTemplate = await connection.manager.findOneOrFail(ProcessTemplate, {
+        relations: ['nodeElements'],
+      })
+      let nodeElements = processTemplate.nodeElements as NodeElementTemplate[]
+      let startNode = nodeElements.find(n => `${n.implementation}`.includes('startEvent')) as NodeElementTemplate
+      let processInstance = await runner.initAndSaveProcess(
+        processTemplate as { id: number },
+        startNode,
+      )
+
+      for (let exp of expected) {
+        let processI = await connection.manager.findOneOrFail(ProcessInstance)
+        let nodeInstances = await connection.manager.find(NodeElementInstance)
+        let completedNodes = nodeInstances.filter(n => n.status === ActivityStatus.Completed)
+        let readyNodes = nodeInstances.filter(n => n.status === ActivityStatus.Ready)
+        let waitNodes = nodeInstances.filter(n => n.status === ActivityStatus.Waiting)
+
+        if (path.includes('simple_and_incoming_nested')) {
+          // console.warn(JSON.stringify(nodeInstances, null, 2))
+        }
+
+        if (exp.nodeInstances)
+          expect(nodeInstances).toBeArrayOfSize(exp.nodeInstances)
+        if (exp.completedNodes)
+          expect(completedNodes).toBeArrayOfSize(exp.completedNodes)
+        if (exp.readyNodes)
+          expect(readyNodes).toBeArrayOfSize(exp.readyNodes)
+        if (exp.processStatus)
+          expect(processI.status).toBe(exp.processStatus)
+
+        let readyNode: NodeElementInstance | undefined
+        if (orderExucute === 'fifo'){
+          readyNode = readyNodes.shift()
+        }
+        else if (orderExucute === 'lifo') {
+          readyNode = readyNodes.pop()
+        }
+
         if (readyNode) {
           await runner.runIt({
             instance: readyNode,

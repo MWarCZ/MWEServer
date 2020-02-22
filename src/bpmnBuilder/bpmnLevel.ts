@@ -36,7 +36,7 @@ export declare namespace BpmnLevel {
   }
   type DataObjectReference = {
     entity: DataObjectTemplate | undefined, data: BpmnFxm.DataObjectReference, tag: 'dataObjectReference',
-    refObject: { bpmnId: string, dataObjectRef: string },
+    refObject: { bpmnId: string, dataObjectRef: string, name: string },
   }
   type StartEvent = {
     entity: NodeElementTemplate, data: BpmnFxm.StartEvent, tag: 'startEvent',
