@@ -3,4 +3,4 @@
 //     new(): T,
 // }
 
-export type Constructor<T> = new()=>T
+export type Constructor<T> = new() => T

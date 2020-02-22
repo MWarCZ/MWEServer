@@ -1,39 +1,64 @@
-import { Column, Entity, ManyToOne, OneToMany, OneToOne } from 'typeorm'
+import { BeforeInsert, Column, Entity, ManyToOne, OneToMany, PrimaryGeneratedColumn } from 'typeorm'
+import { v4 as uuid } from 'uuid'
 
 import { fillElement, OptionsConstructor } from './baseElement'
-import { ConnectorNode2Sequence, ConnectorSequence2Node } from './connectorNodeAndSequence'
 import { FlowElementInstance, FlowElementTemplate } from './flowElement'
-import { GatewayTemplate } from './gateway'
+import { NodeElementInstance, NodeElementTemplate } from './nodeElement'
+import { ProcessInstance, ProcessTemplate } from './process'
 
 /**
  * Propopoj mezi uzly BPMN. SequenceFlow2FlowNode
  */
 @Entity()
-export class SequenceFlowTemplate extends FlowElementTemplate {
+export class SequenceFlowTemplate implements FlowElementTemplate {
+  @PrimaryGeneratedColumn()
+  id?: number
 
   @Column('text')
-  expression?: string = ''
+  bpmnId?: string
 
-  @OneToOne(
-    type => ConnectorNode2Sequence,
-    entity => entity.sequenceFlow,
+  @Column('varchar', { length: 255, default: '' })
+  name?: string
+
+  // =============
+
+  @ManyToOne(
+    type => ProcessTemplate,
+    entity => entity.sequenceFlows,
+    { onDelete: 'CASCADE' },
+  )
+  processTemplate?: ProcessTemplate
+
+  @Column({ nullable: true })
+  processTemplateId?: number
+
+  // ============
+
+  @Column('text')
+  expression: string = 'true'
+
+  @Column()
+  flag: string = ''
+
+  @ManyToOne(
+    type => NodeElementTemplate,
+    entity => entity.outgoing,
     { cascade: true },
   )
-  source?: ConnectorNode2Sequence
+  source?: NodeElementTemplate
 
-  @OneToOne(
-    type => ConnectorSequence2Node,
-    entity => entity.sequenceFlow,
+  @Column({ nullable: true })
+  sourceId?: number
+
+  @ManyToOne(
+    type => NodeElementTemplate,
+    entity => entity.incoming,
     { cascade: true },
   )
-  target?: ConnectorSequence2Node
+  target?: NodeElementTemplate
 
-  @OneToOne(
-    type => GatewayTemplate,
-    entity => entity.default,
-    { cascade: true },
-  )
-  default?: GatewayTemplate
+  @Column({ nullable: true })
+  targetId?: number
 
   @OneToMany(
     type => SequenceFlowInstance,
@@ -41,16 +66,65 @@ export class SequenceFlowTemplate extends FlowElementTemplate {
     { onDelete: 'CASCADE' },
   )
   instances?: SequenceFlowInstance[]
-  // instances: undefined
 
   constructor(options?: OptionsConstructor<SequenceFlowTemplate>) {
-    super()
     fillElement(this, options)
+  }
+
+  @BeforeInsert()
+  genBpmnId() {
+    if (!this.bpmnId)
+      this.bpmnId = uuid()
   }
 }
 
 @Entity()
-export class SequenceFlowInstance extends FlowElementInstance {
+export class SequenceFlowInstance implements FlowElementInstance {
+
+  @PrimaryGeneratedColumn()
+  id?: number
+
+  @Column('datetime', { nullable: true })
+  startDateTime?: Date
+
+  @Column('datetime', { nullable: true })
+  endDateTime?: Date
+
+  // ===============
+
+  @ManyToOne(
+    type => ProcessInstance,
+    entity => entity.sequenceFlows,
+    { onDelete: 'CASCADE' },
+  )
+  processInstance?: ProcessInstance
+
+  @Column({ nullable: true })
+  processInstanceId?: number
+
+  @Column({ nullable: true })
+  templateId?: number
+
+  // ===============
+
+  @ManyToOne(
+    type => NodeElementInstance,
+    { onDelete: 'CASCADE' },
+  )
+  source?: NodeElementInstance
+
+  @Column({ nullable: true })
+  sourceId?: number
+
+  @ManyToOne(
+    type => NodeElementInstance,
+    { onDelete: 'CASCADE' },
+  )
+  target?: NodeElementInstance
+
+  @Column({ nullable: true })
+  targetId?: number
+
   @ManyToOne(
     type => SequenceFlowTemplate,
     entity => entity.instances,
@@ -59,7 +133,6 @@ export class SequenceFlowInstance extends FlowElementInstance {
   template?: SequenceFlowTemplate
 
   constructor(options?: OptionsConstructor<SequenceFlowInstance>) {
-    super()
     fillElement(this, options)
   }
 }

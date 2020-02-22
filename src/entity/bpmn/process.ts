@@ -1,6 +1,10 @@
-import { Column, Entity, ManyToOne, OneToMany } from 'typeorm'
+import { BeforeInsert, Column, Entity, ManyToOne, OneToMany, PrimaryGeneratedColumn } from 'typeorm'
+import { v4 as uuid } from 'uuid'
 
-import { ActivityStatus, BaseElementInstance, BaseElementTemplate, OptionsBaseElement } from './baseElement'
+import { BaseElementInstance, BaseElementTemplate, fillElement, OptionsConstructor, ProcessStatus } from './baseElement'
+import { DataObjectInstance, DataObjectTemplate } from './dataObject'
+import { NodeElementInstance, NodeElementTemplate } from './nodeElement'
+import { SequenceFlowInstance, SequenceFlowTemplate } from './sequenceFlow'
 
 export enum ProcessType {
   None = 'none',
@@ -13,7 +17,7 @@ export enum VersionType {
   semver = 'semver',
 }
 
-export interface OptionsProcess extends OptionsBaseElement {
+export interface OptionsProcess {
   isExecutable: boolean,
   processType: ProcessType,
   versionType: VersionType,
@@ -21,31 +25,41 @@ export interface OptionsProcess extends OptionsBaseElement {
 }
 
 @Entity()
-export class ProcessTemplate extends BaseElementTemplate {
+export class ProcessTemplate implements BaseElementTemplate {
+  @PrimaryGeneratedColumn()
+  id?: number
 
-  @Column('boolean', { default: false, nullable: false })
-  isExecutable?: boolean
+  @Column('text')
+  bpmnId?: string
+
+  @Column('varchar', { length: 255, default: '' })
+  name?: string
+
+  // ===================
+
+  @Column('boolean', { default: true, nullable: false })
+  isExecutable?: boolean = true
 
   @Column('enum', {
     enum: ProcessType,
     default: ProcessType.None,
     nullable: false,
   })
-  processType?: ProcessType
+  processType?: ProcessType = ProcessType.None
 
   @Column('varchar', {
     length: 50,
     default: '1',
     nullable: false,
   })
-  version?: string
+  version?: string = '1'
 
   @Column('enum', {
     enum: VersionType,
     default: VersionType.number,
     nullable: false,
   })
-  versionType?: VersionType
+  versionType?: VersionType = VersionType.number
 
   @OneToMany(
     type => ProcessInstance,
@@ -54,32 +68,45 @@ export class ProcessTemplate extends BaseElementTemplate {
   )
   processInstances?: ProcessInstance[]
 
+  @OneToMany(type => DataObjectTemplate, entity => entity.processTemplate)
+  dataObjects?: DataObjectTemplate[]
 
-  // @OneToMany(type => StartEventTemplate, event => event.processTemplate)
-  // startEvent?: StartEventTemplate[]
-  // @OneToMany(type => EndEventTemplate, event => event.processTemplate)
-  // endEvent?: EndEventTemplate[]
+  @OneToMany(type => NodeElementTemplate, entity => entity.processTemplate)
+  nodeElements?: NodeElementTemplate[]
 
-  constructor(options?: Partial<OptionsProcess>) {
-    super(options)
+  @OneToMany(type => SequenceFlowTemplate, entity => entity.processTemplate)
+  sequenceFlows?: SequenceFlowTemplate[]
+
+  constructor(options?: OptionsConstructor<ProcessTemplate>) {
+    fillElement(this, options)
+  }
+
+  @BeforeInsert()
+  genBpmnId() {
+    if (!this.bpmnId)
+      this.bpmnId = uuid()
   }
 }
 
 @Entity()
-export class ProcessInstance extends BaseElementInstance {
-
-  @Column('enum', {
-    enum: ActivityStatus,
-    default: ActivityStatus.None,
-    nullable: false,
-  })
-  status?: ActivityStatus
+export class ProcessInstance implements BaseElementInstance {
+  @PrimaryGeneratedColumn()
+  id?: number
 
   @Column('datetime', { nullable: true })
-  startDateTime?: Date
+  startDateTime?: Date = new Date()
 
   @Column('datetime', { nullable: true })
   endDateTime?: Date
+
+  // ===============
+
+  @Column('enum', {
+    enum: ProcessStatus,
+    default: ProcessStatus.None,
+    nullable: false,
+  })
+  status?: ProcessStatus = ProcessStatus.None
 
   @ManyToOne(
     type => ProcessTemplate,
@@ -91,15 +118,13 @@ export class ProcessInstance extends BaseElementInstance {
   @Column({ nullable: true })
   processTemplateId?: number
 
-  // @OneToMany(type => DataObjectInstance, entity => entity.processInstance)
-  // dataObjects?: DataObjectInstance[]
-  // @OneToMany(type => StartEventInstance, entity => entity.processInstance)
-  // startEvents?: StartEventInstance[]
-  // @OneToMany(type => EndEventInstance, entity => entity.processInstance)
-  // endEvents?: EndEventInstance[]
+  @OneToMany(type => DataObjectInstance, entity => entity.processInstance)
+  dataObjects?: DataObjectInstance[]
 
+  @OneToMany(type => NodeElementInstance, entity => entity.processInstance)
+  nodeElements?: NodeElementInstance[]
 
-  // @OneToMany(type => GatewayInstance, entity => entity.processInstance)
-  // gateways?: GatewayInstance[]
+  @OneToMany(type => SequenceFlowInstance, entity => entity.processInstance)
+  sequenceFlows?: SequenceFlowInstance[]
 
 }

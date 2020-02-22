@@ -1,4 +1,5 @@
-import { ActivityStatus, FlowElementInstance } from '../entity/bpmn'
+import { ActivityStatus, NodeElementInstance } from '../entity/bpmn'
+import { JsonMap } from '../types/json'
 import { NodeImplementation } from './pluginNodeImplementation'
 import { RunContext } from './runContext'
 
@@ -8,11 +9,12 @@ import { RunContext } from './runContext'
  * @returns Vraci `true` pokud vse probeho OK nebo v pripade chyby vraci `false`.
  */
 export function executeNodePrerun(options: {
-  nodeInstance: FlowElementInstance,
+  nodeInstance: NodeElementInstance,
   nodeImplementation: NodeImplementation,
   context: RunContext,
-  args: any,
-  initNext: (x:any)=>void,
+  args: JsonMap,
+  initNext: (x: any) => void,
+  finishProcess: (x: any) => void,
 }): boolean {
   const {
     nodeInstance,
@@ -20,6 +22,7 @@ export function executeNodePrerun(options: {
     context,
     args,
     initNext,
+    finishProcess,
   } = options
   // status === Ready
   try {
@@ -27,8 +30,10 @@ export function executeNodePrerun(options: {
       context,
       args,
       initNext,
+      finishProcess,
     }) : true
-    nodeInstance.returnValue = result
+    // nodeInstance.returnValue = result
+    nodeInstance.returnValue = context.$OUTPUT
     nodeInstance.status = ActivityStatus.Active
     // status === Active
     return true
@@ -48,11 +53,12 @@ export function executeNodePrerun(options: {
  * @returns Vraci `true` pokud vse probeho OK nebo v pripade chyby vraci `false`.
  */
 export function executeNodeRun(options: {
-  nodeInstance: FlowElementInstance,
+  nodeInstance: NodeElementInstance,
   nodeImplementation: NodeImplementation,
   context: RunContext,
-  args: any,
+  args: JsonMap,
   initNext: (x:any) => void,
+  finishProcess: (x:any) => void,
 }): boolean {
   const {
     nodeInstance,
@@ -60,6 +66,7 @@ export function executeNodeRun(options: {
     context,
     args,
     initNext,
+    finishProcess,
   } = options
   // status === Active
   try {
@@ -67,9 +74,11 @@ export function executeNodeRun(options: {
       context,
       args,
       initNext,
+      finishProcess,
     })
+    nodeInstance.returnValue = context.$OUTPUT
     nodeInstance.status = ActivityStatus.Completing
-    nodeInstance.returnValue = result
+    // nodeInstance.returnValue = result
     // status === Completing
     return true
   } catch (e) {
@@ -90,24 +99,40 @@ export function executeNodeRun(options: {
  * @returns Vraci seznam s SequenceFlow.id, ktere maji byti provedeny.
  */
 export function executeNode(options: {
-  nodeInstance: FlowElementInstance,
+  nodeInstance: NodeElementInstance,
   nodeImplementation: NodeImplementation,
   context: RunContext,
-  args: any,
-}): number[] {
+  args: JsonMap,
+}) {
   const { nodeInstance, args, nodeImplementation, context } = options
-  // Seznam obsahujici id sequenceFlow, ktere maji byt provedeny.
-  const listOfinitNext: number[] = []
+  let returnValues: {
+    // Seznam obsahujici id sequenceFlow, ktere maji byt provedeny.
+    initNext: number[],
+    // Informace o ukoceni procesu.
+    finishProcess: { finished: boolean, forced: boolean },
+    outputs?: JsonMap,
+  } = {
+    initNext: [],
+    finishProcess: { finished: false, forced: false },
+  }
+
   // Pomocna funkce (callback), ktera pridava id sequenceFlow do seznamu pro provedeni.
   const initNext = (sequenceIds: (number | { id: number })[]) => {
-    let ids = sequenceIds.map(seq=>typeof seq === 'number' ? seq : seq.id)
-    listOfinitNext.push(...ids)
+    let ids = sequenceIds.map(seq => typeof seq === 'number' ? seq : seq.id)
+    returnValues.initNext.push(...ids)
+  }
+  // Pomocna funkce (callback), pro nastaveni priznaku pro pripadny konec procesu.
+  const finishProcess = (options?: { forced: boolean }) => {
+    returnValues.finishProcess.finished = true
+    if (options) {
+      returnValues.finishProcess.forced = !!options.forced
+    }
   }
 
   // taskInstance.status === Ready
-  if (executeNodePrerun({ nodeInstance, args, context, nodeImplementation, initNext, })) {
+  if (executeNodePrerun({ nodeInstance, args, context, nodeImplementation, initNext, finishProcess })) {
     // status === Active
-    if (executeNodeRun({ nodeInstance, args, context, nodeImplementation, initNext, })) {
+    if (executeNodeRun({ nodeInstance, args, context, nodeImplementation, initNext, finishProcess })) {
       // status === completing
       if (typeof nodeImplementation.onCompleting === 'function') {
         // TODO - dovymislet onCompleting()
@@ -115,6 +140,7 @@ export function executeNode(options: {
           context: context,
           args: args,
           initNext,
+          finishProcess,
         })
       }
       nodeInstance.status = ActivityStatus.Completed
@@ -127,18 +153,19 @@ export function executeNode(options: {
           context: context,
           args: args,
           initNext,
+          finishProcess,
         })
       }
       nodeInstance.status = ActivityStatus.Failled
       // status === Failed
     }
+    nodeInstance.endDateTime = new Date()
   } else {
     // status === Ready
-    nodeInstance.status = ActivityStatus.Ready
-    // TODO Zauvazovat zda nepridat novy stav Waiting // status = Waiting
-    //      stejne jako Ready jen s rozlisenim Ready - ceka na zpracovani,
-    //      Waiting - ceka na podminku pred zpracovanim.
-    // status === Ready
+    nodeInstance.status = ActivityStatus.Waiting
+    // status == Waiting
   }
-  return listOfinitNext
+  returnValues.outputs = nodeInstance.returnValue
+
+  return returnValues
 }

@@ -1,13 +1,9 @@
 import {
   BaseElementTemplate,
   DataObjectTemplate,
-  EndEventTemplate,
-  GatewayTemplate,
+  NodeElementTemplate,
   ProcessTemplate,
-  ScriptTaskTemplate,
   SequenceFlowTemplate,
-  StartEventTemplate,
-  TaskTemplate,
 } from '../entity/bpmn'
 import { BpmnFxm } from './bpmnFxm'
 
@@ -27,10 +23,10 @@ export declare namespace BpmnLevel {
 
   /** Parsovani BPMN Level 2 */
   type Task = {
-    entity: TaskTemplate, data: BpmnFxm.Task, tag: 'task',
+    entity: NodeElementTemplate, data: BpmnFxm.Task, tag: 'task',
   }
   type ScriptTask = {
-    entity: ScriptTaskTemplate, data: BpmnFxm.ScriptTask, tag: 'scriptTask',
+    entity: NodeElementTemplate, data: BpmnFxm.ScriptTask, tag: 'scriptTask',
   }
   type SequenceFlow = {
     entity: SequenceFlowTemplate, data: BpmnFxm.SequenceFlow, tag: 'sequenceFlow',
@@ -40,16 +36,16 @@ export declare namespace BpmnLevel {
   }
   type DataObjectReference = {
     entity: DataObjectTemplate | undefined, data: BpmnFxm.DataObjectReference, tag: 'dataObjectReference',
-    refObject: { bpmnId: string, dataObjectRef: string },
+    refObject: { bpmnId: string, dataObjectRef: string, name: string },
   }
   type StartEvent = {
-    entity: StartEventTemplate, data: BpmnFxm.StartEvent, tag: 'startEvent',
+    entity: NodeElementTemplate, data: BpmnFxm.StartEvent, tag: 'startEvent',
   }
   type EndEvent = {
-    entity: EndEventTemplate, data: BpmnFxm.EndEvent, tag: 'endEvent',
+    entity: NodeElementTemplate, data: BpmnFxm.EndEvent, tag: 'endEvent',
   }
   type Gateway = {
-    entity: GatewayTemplate, data: BpmnFxm.Gateway, tag: 'gateway',
+    entity: NodeElementTemplate, data: BpmnFxm.Gateway, tag: 'gateway',
   }
   type Level2 = Task
     | SequenceFlow

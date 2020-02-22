@@ -1,40 +1,37 @@
-import { options } from 'bpmnBuilder/fxp.config'
-import { gatewayImplementation } from 'bpmnRunnerPlugins/gateway'
-import { Connection, In } from 'typeorm'
-import { convertTemplate2Instance } from 'utils/entityHelpers'
+import { Connection, Equal, In } from 'typeorm'
 
+import { endEventImplementation } from '../bpmnRunnerPlugins/endEvent'
+import {
+  exclusiveGatewayImplementation,
+  inclusiveGatewayImplementation,
+  parallelGatewayImplementation,
+} from '../bpmnRunnerPlugins/gateway'
 import { scriptTaskImplementation } from '../bpmnRunnerPlugins/scriptTask'
+import { startEventImplementation } from '../bpmnRunnerPlugins/startEvent'
 import { taskImplementation } from '../bpmnRunnerPlugins/task'
 import {
-  BasicTaskInstance,
-  BasicTaskTemplate,
-  ConnectorSequence2Node,
+  ActivityStatus,
   DataObjectInstance,
   DataObjectTemplate,
-  EndEventInstance,
-  EndEventTemplate,
-  EventTemplate,
   FlowElementInstance,
   FlowElementTemplate,
-  GatewayInstance,
-  GatewayTemplate,
+  NodeElementInstance,
+  NodeElementTemplate,
   ProcessInstance,
+  ProcessStatus,
   ProcessTemplate,
-  ScriptTaskInstance,
-  ScriptTaskTemplate,
   SequenceFlowInstance,
   SequenceFlowTemplate,
-  StartEventInstance,
-  StartEventTemplate,
-  TaskInstance,
-  TaskTemplate,
 } from '../entity/bpmn'
 import { Constructor } from '../types/constructor'
+import { JsonMap } from '../types/json'
+import { convertTemplate2Instance } from '../utils/entityHelpers'
 import { getInstance, getTemplate } from './anotherHelpers'
 import { executeNode } from './executeHelpers'
 import * as InitHelpers from './initHelpers'
-import { LibrariesWithNodeImplementations } from './pluginNodeImplementation'
-import { loadContextForBasicTask } from './runContext'
+import { LibrariesWithNodeImplementations, NodeImplementation } from './pluginNodeImplementation'
+import { createContextForNode, createEmptyContext } from './runContext'
+
 
 // import * as bpmn from '../entity/bpmn'
 /*
@@ -72,7 +69,11 @@ export class BpmnRunner {
     this.pluginsWithImplementations = {
       task: taskImplementation,
       scriptTask: scriptTaskImplementation,
-      gateway: gatewayImplementation,
+      exclusiveGateway: exclusiveGatewayImplementation,
+      inclusiveGateway: inclusiveGatewayImplementation,
+      parallelGateway: parallelGatewayImplementation,
+      startEvent: startEventImplementation,
+      endEvent: endEventImplementation,
     }
     if (typeof pluginsWithImplementations === 'object') {
       this.pluginsWithImplementations = {
@@ -100,12 +101,17 @@ export class BpmnRunner {
       callInitNew,
     } = options
 
+    // Neni co lulozit
+    if (elementTemplate.length <= 0) {
+      return []
+    }
+
     let processI = await getInstance({
       instanceClass: ProcessInstance,
       entityOrId: processInstance,
       typeormConnection: this.connection,
     })
-    let elementIs = await Promise.all(elementTemplate.map(async entityOrId=>{
+    let elementIs = await Promise.all(elementTemplate.map(async entityOrId => {
       let elementT = await getTemplate({
         templateClass,
         entityOrId,
@@ -149,27 +155,31 @@ export class BpmnRunner {
     // [x] Vrat vsechny uspesne inicializovane instance elementu
     //
     const { templateClass, processInstance, elementTemplate} = options
+    // Neni nic k ulozeni
+    if (elementTemplate.length <= 0) {
+      return []
+    }
     const instanceClass = convertTemplate2Instance(templateClass)
     if (instanceClass) {
-      let instanceRepo = this.connection.getRepository(instanceClass as Constructor<FlowElementInstance>)
+      let instanceRepo = await this.connection.getRepository(instanceClass as Constructor<FlowElementInstance>)
 
-      let elementIds = elementTemplate.map(e=>e.id)
+      let elementIds = elementTemplate.map(e => e.id)
       // Najde vsechny instance elementu
       let result = await instanceRepo.find({
         processInstanceId: processInstance.id,
         templateId: In(elementIds),
       })
-      let resultIds = result.map(r=>r.templateId)
+      let resultIds = result.map(r => r.templateId)
 
-      let tmpMatrixWithElementInstance = await Promise.all(elementTemplate.map(template=>{
+      let tmpMatrixWithElementInstance = await Promise.all(elementTemplate.map(template => {
         let isIn = resultIds.includes(template.id)
         return (isIn) ? [] : this.initElement({
           ...options,
           elementTemplate: [template],
         })
       }))
-      let elementInstances = tmpMatrixWithElementInstance.reduce((acc, value)=>{
-        return {...acc, ...value}
+      let elementInstances = tmpMatrixWithElementInstance.reduce((acc, value) => {
+        return [...acc, ...value]
       })
       return elementInstances
     }
@@ -178,7 +188,7 @@ export class BpmnRunner {
 
   async initAndSaveProcess(
     processTemplate: { id: number } | ProcessTemplate,
-    startEvent: { id: number } | StartEventTemplate,
+    startEvent: { id: number } | NodeElementTemplate,
   ): Promise<ProcessInstance> {
     // Vyhledani sablon
     let processT = await getTemplate({
@@ -187,7 +197,7 @@ export class BpmnRunner {
       typeormConnection: this.connection,
     })
     let startEventT = await getTemplate({
-      templateClass: StartEventTemplate,
+      templateClass: NodeElementTemplate,
       entityOrId: startEvent,
       typeormConnection: this.connection,
     })
@@ -197,78 +207,22 @@ export class BpmnRunner {
     processInstance = await this.connection.manager.save(processInstance)
 
     // Vytvoreni instance prvniho startovaciho eventu
-    let startEventI = await this.initStartEvent(processInstance, [startEventT])
+    let startEventI = await this.initNodeElement(processInstance, [startEventT])
     startEventI = await this.saveElement(startEventI)
 
     return processInstance
   }
 
-  initStartEvent(
+  initNodeElement(
     processInstance: { id: number } | ProcessInstance,
-    event: ({ id: number } | StartEventTemplate)[],
+    nodeElement: ({ id: number } | NodeElementTemplate)[],
     onlyIfUnexist: boolean = false,
-  ): Promise<StartEventInstance[]> {
+  ): Promise<NodeElementInstance[]> {
     let options = {
-      callInitNew: InitHelpers.initNewStartEvent,
+      callInitNew: InitHelpers.initNewNodeElement,
       processInstance,
-      elementTemplate: event,
-      templateClass: StartEventTemplate,
-    }
-    return (onlyIfUnexist) ? this.initIfUnexistElement(options) : this.initElement(options)
-  }
-
-  initEndEvent(
-    processInstance: { id: number } | ProcessInstance,
-    event: ({ id: number } | EndEventTemplate)[],
-    onlyIfUnexist: boolean = false,
-  ): Promise<EndEventInstance[]> {
-    let options = {
-      callInitNew: InitHelpers.initNewEndEvent,
-      processInstance,
-      elementTemplate: event,
-      templateClass: EndEventTemplate,
-    }
-    return (onlyIfUnexist) ? this.initIfUnexistElement(options) : this.initElement(options)
-  }
-
-  initGateway(
-    processInstance: { id: number } | ProcessInstance,
-    gateway: ({ id: number } | GatewayTemplate)[],
-    onlyIfUnexist: boolean = false,
-  ): Promise<GatewayInstance[]> {
-    let options = {
-      callInitNew: InitHelpers.initNewGateway,
-      processInstance,
-      elementTemplate: gateway,
-      templateClass: GatewayTemplate,
-    }
-    return (onlyIfUnexist) ? this.initIfUnexistElement(options) : this.initElement(options)
-  }
-
-  initTask(
-    processInstance: { id: number } | ProcessInstance,
-    task: ({ id: number } | TaskTemplate)[],
-    onlyIfUnexist: boolean = false,
-  ): Promise<TaskInstance[]> {
-    let options = {
-      callInitNew: InitHelpers.initNewTask,
-      processInstance,
-      elementTemplate: task,
-      templateClass: TaskTemplate,
-    }
-    return (onlyIfUnexist) ? this.initIfUnexistElement(options) : this.initElement(options)
-  }
-
-  initScriptTask(
-    processInstance: { id: number } | ProcessInstance,
-    task: ({ id: number } | ScriptTaskTemplate)[],
-    onlyIfUnexist: boolean = false,
-  ): Promise<ScriptTaskInstance[]> {
-    let options = {
-      callInitNew: InitHelpers.initNewScriptTask,
-      processInstance,
-      elementTemplate: task,
-      templateClass: ScriptTaskTemplate,
+      elementTemplate: nodeElement,
+      templateClass: NodeElementTemplate,
     }
     return (onlyIfUnexist) ? this.initIfUnexistElement(options) : this.initElement(options)
   }
@@ -301,105 +255,6 @@ export class BpmnRunner {
     return (onlyIfUnexist) ? this.initIfUnexistElement(options) : this.initElement(options)
   }
 
-  // TODO Nejtezsi funkce ;( nevim si rady
-  async initNextNodes(options: {
-    processInstance: { id: number } | ProcessInstance,
-    selectedSequenceFlows: (number | { id: number } | SequenceFlowTemplate)[],
-  }) {
-    // [ ] Ziskat cilove uzly ze sekvence
-    // [ ] Inicializovat cilove uzly pokud neexistuji
-    // [ ] ...
-    const {
-      processInstance,
-      selectedSequenceFlows,
-    } = options
-
-    // ziskat vsechny cile (uzly) pro vsechny sablony spoju
-    let sequences = await Promise.all(selectedSequenceFlows.map(async seq => {
-      return await getTemplate({
-        typeormConnection: this.connection,
-        entityOrId: (typeof seq === 'number') ? { id: seq } : seq,
-        templateClass: SequenceFlowTemplate,
-        relations: ['target', 'target.task', 'target.gateway', 'target.event'],
-      })
-    }))
-
-    // Prejit zkrze spoj na zaznamy o cilech
-    let targets = sequences.map(s => s.target).filter(s => !!s) as ConnectorSequence2Node[]
-    // Ziskat cile (uloha, udalost, brana)
-    let tasks = targets.map(t => t.task).filter(t => !!t) as BasicTaskTemplate[]
-    let events = targets.map(t => t.event).filter(t => !!t) as EventTemplate[]
-    let gateways = targets.map(t => t.gateway).filter(t => !!t) as GatewayTemplate[]
-
-    // let x = await Promise.all(tasks.map(task => {
-    //   switch (task.class) {
-    //     case TaskTemplate.name:
-    //       return this.initTask(processInstance, [task])
-    //     case ScriptTaskTemplate.name:
-    //       return this.initScriptTask(processInstance, [task])
-    //   }
-    //   return undefined
-    // }))
-    // let y = x.reduce((acc: BasicTaskInstance[], task)=>{
-    //   return (task)?[...acc, ...task]: acc
-    // }, [])
-
-    // Vytvorit a ulozit instance pro ziskane ulohy.
-    let tasksI = await Promise.all(tasks.map(task => {
-      switch (task.class) {
-        case TaskTemplate.name:
-          return this.initTask(processInstance, [task])
-        case ScriptTaskTemplate.name:
-          return this.initScriptTask(processInstance, [task])
-      }
-      return Promise.resolve(undefined)
-    }))
-    let eventsI = await Promise.all(events.map(event => {
-      switch (event.class) {
-        case StartEventTemplate.name:
-          return this.initStartEvent(processInstance, [event])
-        case EndEventTemplate.name:
-          return this.initEndEvent(processInstance, [event])
-      }
-      return Promise.resolve(undefined)
-    }))
-    let gatewaysI = await Promise.all(gateways.map(gate => {
-      return this.initGateway(processInstance, [gate])
-    }))
-
-  }
-
-  async initNext(
-    options: {
-      processInstance: { id: number } | ProcessInstance,
-      selectedSequenceFlows: (number | { id: number } | SequenceFlowTemplate)[],
-      possibleSequenceFlows: (number | { id: number } | SequenceFlowTemplate)[],
-    }
-  ) {
-    // [x] Normalizovat vstupni sequenceFlows.id
-    // [x] Overit zda vybrane existuji v moznych
-    // [x] Inicializovat instance seqenci pokud neexistuji
-    // [ ] Inicializovat instance uzlu (cil seqenci) pokud neexistuji
-    const {
-      processInstance,
-      selectedSequenceFlows,
-      possibleSequenceFlows,
-    } = options
-
-    let normSelected = selectedSequenceFlows.map(seq => typeof seq === 'number' ? { id: seq } : seq)
-    let normPossibleIds = possibleSequenceFlows.map(seq => typeof seq === 'number' ? seq : seq.id)
-
-    let filteredSelected = normSelected.filter(seq => normPossibleIds.includes(seq.id))
-
-    // Instance sequenceFlow
-    let sequenceFlowInstances = await this.initSequenceFlow(processInstance, filteredSelected, true)
-
-    sequenceFlowInstances = await this.saveElement([...new Set(sequenceFlowInstances)])
-
-    // TODO vytvoreni instanci uzlu
-
-  }
-
   //#endregion
 
 
@@ -408,71 +263,452 @@ export class BpmnRunner {
   // ExecuteXXX - synchronni funkce
   // RunXXX - asynchronni funkce
 
-  async runIt(elementInstance: FlowElementInstance, args?: any) {
-    if (elementInstance instanceof StartEventInstance) {
-
-    } else if (elementInstance instanceof EndEventInstance) {
-
-    } else if (elementInstance instanceof GatewayInstance) {
-
-    } else if (elementInstance instanceof BasicTaskInstance) {
-      await this.runBasicTask({
-        taskInstance: elementInstance,
-        taskArgs: args,
-      })
-    } else {
-      throw new Error('Neznamou instanci nelze spustit.')
-    }
-  }
-
-
-  async runBasicTask(options: {
-    taskInstance: BasicTaskInstance,
-    taskArgs: any,
+  // [ ] Vzit instanci uzlu z fronty X
+  // [x] Najit implementaci uzlu
+  //    [x] Pokud neexistuje vyhod chybu
+  // [x] Vytvo5it kontext pro uzel
+  //    [x] incoming: [{idSeq: int, came: bool}, ...]
+  //    [x] outgoing: [{idTargetNode: int, expression: string, flag: string}]
+  // [x] Poskladat dodatky/argumenty pro uzel
+  //    [x] Nacist data ze sablony uzlu
+  //    [x] Nacist data z instance uzlu
+  //    [x] Spojit data ze sablony, instance a jine.
+  // [ ] Spustit instanci uzlu
+  //    [x] prerun
+  //    [x] run
+  //    [x] oncomplete
+  //    [x] onfailling
+  //    [ ] osetreni vsech vyjimek zpusobenych implementaci
+  // [x] Ulozit vystupni data
+  //    [x] Ziskej instance datovych objekt; pokud existuji
+  //    [x] Neexistuje instance datoveho objektu, tak ji vytvo5
+  //    [x] Prochazet vzstupni data v kontextu (obj key = dT name)
+  // [ ] Ukoncuje uzel proces?
+  //    [ ] Ukoncuje nasilne? (Neceka se na dokonceni ostatnich)
+  //        [ ] Ano:
+  //            [ ] Nastav proces jako ukonceny
+  //            [ ] U vsech existujicich instanci uzlu nastav stav jako preruseny
+  //            (Ready, Waiting -> Widraw) -> Zmena se musi projevit ve fronte X
+  //        [x] Ne:
+  //            [x] Kontrola zda existuje jina aktivni instance v procesu.
+  //            [x] Existuje: tak pokracovat dal.
+  //            [x] Neexistuje: Ukoncist proces.
+  // [ ] Spusti uzel dalsi uzly?
+  //    [x] Ziskat sablonu uzlu
+  //    [ ] Ziskat implementaci uzlu
+  //    [ ] Vyhodnotit podminky stanovene v nastaveni implementace
+  //    [x] Vytvorit novou ci najit cekajici instanci uzlu a nastavit status na ready
+  //        [ ] Vlozit instance do fronty Y
+  //    [x] Vytvorit instance sekvenci seqI(seqT, sourceNodeI, targetNodeI)
+  // [x] Ulozit vse do databaze
+  // [ ] Naplanovat zpracovani dalsich uzlu
+  //    [ ] Uzly z fronty Y do fronty X
+  //
+  async runIt(options: {
+    instance: NodeElementInstance,
+    args?: JsonMap,
   }) {
-    // [x] Ziskat implementaci k vykonani ulohy
-    // [x] Ziskat kontext pro danou instanci urceni pro implementaci
-    // [ ] Ziskani argumentu pro implementaci (kombinace prichozich a vnitrnitch)
-    //    - args napr.: Vyplneny form od uzivatele, Nactene vnitrni data (skript, jazyk, aj.), ...
-    // [ ] Vykonta implementaci
-    //    [x] Zavolat vykonani implementace
-    //    [ ] Vytvorit instance vracenych sequenceFlow
-    //    [ ] Vytvorit cilove uzly vracenych sequenceFlow
-    //    [ ] Osetrit necekane chybove stavy
-    // [x] Ulozit danou instanci s jejimi novymi stavy (hodnotami)
 
-    const { taskInstance, taskArgs } = options
+    //#region Find and load data from DB.
 
-
-    let taskTemplate = await getTemplate({
-      templateClass: BasicTaskTemplate,
-      entityOrId: taskInstance.template || { id: taskInstance.templateId as number },
-      typeormConnection: this.connection,
-      relations: ['outgoing', 'outgoing.sequenceFlow'],
+    let nodeInstance = await this.connection.manager.findOneOrFail(NodeElementInstance, {
+      relations: [
+        'template',
+        'template.incoming',
+        'template.outgoing',
+        'template.inputs',
+        'template.outputs',
+        'processInstance',
+        'processInstance.nodeElements',
+        'processInstance.processTemplate',
+        'processInstance.processTemplate.nodeElements',
+      ],
+      where: {
+        id: options.instance.id,
+      },
     })
-    let implementation = this.pluginsWithImplementations[taskTemplate.implementation as string]
-    if (typeof implementation !== 'object') {
-      throw new Error('Implementace ulohy nenalezena.')
-    }
 
-    let context = await loadContextForBasicTask({ id: taskInstance.id as number }, this.connection)
+    // 1) Overit zda polozka existuje.
+    // 2) Ulozit objekt v polozce do samostatne promenne.
+    // 3) Odstranit polozku z puvodniho objektu.
+    //    Proc? Problem pri ukladani -> vyrazne zretezeni zpusobuje problemy.
+    if (!nodeInstance.template) {throw new Error('Instance uzelu nema sablonu')}
+    let nodeTemplate = nodeInstance.template
+    delete nodeInstance.template
+    if (!nodeTemplate.incoming) {throw new Error('Sablona uzelu nema vstupni seqence')}
+    let incomingSequenceTemplates = nodeTemplate.incoming
+    delete nodeTemplate.incoming
+    if (!nodeTemplate.outgoing) {throw new Error('Sablona uzelu nema vystupni seqence')}
+    let outgoingSequenceTemplates = nodeTemplate.outgoing
+    delete nodeTemplate.outgoing
+    if (!nodeTemplate.inputs) {throw new Error('Sablona uzelu nema vstupni data')}
+    let inputsDataTemplates = nodeTemplate.inputs
+    delete nodeTemplate.inputs
+    if (!nodeTemplate.outputs) {throw new Error('Sablona uzelu nema vystupni data')}
+    let outputsDataTemplates = nodeTemplate.outputs
+    delete nodeTemplate.outputs
+    if (!nodeInstance.processInstance) {throw new Error('Instance uzelu nema instanci procesu')}
+    let processInstance = nodeInstance.processInstance
+    delete nodeInstance.processInstance
+    if (!processInstance.processTemplate) {throw new Error('Instance procesu nema sablonu procesu')}
+    let processTemplate = processInstance.processTemplate
+    delete processInstance.processTemplate
 
-    try {
-      // TODO Zavolat init next pro ziskane id sekvenci
-      let nextSequences = executeNode({
-        nodeInstance: taskInstance,
-        args: taskArgs,
-        context,
-        nodeImplementation: implementation,
+    if (!processTemplate.nodeElements) {throw new Error('Sablona procesu neobsahuje seznam sablon uzlu')}
+    let nodeTemplates = processTemplate.nodeElements
+    delete processTemplate.nodeElements
+    if (!processInstance.nodeElements) {throw new Error('Instance procesu neobsahuje seznam instanci uzlu')}
+    let nodeInstances = processInstance.nodeElements
+    delete processInstance.nodeElements
+
+    // Implementace pro dany uzel => Zjistit nastavene predvolby
+    let implementation = this.getImplementation(nodeTemplate.implementation as string)
+    const { scope_inputs, scope_outputs } = implementation.options || {}
+    // Potrebuji data v globalnim meritku procesu?
+    if (scope_inputs === 'global') {
+      // Data dostupna v celem procesu jako vstupy
+      inputsDataTemplates = await this.connection.manager.find(DataObjectTemplate, {
+        processTemplateId: Equal(processTemplate.id),
       })
-    } catch (e) {
-      // TODO Osetrit validni vyjimky.
-      console.error('runBasicTask:', e)
+    }
+    if (scope_outputs === 'global') {
+      // Data dostupna v celem procesu jako vystupy
+      outputsDataTemplates = await this.connection.manager.find(DataObjectTemplate, {
+        processTemplateId: Equal(processTemplate.id),
+      })
     }
 
-    // Uloz instanci ktera prosla zpracovanim
-    await this.connection.manager.save(taskInstance)
+
+    let inputsDataInstances: DataObjectInstance[] = []
+    if (inputsDataTemplates.length > 0) {
+      let templatesIds = inputsDataTemplates.map(d => d.id)
+      inputsDataInstances = await this.connection.getRepository(DataObjectInstance).find({
+        processInstanceId: Equal(processInstance.id),
+        templateId: In([...templatesIds]),
+      })
+    }
+    let outputsDataInstances: DataObjectInstance[] = []
+    if (outputsDataTemplates.length > 0) {
+      let templatesIds = outputsDataTemplates.map(d => d.id)
+      outputsDataInstances = await this.connection.getRepository(DataObjectInstance).find({
+        processInstanceId: Equal(processInstance.id),
+        templateId: In([...templatesIds]),
+      })
+    }
+    let incomingSequenceInstances: SequenceFlowInstance[] = []
+    if (incomingSequenceTemplates.length > 0) {
+      // sekvence ktere prichazi do aktuani instance uzlu
+      let templatesIds = incomingSequenceTemplates.map(d => d.id)
+      incomingSequenceInstances = await this.connection.getRepository(SequenceFlowInstance).find({
+        // processInstanceId: Equal(processInstance.id),
+        templateId: In([...templatesIds]),
+        targetId: Equal(nodeInstance.id),
+      })
+    }
+    let outgoingSequenceInstances: SequenceFlowInstance[] = []
+    if (outgoingSequenceTemplates.length > 0) {
+      // sekvence ktere prichazi do aktuani instance uzlu
+      let templatesIds = outgoingSequenceTemplates.map(d => d.id)
+      outgoingSequenceInstances = await this.connection.getRepository(SequenceFlowInstance).find({
+        // processInstanceId: Equal(processInstance.id),
+        templateId: In([...templatesIds]),
+        targetId: Equal(nodeInstance.id),
+      })
+    }
+
+    //#endregion
+
+    let result = this.runNode({
+      incomingSequenceInstances,
+      incomingSequenceTemplates,
+      inputsDataInstances,
+      inputsDataTemplates,
+      nodeInstance,
+      nodeTemplate,
+      outgoingSequenceInstances,
+      outgoingSequenceTemplates,
+      outputsDataInstances,
+      outputsDataTemplates,
+      processInstance,
+      processTemplate,
+      args: options.args,
+      nodeTemplates,
+      nodeInstances,
+    })
+
+    //#region Save data to DB
+
+    // Ulozit do DB
+    await this.connection.manager.save(result.nodeInstance) // aktualni instance
+    await this.connection.manager.save(result.outputsDataInstances) // Nova data
+    await this.connection.manager.save(result.targetNodeInstances) // Nove pripravene instance uzlu
+    await this.connection.manager.save(result.targetSequenceInstances) // Nove pripravene instance seqenci
+    await this.connection.manager.save(result.processInstance) // Proces mohl skoncit
+
+
+    //#endregion
+
   }
+  runNode(options: {
+    args?: JsonMap,
+    nodeInstance: NodeElementInstance,
+    nodeTemplate: NodeElementTemplate,
+    incomingSequenceTemplates: SequenceFlowTemplate[],
+    outgoingSequenceTemplates: SequenceFlowTemplate[],
+    inputsDataTemplates: DataObjectTemplate[],
+    outputsDataTemplates: DataObjectTemplate[],
+    processInstance: ProcessInstance,
+    processTemplate: ProcessTemplate,
+    inputsDataInstances: DataObjectInstance[],
+    outputsDataInstances: DataObjectInstance[],
+    incomingSequenceInstances: SequenceFlowInstance[],
+    outgoingSequenceInstances: SequenceFlowInstance[],
+    nodeTemplates: NodeElementTemplate[],
+    nodeInstances: NodeElementInstance[],
+  }) {
+    let {
+      incomingSequenceInstances,
+      inputsDataInstances,
+      outgoingSequenceInstances,
+      outgoingSequenceTemplates,
+      outputsDataTemplates,
+      processInstance,
+      incomingSequenceTemplates,
+      inputsDataTemplates,
+      nodeInstance,
+      nodeTemplate,
+      outputsDataInstances,
+      processTemplate,
+      args,
+      nodeTemplates,
+      nodeInstances,
+    } = options
+
+    //#region Predpripravy pro vykonani uzlu.
+
+    // Nalezeni implementace pro dany uzel.
+    let implementation = this.getImplementation(nodeTemplate.implementation as string)
+
+    // Sestaveni kontextu pro dany uzel.
+    let context = createEmptyContext()
+    context = createContextForNode({
+      context,
+      nodeTemplate,
+      nodeInstance,
+      incomingSequenceTemplates,
+      incomingSequenceInstances,
+      outgoingSequenceTemplates,
+      inputsDataTemplates,
+      inputsDataInstances,
+      outputsDataTemplates,
+      outputsDataInstances,
+    })
+
+    // Sestaveni dodatku/argumentu pro dany uzel.
+    let allArgs = this.createAdditionsArgs({
+      nodeTemplate,
+      nodeInstance,
+      otherArgs: options.args,
+    })
+
+    //#endregion
+
+    // Vykonani uzlu nad pripravenymi daty a implementaci.
+    let results = executeNode({
+      nodeInstance,
+      args: allArgs,
+      context,
+      nodeImplementation: implementation,
+    })
+
+    //#region Zpracovani vysledku po vykonani uzlu.
+
+    // Uloz data z results.outputs do DataObject Instance
+    outputsDataInstances = this.storeDataToDataObject({
+      dataObject: results.outputs,
+      outputsDataTemplates,
+      outputsDataInstances,
+      processInstance,
+    })
+
+    // Najit sablony uzlu, ktere maji byt spusteny dale.
+    let targetNodeTemplates = nodeTemplates.filter(
+      node => results.initNext.includes(node.id as number),
+    )
+    // Najit nedokoncene instance uzlu pro dany proces.
+    let unfinishedNodeInstances = nodeInstances.filter(
+      node => [ActivityStatus.Ready, ActivityStatus.Waiting].includes(node.status as ActivityStatus),
+    )
+    // Odstraneni prave zpracovavane instance uzlu ze seznamu nedokoncenych instanci uzlu.
+    unfinishedNodeInstances = unfinishedNodeInstances.filter(node => node.id !== nodeInstance.id)
+    // Pripravit instance uzlu pro pristi spusteni.
+    let targetNodeInstances = this.prepareTargetNodeInstances({
+      processInstance,
+      nodeTemplates: targetNodeTemplates,
+      unfinishedNodeInstances,
+    })
+    // Pripravit instance sekvenci, ktere vedou k uzlum pro pristi spusteni.
+    let targetSequenceInstances = this.prepareTargetSequenceInstances({
+      processInstance,
+      sourceNodeInstance: nodeInstance,
+      targetNodeInstances,
+      outgoingSequenceTemplates,
+      outgoingSequenceInstances,
+    })
+    // console.error(JSON.stringify(targetNodeInstances,null,2))
+
+    // Ukoncit proces? TODO
+    // TODO Zamyslet se nad ukoncovanim procesu
+    if (results.finishProcess.finished) {
+      if (results.finishProcess.forced) {
+        // Ukoncit proces a vsechny cekajici a pripravene uzly
+        processInstance.status = ProcessStatus.Terminated
+        // Ukoncit pripravene/cekajici uzly
+        targetNodeInstances = unfinishedNodeInstances.map(node => {
+          node.status = ActivityStatus.Withdrawn
+          return node
+        })
+      } else {
+        // Ukonci proces kdyz:
+        // Neexistuje cekajici/pripraveny uzel a ani nebyl pripraven zadny novy uzel.
+        if (unfinishedNodeInstances.length === 0 && targetNodeInstances.length === 0) {
+          processInstance.status = ProcessStatus.Completed
+        }
+      }
+    } else {
+      // Neni konec, ale jiz neni co dale vykonat => proces konci chybou
+      if (unfinishedNodeInstances.length === 0 && targetNodeInstances.length === 0) {
+        processInstance.status = ProcessStatus.Failled
+      }
+    }
+
+
+    //#endregion
+
+    return {
+      nodeInstance,
+      outputsDataInstances,
+      targetNodeInstances,
+      targetSequenceInstances,
+      processInstance,
+    }
+  }
+  getImplementation(name: string): NodeImplementation {
+    let implementation = this.pluginsWithImplementations[name]
+    if (typeof implementation !== 'object') {
+      throw new Error(`Implementace ulohy '${name}' nenalezena.`)
+    }
+    return implementation
+  }
+  createAdditionsArgs(options: {
+    nodeTemplate?: NodeElementTemplate,
+    nodeInstance?: NodeElementInstance,
+    otherArgs?: JsonMap,
+  }): JsonMap {
+    const { nodeInstance, nodeTemplate, otherArgs } = options
+    let instanceArgs: JsonMap = {}, templateArgs: JsonMap = {}, someArgs: JsonMap = {}
+    if (typeof nodeTemplate === 'object' && typeof nodeTemplate.data === 'object') {
+      templateArgs = nodeTemplate.data
+    }
+    if (typeof nodeInstance === 'object' && typeof nodeInstance.data === 'object') {
+      instanceArgs = nodeInstance.data
+    }
+    if (typeof otherArgs === 'object') {
+      someArgs = otherArgs
+    }
+
+    return { ...templateArgs, ...instanceArgs,  ...someArgs }
+  }
+  storeDataToDataObject(options: {
+    dataObject?: JsonMap,
+    outputsDataTemplates: DataObjectTemplate[],
+    outputsDataInstances: DataObjectInstance[],
+    processInstance: ProcessInstance,
+  }): DataObjectInstance[] {
+    const { dataObject, outputsDataInstances, outputsDataTemplates, processInstance } = options
+    if (typeof dataObject !== 'object') return outputsDataInstances
+
+    for (let dataKey in dataObject) {
+
+      let dataTemplate = outputsDataTemplates.find(d => d.name === dataKey)
+      // Vystupni objekt daneho jmena nenalezen -> preskoc dal
+      if (!dataTemplate) continue
+
+      let dataInstance = outputsDataInstances.find(
+        d => d.templateId === (dataTemplate && dataTemplate.id),
+      )
+      // Instance neexistuje? -> Pokud ne vytvor novou a pridej ji do seznamu instanci
+      if (!dataInstance) {
+        dataInstance = InitHelpers.initNewDataObject(processInstance, dataTemplate)
+        outputsDataInstances.push(dataInstance)
+      }
+
+      // V datech nic neni ulozeno - preskoc
+      let data = dataObject[dataKey]
+      if (typeof data !== 'undefined' && data === null) continue
+      dataInstance.data = data
+    }
+
+    return outputsDataInstances
+  }
+  prepareTargetNodeInstances(options: {
+    processInstance: ProcessInstance,
+    nodeTemplates: NodeElementTemplate[],
+    unfinishedNodeInstances: NodeElementInstance[],
+  }): NodeElementInstance[] {
+    const { processInstance, nodeTemplates, unfinishedNodeInstances } = options
+
+    let result = nodeTemplates.map(nodeTemplate => {
+      let nodeInstance = unfinishedNodeInstances.find(n => n.templateId === nodeTemplate.id)
+      if (!nodeInstance) {
+        nodeInstance = InitHelpers.initNewNodeElement(processInstance, nodeTemplate)
+      }
+      nodeInstance.status = ActivityStatus.Ready
+      return nodeInstance
+    })
+    return result
+  }
+  prepareTargetSequenceInstances(options: {
+    outgoingSequenceTemplates: SequenceFlowTemplate[],
+    outgoingSequenceInstances: SequenceFlowInstance[],
+    targetNodeInstances: NodeElementInstance[],
+    sourceNodeInstance: NodeElementInstance,
+    processInstance: ProcessInstance,
+  }): SequenceFlowInstance[] {
+    const {
+      outgoingSequenceInstances,
+      outgoingSequenceTemplates,
+      targetNodeInstances,
+      sourceNodeInstance,
+      processInstance,
+    } = options
+    if (targetNodeInstances.length <= 0) return outgoingSequenceInstances
+    // Pouze jiz existujici cilove uzly (Do neexistujiciho nemohlo nic vest)
+    let targetIds = targetNodeInstances.map(n => n.id).filter(n => !n) as number[]
+
+    let sequenceInstances = outgoingSequenceTemplates.map(sequenceTemplate => {
+      // Existuje instance patrici sablone a zaroven ukazujici na cil?
+      let sequenceInstance = outgoingSequenceInstances.find(
+        seq => seq.templateId === sequenceTemplate.id && targetIds.includes(seq.targetId as number),
+      )
+      // Neexistuje tak vytvor
+      if (!sequenceInstance) {
+        // najdi instanci cile => id cile sekvence sablony musi bit stejne jako id instance cile
+        let targetNodeInstance = targetNodeInstances.find(targetNode => {
+          return (targetNode.templateId === sequenceTemplate.targetId) ||
+            (targetNode.template && targetNode.template.id === sequenceTemplate.targetId)
+        })
+        sequenceInstance = InitHelpers.initNewSequenceFlow(
+          processInstance,
+          sequenceTemplate,
+          { sourceNodeInstance, targetNodeInstance },
+        )
+      }
+      return sequenceInstance
+    })
+    return sequenceInstances
+  }
+
 
   //#endregion
 

@@ -10,18 +10,19 @@ import {
   convertTemplate2Instance,
 } from '../../src/utils/entityHelpers'
 
-describe('Test zakladni implamantace ulohy', ()=>{
+describe('Test zakladni implamantace ulohy', () => {
   it('taskImplementation', () => {
     expect(taskImplementation).toBeObject()
     expect(taskImplementation.prerun).toBeUndefined()
     expect(taskImplementation.run).toBeFunction()
     let result = taskImplementation.run({
       context: createEmptyContext(),
-      initNext: ()=>{},
+      initNext: () => {},
+      finishProcess: () => {},
     })
     expect(result).toBeTrue()
   })
-  it('err',()=>{
+  it('err', () => {
     let i = convertTemplate2Instance(ProcessTemplate)
     let t = (i) ? convertInstance2Template(i) : undefined
     let si = convertString2Instance(i && i.name || '')
