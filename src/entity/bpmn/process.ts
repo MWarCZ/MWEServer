@@ -1,6 +1,7 @@
 import { BeforeInsert, Column, Entity, ManyToOne, OneToMany, PrimaryGeneratedColumn } from 'typeorm'
 import { v4 as uuid } from 'uuid'
 
+import { JsonMap } from '../../types/json'
 import { BaseElementInstance, BaseElementTemplate, fillElement, OptionsConstructor, ProcessStatus } from './baseElement'
 import { DataObjectInstance, DataObjectTemplate } from './dataObject'
 import { NodeElementInstance, NodeElementTemplate } from './nodeElement'
@@ -100,6 +101,10 @@ export class ProcessInstance implements BaseElementInstance {
   endDateTime?: Date
 
   // ===============
+
+
+  @Column('simple-json')
+  data: JsonMap = {}
 
   @Column('enum', {
     enum: ProcessStatus,

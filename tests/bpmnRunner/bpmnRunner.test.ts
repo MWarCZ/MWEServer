@@ -196,7 +196,6 @@ describe('Testy s bpmnRunner', () => {
           // console.warn(nodeI)
           await runner.runIt({
             instance: nodeI,
-            args: {},
           })
           console.log('--------', i, '----------')
         }
@@ -232,7 +231,7 @@ describe('Testy s bpmnRunner', () => {
       ]
       for (let exp of expected ) {
         let processI = await connection.manager.findOneOrFail(ProcessInstance)
-        let nodeInstances = await connection.manager.find(NodeElementInstance)
+        let nodeInstances = await connection.manager.find(NodeElementInstance,)
         let completedNodes = nodeInstances.filter(n => n.status === ActivityStatus.Completed)
         let readyNodes = nodeInstances.filter(n => n.status === ActivityStatus.Ready)
 
@@ -245,7 +244,6 @@ describe('Testy s bpmnRunner', () => {
         if (readyNode) {
           await runner.runIt({
             instance: readyNode,
-            args: {},
           })
         }
 
@@ -405,7 +403,6 @@ describe('Testy s bpmnRunner', () => {
         if (readyNode) {
           await runner.runIt({
             instance: readyNode,
-            args: {},
           })
         }
 
@@ -450,7 +447,6 @@ describe('Testy s bpmnRunner', () => {
     console.log('xxxx')
     let aaa = await runner.runIt({
       instance: startI,
-      args: {},
     })
 
     // let startEventI = await connection.manager.findOneOrFail(StartEventInstance)

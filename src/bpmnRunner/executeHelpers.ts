@@ -1,5 +1,5 @@
 import { ActivityStatus, NodeElementInstance } from '../entity/bpmn'
-import { JsonMap } from '../types/json'
+import { Json, JsonMap } from '../types/json'
 import { NodeImplementation } from './pluginNodeImplementation'
 import { RunContext } from './runContext'
 
@@ -15,6 +15,7 @@ export function executeNodePrerun(options: {
   args: JsonMap,
   initNext: (x: any) => void,
   finishProcess: (x: any) => void,
+  registerData: (x: string, y: any) => void,
 }): boolean {
   const {
     nodeInstance,
@@ -23,6 +24,7 @@ export function executeNodePrerun(options: {
     args,
     initNext,
     finishProcess,
+    registerData,
   } = options
   // status === Ready
   try {
@@ -31,6 +33,7 @@ export function executeNodePrerun(options: {
       args,
       initNext,
       finishProcess,
+      registerData,
     }) : true
     // nodeInstance.returnValue = result
     nodeInstance.returnValue = context.$OUTPUT
@@ -59,6 +62,7 @@ export function executeNodeRun(options: {
   args: JsonMap,
   initNext: (x:any) => void,
   finishProcess: (x:any) => void,
+  registerData: (x:string, y:any) => void,
 }): boolean {
   const {
     nodeInstance,
@@ -67,6 +71,7 @@ export function executeNodeRun(options: {
     args,
     initNext,
     finishProcess,
+    registerData,
   } = options
   // status === Active
   try {
@@ -75,6 +80,7 @@ export function executeNodeRun(options: {
       args,
       initNext,
       finishProcess,
+      registerData,
     })
     nodeInstance.returnValue = context.$OUTPUT
     nodeInstance.status = ActivityStatus.Completing
@@ -110,10 +116,12 @@ export function executeNode(options: {
     initNext: number[],
     // Informace o ukoceni procesu.
     finishProcess: { finished: boolean, forced: boolean },
+    registerData: JsonMap,
     outputs?: JsonMap,
   } = {
     initNext: [],
     finishProcess: { finished: false, forced: false },
+    registerData: {},
   }
 
   // Pomocna funkce (callback), ktera pridava id sequenceFlow do seznamu pro provedeni.
@@ -128,19 +136,44 @@ export function executeNode(options: {
       returnValues.finishProcess.forced = !!options.forced
     }
   }
+  // Pomocna funkce, pro nastaveni/registraci novych dat do instance procesu.
+  const registerData = (name: string, data: Json) => {
+    if(data) {
+      returnValues.registerData[name] = data
+    } else {
+      delete returnValues.registerData[name]
+    }
+  }
 
   // taskInstance.status === Ready
-  if (executeNodePrerun({ nodeInstance, args, context, nodeImplementation, initNext, finishProcess })) {
+  if (executeNodePrerun({
+    nodeInstance,
+    args,
+    context,
+    nodeImplementation,
+    initNext,
+    finishProcess,
+    registerData,
+  })) {
     // status === Active
-    if (executeNodeRun({ nodeInstance, args, context, nodeImplementation, initNext, finishProcess })) {
+    if (executeNodeRun({
+      nodeInstance,
+      args,
+      context,
+      nodeImplementation,
+      initNext,
+      finishProcess,
+      registerData,
+    })) {
       // status === completing
       if (typeof nodeImplementation.onCompleting === 'function') {
         // TODO - dovymislet onCompleting()
         nodeImplementation.onCompleting({
-          context: context,
-          args: args,
+          context,
+          args,
           initNext,
           finishProcess,
+          registerData,
         })
       }
       nodeInstance.status = ActivityStatus.Completed
@@ -154,6 +187,7 @@ export function executeNode(options: {
           args: args,
           initNext,
           finishProcess,
+          registerData,
         })
       }
       nodeInstance.status = ActivityStatus.Failled

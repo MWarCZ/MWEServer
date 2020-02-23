@@ -1,7 +1,6 @@
 import { VM } from 'vm2'
 
-import { NodeImplementation } from '../bpmnRunner'
-import { RunContext } from '../bpmnRunner/runContext'
+import { NodeImplementation, RunContext } from '../bpmnRunner'
 
 
 function evalExpression(options: {
@@ -54,6 +53,9 @@ export const parallelGatewayImplementation: NodeImplementation = {
  * Inclusive Gateway (OR)
  */
 export const inclusiveGatewayImplementation: NodeImplementation = {
+  options: {
+    scope_inputs: 'global',
+  },
   prerun() {
     return true
   },
@@ -82,6 +84,9 @@ export const inclusiveGatewayImplementation: NodeImplementation = {
  * Exclusive Gateway (XOR)
  */
 export const exclusiveGatewayImplementation: NodeImplementation = {
+  options: {
+    scope_inputs: 'global',
+  },
   prerun() {
     return true
   },
