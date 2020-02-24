@@ -140,7 +140,7 @@ describe('Testy prevodu XML na interni entity DB', () => {
     const dataObject = await connection.getRepository(DataObjectTemplate).findOneOrFail()
     expect(dataObject.name).toBe('DATA')
     expect(dataObject.strict).toBeFalsy()
-    expect(dataObject.json).toMatchObject({})
+    expect(dataObject.json).toStrictEqual({ "pozdrav": "ahoj", "cislo": 10, "existuji": true })
     expect(dataObject.processTemplateId).toBe(process.id)
 
     const task = await connection.getRepository(NodeElementTemplate).findOneOrFail({

@@ -306,7 +306,6 @@ export class BpmnRunner {
   //
   async runIt(options: {
     instance: NodeElementInstance,
-    args?: JsonMap,
   }) {
 
     //#region Find and load data from DB.
@@ -363,8 +362,10 @@ export class BpmnRunner {
 
     // Implementace pro dany uzel => Zjistit nastavene predvolby
     let implementation = this.getImplementation(nodeTemplate.implementation as string)
-    const { scope_inputs, scope_outputs } = implementation.options || {}
+
     // Potrebuji data v globalnim meritku procesu?
+    const { scope_inputs, scope_outputs } = implementation.options || {}
+
     if (scope_inputs === 'global') {
       // Data dostupna v celem procesu jako vstupy
       inputsDataTemplates = await this.connection.manager.find(DataObjectTemplate, {
@@ -431,7 +432,6 @@ export class BpmnRunner {
       outputsDataTemplates,
       processInstance,
       processTemplate,
-      args: options.args,
       nodeTemplates,
       nodeInstances,
     })
@@ -450,7 +450,6 @@ export class BpmnRunner {
 
   }
   runNode(options: {
-    args?: JsonMap,
     nodeInstance: NodeElementInstance,
     nodeTemplate: NodeElementTemplate,
     incomingSequenceTemplates: SequenceFlowTemplate[],
@@ -479,10 +478,11 @@ export class BpmnRunner {
       nodeTemplate,
       outputsDataInstances,
       processTemplate,
-      args,
       nodeTemplates,
       nodeInstances,
     } = options
+
+    let otherArgs: JsonMap = {}
 
     //#region Predpripravy pro vykonani uzlu.
 
@@ -502,13 +502,29 @@ export class BpmnRunner {
       inputsDataInstances,
       outputsDataTemplates,
       outputsDataInstances,
+      processInstance,
     })
+
+    // Chce dostat uzel informace i o jinych uzlech v sablone
+    const { provideNodes } = implementation.options || {}
+    if (provideNodes) {
+      let tmpNodes = nodeTemplates.map(node=>{
+        return {
+          id: node.id || 0,
+          bpmnId: node.bpmnId || '',
+          name: node.name || '',
+          implementation: node.implementation || '',
+        }
+      })
+      let nodesInArgs = tmpNodes.filter(node=>provideNodes(node))
+      otherArgs['provideNodes'] = nodesInArgs
+    }
 
     // Sestaveni dodatku/argumentu pro dany uzel.
     let allArgs = this.createAdditionsArgs({
       nodeTemplate,
       nodeInstance,
-      otherArgs: options.args,
+      otherArgs,
     })
 
     //#endregion
@@ -530,6 +546,9 @@ export class BpmnRunner {
       outputsDataInstances,
       processInstance,
     })
+
+    // results.registerData
+    processInstance.data = { ...processInstance.data, ...results.registerData }
 
     // Najit sablony uzlu, ktere maji byt spusteny dale.
     let targetNodeTemplates = nodeTemplates.filter(

@@ -1,12 +1,25 @@
+import { Json } from '../types/json'
 import { RunContext } from './runContext'
+
+export type FilterProps_NodeElementTemplate = {
+  id: number,
+  bpmnId: string,
+  name: string,
+  implementation: string,
+}
 
 /**
  * Rozhrani definujici podobu pluginu
  */
 export interface NodeImplementation {
   options?: {
-    scope_inputs: 'local' | 'global',
-    scope_outputs: 'local' | 'global',
+    // Obdrzi datove objekty A) vedou primo do uzlu X B) Vsechny datove objekty instance procesu.
+    scope_inputs?: 'local' | 'global',
+    // Obdrzi datove objekty A) vedou primo do uzlu X B) Vsechny datove objekty instance procesu.
+    scope_outputs?: 'local' | 'global',
+    // Ziskat i jine uzly, ktere by mohly mit vliv na chovani (Skok v provadeni na jiny uzel)
+    // Prida do `args` polozku `provideNodes` s polem uzlu, ktere vyhovuji funkci.
+    provideNodes?: (node:FilterProps_NodeElementTemplate)=>boolean,
   }
 
   // Akce doplnujici hodnoty (dodatky) pro predpokladany validni pruchod pres prerun.
@@ -30,6 +43,7 @@ export interface NodeImplementationFunctionOptions {
   // Funkce ktera vytvori dalsi instance elementu dle vybranych id sablon elementu
   initNext: (sequenceFlowIds: number[]|{id: number}[]) => void,
   finishProcess: (options?: { forced: boolean }) => void,
+  registerData: (name: string, data: Json) => void,
 }
 
 export interface NodeImplementationFunction {

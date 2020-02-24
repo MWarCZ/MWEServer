@@ -12,13 +12,23 @@ describe('Zakladni testy pro scriptTaskImplementation.', () => {
   it('Skript obsahuje jednoduchy aritmeticky vyraz.', () => {
     let context = createEmptyContext()
     let args = { script: `(5+6*2)*3` }
-    let result = scriptTask.run({context, args, initNext: () => { }, finishProcess: () => { }})
+    let result = scriptTask.run({
+      context, args,
+      initNext: () => { },
+      finishProcess: () => { },
+      registerData: () => { },
+    })
     expect(result).toBe((5 + 6 * 2) * 3)
   })
   it('Skript obsahuje prikaz pro vyhozeni chyby.', () => {
     let context = createEmptyContext()
     let args = { script: `throw new Error('abc')` }
-    expect(() => scriptTask.run({ context, args, initNext: () => { }, finishProcess: () => { }})).toThrowError()
+    expect(() => scriptTask.run({
+      context, args,
+      initNext: () => { },
+      finishProcess: () => { },
+      registerData: () => { },
+    })).toThrowError()
   })
   it('Skript obsahuje jednoduchy aritmeticky vyraz.', () => {
     let context = createEmptyContext()
@@ -28,7 +38,12 @@ describe('Zakladni testy pro scriptTaskImplementation.', () => {
       }
       add(11,22)
     ` }
-    let result = scriptTask.run({ context, args, initNext: () => { }, finishProcess: () => { }})
+    let result = scriptTask.run({
+      context, args,
+      initNext: () => { },
+      finishProcess: () => { },
+      registerData: () => { },
+    })
     console.log(result)
     expect(result).toBe(33)
   })
@@ -42,7 +57,12 @@ describe('Zakladni testy pro scriptTaskImplementation.', () => {
       }
       $OUTGOING.push(11)
     ` }
-    let result = scriptTask.run({ context, args, initNext: () => { }, finishProcess: () => { }})
+    let result = scriptTask.run({
+      context, args,
+      initNext: () => { },
+      finishProcess: () => { },
+      registerData: () => { },
+    })
     console.log({result, context})
   })
 
