@@ -252,7 +252,7 @@ describe('Testy s bpmnRunner', () => {
 
     })
 
-    it.each([
+    it.only.each([
       [
         '../resources/bpmn/simple/simple_xor_outgoing.bpmn',
         'fifo',
@@ -355,6 +355,15 @@ describe('Testy s bpmnRunner', () => {
           { nodeInstances: 8, completedNodes: 8, readyNodes: 0, processStatus: ProcessStatus.Completed },
         ],
       ],
+      [
+        '../resources/bpmn/simple/simple_without_end.bpmn',
+        'fifo',
+        [
+          { nodeInstances: 1, completedNodes: 0, readyNodes: 1, processStatus: ProcessStatus.Ready },
+          { nodeInstances: 2, completedNodes: 1, readyNodes: 1, processStatus: ProcessStatus.Ready },
+          { nodeInstances: 2, completedNodes: 2, readyNodes: 0, processStatus: ProcessStatus.Failled },
+        ],
+      ],
 
     ])('%s - %s', async (path, orderExucute, expected ) => {
       let xml = readFileSync(joinPath(
@@ -380,8 +389,9 @@ describe('Testy s bpmnRunner', () => {
         let readyNodes = nodeInstances.filter(n => n.status === ActivityStatus.Ready)
         let waitNodes = nodeInstances.filter(n => n.status === ActivityStatus.Waiting)
 
-        if (path.includes('simple_and_incoming_nested')) {
-          // console.warn(JSON.stringify(nodeInstances, null, 2))
+        if (path.includes('simple_without_end')) {
+          console.warn(JSON.stringify(nodeInstances, null, 2))
+          console.error(JSON.stringify(processI, null, 2))
         }
 
         if (exp.nodeInstances)
@@ -411,7 +421,7 @@ describe('Testy s bpmnRunner', () => {
 
     })
 
-    it.only.each([
+    it.each([
       [
         '../resources/bpmn/simple/simple_scripttask.bpmn',
         [
