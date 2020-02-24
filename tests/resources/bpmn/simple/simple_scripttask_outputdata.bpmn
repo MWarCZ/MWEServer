@@ -17,17 +17,21 @@
       <bpmn2:dataOutputAssociation id="DataOutputAssociation_0lbceh6">
         <bpmn2:targetRef>DataObjectReference_05x9oqz</bpmn2:targetRef>
       </bpmn2:dataOutputAssociation>
-      <bpmn2:script>$OUTPUT.xxx = {
-  name: $SELF.name,
-}</bpmn2:script>
+      <bpmn2:script>
+  $OUTPUT.xxx = {
+    name: $SELF.name,
+    input: $INPUT,
+  }
+  $OUTPUT.Bbb = { a: 1, b: 'B', c: [true, false, false] }
+      </bpmn2:script>
     </bpmn2:scriptTask>
     <bpmn2:dataObjectReference id="DataObjectReference_05x9oqz" name="Bbb" dataObjectRef="DataObject_0kh9ibf" />
     <bpmn2:dataObject id="DataObject_0kh9ibf">
-      <bpmn:extensionElements>
+      <bpmn2:extensionElements>
         <mwe:json>
-          {"pozdrav":"ahoj", "cislo": 10, "existuji": true}
+          {"pozdrav":"caw", "cislo": 22, "existuji": false}
         </mwe:json>
-      </bpmn:extensionElements>
+      </bpmn2:extensionElements>
     </bpmn2:dataObject>
   </bpmn2:process>
   <bpmndi:BPMNDiagram id="BPMNDiagram_1">

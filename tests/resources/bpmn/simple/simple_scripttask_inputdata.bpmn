@@ -21,15 +21,18 @@
       </bpmn2:dataInputAssociation>
       <bpmn2:script>$OUTPUT.xxx = {
   name: $SELF.name,
+  input: $INPUT,
+  number: $INPUT.Aaa.cislo,
+  greeting: $INPUT.Aaa.pozdrav,
 }</bpmn2:script>
     </bpmn2:scriptTask>
     <bpmn2:dataObjectReference id="DataObjectReference_05x9oqz" name="Aaa" dataObjectRef="DataObject_0kh9ibf" />
     <bpmn2:dataObject id="DataObject_0kh9ibf" >
-      <bpmn:extensionElements>
+      <bpmn2:extensionElements>
         <mwe:json>
           {"pozdrav":"ahoj", "cislo": 10, "existuji": true}
         </mwe:json>
-      </bpmn:extensionElements>
+      </bpmn2:extensionElements>
     </bpmn2:dataObject>
   </bpmn2:process>
   <bpmndi:BPMNDiagram id="BPMNDiagram_1">

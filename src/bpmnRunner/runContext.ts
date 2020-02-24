@@ -89,7 +89,6 @@ export function createContextInputs(
       ...value,
     }
   }, {})
-
   return data
 }
 
@@ -223,6 +222,7 @@ export function createContextForNode(
   let incoming = createContextIncoming({incomingSequenceInstances, incomingSequenceTemplates})
   context.$INCOMING = [ ...context.$INCOMING, ...incoming ]
 
+  // console.log(JSON.stringify(context, null, 4))
   return context
 }
 

@@ -8,6 +8,7 @@ import { BpmnBuilder } from '../../src/bpmnBuilder'
 import { BpmnRunner } from '../../src/bpmnRunner'
 import {
   ActivityStatus,
+  DataObjectInstance,
   NodeElementInstance,
   NodeElementTemplate,
   ProcessInstance,
@@ -409,6 +410,142 @@ describe('Testy s bpmnRunner', () => {
       }
 
     })
+
+    it.only.each([
+      [
+        '../resources/bpmn/simple/simple_scripttask.bpmn',
+        [
+          { nodeInstances: 1, processStatus: ProcessStatus.Ready, },
+          { nodeInstances: 2, processStatus: ProcessStatus.Ready, retVal: {
+            xxx: { name: 'SkriptX' },
+          },},
+          { nodeInstances: 3, processStatus: ProcessStatus.Ready, },
+          { nodeInstances: 3, processStatus: ProcessStatus.Completed, },
+        ],
+      ],
+      [
+        '../resources/bpmn/simple/simple_scripttask_inputdata.bpmn',
+        [
+          { nodeInstances: 1, processStatus: ProcessStatus.Ready, },
+          { nodeInstances: 2, processStatus: ProcessStatus.Ready, retVal: {
+              xxx: {
+                name: 'SkriptX',
+                input: { Aaa: {pozdrav: 'ahoj', cislo: 10, existuji: true} },
+                number: 10,
+                greeting: 'ahoj',
+              },
+            },
+          },
+          { nodeInstances: 3, processStatus: ProcessStatus.Ready, },
+          { nodeInstances: 3, processStatus: ProcessStatus.Completed, },
+        ],
+      ],
+      [
+        '../resources/bpmn/simple/simple_scripttask_outputdata.bpmn',
+        [
+          {
+            nodeInstances: 1, processStatus: ProcessStatus.Ready,
+          },
+          {
+            nodeInstances: 2, processStatus: ProcessStatus.Ready, retVal: {
+              xxx: {
+                name: 'SkriptX',
+                input: {},
+              },
+              Bbb: { a: 1, b: 'B', c: [true, false, false] },
+            },
+          },
+          {
+            nodeInstances: 3, processStatus: ProcessStatus.Ready, dataObjB: {
+              a: 1, b: 'B', c: [true, false, false],
+            },
+          },
+          {
+            nodeInstances: 3, processStatus: ProcessStatus.Completed, dataObjB: {
+              a: 1, b: 'B', c: [true, false, false],
+            },
+          },
+        ],
+      ],
+      [
+        '../resources/bpmn/simple/simple_scripttask_inputdata_outputdata.bpmn',
+        [
+          { nodeInstances: 1, processStatus: ProcessStatus.Ready, },
+          {
+            nodeInstances: 2, processStatus: ProcessStatus.Ready, retVal: {
+              xxx: {
+                name: 'SkriptX',
+                input: { Aaa: { pozdrav: 'ahoj', cislo: 10, existuji: true } },
+                outputBbb: { pozdrav: 'caw', cislo: 22, existuji: false },
+              },
+              Bbb: { a: 1, b: 'B', c: [true, false, false] },
+            },
+          },
+          { nodeInstances: 3, processStatus: ProcessStatus.Ready, dataObjB: {
+              a: 1, b: 'B', c: [true, false, false],
+            },
+          },
+          { nodeInstances: 3, processStatus: ProcessStatus.Completed, dataObjB: {
+              a: 1, b: 'B', c: [true, false, false],
+            },
+          },
+        ],
+      ],
+    ])('DataFlow: %s', async(path, expected) => {
+      let xml = readFileSync(joinPath(
+        __dirname,
+        path,
+      ), 'utf8').toString()
+      await builder.loadFromXml(xml)
+
+      let processTemplate = await connection.manager.findOneOrFail(ProcessTemplate, {
+        relations: ['nodeElements', 'dataObjects'],
+      })
+      let nodeElements = processTemplate.nodeElements as NodeElementTemplate[]
+      let startNode = nodeElements.find(n => `${n.implementation}`.includes('startEvent')) as NodeElementTemplate
+      let processInstance = await runner.initAndSaveProcess(
+        processTemplate as { id: number },
+        startNode,
+      )
+
+      for (let exp of expected) {
+        let processI = await connection.manager.findOneOrFail(ProcessInstance, {
+          relations: ['dataObjects'],
+        })
+        let nodeInstances = await connection.manager.find(NodeElementInstance)
+        let readyNodes = nodeInstances.filter(n => n.status === ActivityStatus.Ready)
+        let dataObjB = await connection.manager.findOne(DataObjectInstance)
+
+        // console.warn(JSON.stringify(processTemplate.dataObjects, null, 2))
+        // console.error(JSON.stringify(processI.dataObjects, null, 2))
+
+        if (exp.nodeInstances)
+          expect(nodeInstances).toBeArrayOfSize(exp.nodeInstances)
+        if (exp.processStatus)
+          expect(processI.status).toBe(exp.processStatus)
+        if ((exp as { dataObjB: any }).dataObjB) {
+          expect(dataObjB && dataObjB.data).toStrictEqual((exp as { dataObjB: any }).dataObjB)
+        }
+
+        let readyNode: NodeElementInstance | undefined
+        readyNode = readyNodes.shift()
+
+        if (readyNode) {
+          await runner.runIt({
+            instance: readyNode,
+          })
+          let executedInstance = await connection.manager.findOneOrFail(NodeElementInstance, {
+            id: readyNode.id,
+          })
+          if (exp.retVal)
+            expect(executedInstance.returnValue).toStrictEqual(exp.retVal)
+
+        }
+
+      }
+
+    })
+
   })
 
 

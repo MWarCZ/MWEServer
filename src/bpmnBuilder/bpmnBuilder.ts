@@ -38,7 +38,6 @@ export class BpmnBuilder {
         // NUTNE zachovat porad!
         let dataObjects = new Set(level.DataObject.map(e => e.entity).filter(e => !!e))
         await this.connection.manager.save([...dataObjects])
-
         let tasks = new Set(level.Task.map(e => e.entity).filter(e => !!e))
         let startEvents = new Set(level.StartEvent.map(e => e.entity).filter(e => !!e))
         let endEvents = new Set(level.EndEvent.map(e => e.entity).filter(e => !!e))
