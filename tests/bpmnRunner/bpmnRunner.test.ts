@@ -252,7 +252,7 @@ describe('Testy s bpmnRunner', () => {
 
     })
 
-    it.only.each([
+    it.each([
       [
         '../resources/bpmn/simple/simple_xor_outgoing.bpmn',
         'fifo',

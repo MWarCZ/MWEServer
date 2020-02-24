@@ -9,6 +9,13 @@ export declare namespace BpmnFxm {
   type NodeElementAttr = {
     implementation?: string,
   } & BaseElementAttr
+  type NodeElement = {
+    '#attr'?: NodeElementAttr,
+    dataOutputAssociation?: DataOutputAssociation[],
+    dataInputAssociation?: DataInputAssociation[],
+    incoming?: string | string[], /** */
+    outgoing?: string | string[], /** */
+  }
 
   type DefinitionsAttr = {
     [key: string]: string,
@@ -32,6 +39,12 @@ export declare namespace BpmnFxm {
     task?: Task[],
     scriptTask?: ScriptTask[], /** */
     serviceTask?: ServiceTask[], /** */
+    sendTask?: Task[], /** */
+    receiveTask?: Task[], /** */
+    userTask?: Task[], /** */
+    manualTask?: Task[], /** */
+    callActivity?: Task[], /** */
+    businessRuleTask?: Task[], /** */
     // sequence
     sequenceFlow?: SequenceFlow[],
     // data
@@ -40,6 +53,8 @@ export declare namespace BpmnFxm {
     // events
     startEvent?: StartEvent[],
     endEvent?: EndEvent[],
+    intermediateThrowEvent?: IntermediateThrowEvent[],
+    intermediateCatchEvent?: IntermediateCatchEvent[],
     // gateway
     parallelGateway?: ParallelGateway[], /** */
     exclusiveGateway?: ExclusiveGateway[], /** */
@@ -175,6 +190,20 @@ export declare namespace BpmnFxm {
     messageEventDefinition?: string | MessageEventDefinitionAttr[], /** */
     errorEventDefinition?: string | ErrorEventDefinitionAttr[], /** */
     signalEventDefinition?: string | SignalEventDefinitionAttr[], /** */
+  }
+  type IntermediateThrowEventAttr = {
+    eventDefinitionRefs?: string,
+  } & NodeElementAttr
+  type IntermediateThrowEvent = {
+    '#attr'?: IntermediateThrowEventAttr,
+    outgoing?: string | string[], /** */
+  }
+  type IntermediateCatchEventAttr = {
+    eventDefinitionRefs?: string,
+  } & NodeElementAttr
+  type IntermediateCatchEvent = {
+    '#attr'?: IntermediateCatchEventAttr,
+    incoming?: string | string[], /** */
   }
 
   type EventDefinitionAttr = { } & BaseElementAttr

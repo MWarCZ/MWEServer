@@ -6,6 +6,7 @@ export type FilterProps_NodeElementTemplate = {
   bpmnId: string,
   name: string,
   implementation: string,
+  data: any,
 }
 
 /**

@@ -514,6 +514,7 @@ export class BpmnRunner {
           bpmnId: node.bpmnId || '',
           name: node.name || '',
           implementation: node.implementation || '',
+          data: node.data,
         }
       })
       let nodesInArgs = tmpNodes.filter(node=>provideNodes(node))
