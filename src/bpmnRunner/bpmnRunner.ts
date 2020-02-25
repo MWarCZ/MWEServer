@@ -508,15 +508,16 @@ export class BpmnRunner {
     // Chce dostat uzel informace i o jinych uzlech v sablone
     const { provideNodes } = implementation.options || {}
     if (provideNodes) {
-      let tmpNodes = nodeTemplates.map(node=>{
+      let tmpNodes = nodeTemplates.map(node => {
         return {
           id: node.id || 0,
           bpmnId: node.bpmnId || '',
           name: node.name || '',
           implementation: node.implementation || '',
+          data: node.data,
         }
       })
-      let nodesInArgs = tmpNodes.filter(node=>provideNodes(node))
+      let nodesInArgs = tmpNodes.filter(node => provideNodes(node))
       otherArgs['provideNodes'] = nodesInArgs
     }
 

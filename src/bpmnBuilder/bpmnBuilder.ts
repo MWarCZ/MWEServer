@@ -38,18 +38,24 @@ export class BpmnBuilder {
         // NUTNE zachovat porad!
         let dataObjects = new Set(level.DataObject.map(e => e.entity).filter(e => !!e))
         await this.connection.manager.save([...dataObjects])
-        let tasks = new Set(level.Task.map(e => e.entity).filter(e => !!e))
-        let startEvents = new Set(level.StartEvent.map(e => e.entity).filter(e => !!e))
-        let endEvents = new Set(level.EndEvent.map(e => e.entity).filter(e => !!e))
-        let gateways = new Set(level.Gateway.map(e => e.entity).filter(e => !!e))
-        let scriptTasks = new Set(level.ScriptTask.map(e => e.entity).filter(e => !!e))
-        await this.connection.manager.save([
-          ...tasks,
-          ...startEvents,
-          ...endEvents,
-          ...gateways,
-          ...scriptTasks,
-        ])
+
+        let nodeElements = [
+          ...level.Task,
+          ...level.StartEvent,
+          ...level.EndEvent,
+          ...level.Gateway,
+          ...level.ScriptTask,
+          ...level.ServiceTask,
+          ...level.SendTask,
+          ...level.ReceiveTask,
+          ...level.UserTask,
+          ...level.ManualTask,
+          ...level.CallActivity,
+          ...level.BusinessRuleTask,
+          ...level.IntermediateThrowEvent,
+          ...level.IntermediateCatchEvent,
+        ].map(e => e.entity).filter(e => !!e)
+        await this.connection.manager.save([...new Set(nodeElements)])
 
         let sequenceFlows = new Set(level.SequenceFlow.map(e => e.entity).filter(e => !!e))
         await this.connection.manager.save([...sequenceFlows])

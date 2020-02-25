@@ -44,6 +44,14 @@ export declare namespace BpmnLevel {
   type EndEvent = {
     entity: NodeElementTemplate, data: BpmnFxm.EndEvent, tag: 'endEvent',
   }
+  type IntermediateThrowEvent = {
+    entity: NodeElementTemplate, data: BpmnFxm.IntermediateThrowEvent, tag: 'intermediateThrowEvent',
+  }
+  type IntermediateCatchEvent = {
+    entity: NodeElementTemplate, data: BpmnFxm.IntermediateCatchEvent, tag: 'intermediateCatchEvent',
+  }
+
+
   type Gateway = {
     entity: NodeElementTemplate, data: BpmnFxm.Gateway, tag: 'gateway',
   }
@@ -53,5 +61,15 @@ export declare namespace BpmnLevel {
     | DataObjectReference
     | StartEvent
     | EndEvent
+    | IntermediateThrowEvent
+    | IntermediateCatchEvent
+
+type NodeElement = Task
+  | Gateway
+  | ScriptTask
+  | StartEvent
+  | EndEvent
+  | IntermediateThrowEvent
+  | IntermediateCatchEvent
 
 }

@@ -232,7 +232,7 @@ describe('Testy s bpmnRunner', () => {
       ]
       for (let exp of expected ) {
         let processI = await connection.manager.findOneOrFail(ProcessInstance)
-        let nodeInstances = await connection.manager.find(NodeElementInstance,)
+        let nodeInstances = await connection.manager.find(NodeElementInstance )
         let completedNodes = nodeInstances.filter(n => n.status === ActivityStatus.Completed)
         let readyNodes = nodeInstances.filter(n => n.status === ActivityStatus.Ready)
 
@@ -252,7 +252,7 @@ describe('Testy s bpmnRunner', () => {
 
     })
 
-    it.only.each([
+    it.each([
       [
         '../resources/bpmn/simple/simple_xor_outgoing.bpmn',
         'fifo',
@@ -365,7 +365,7 @@ describe('Testy s bpmnRunner', () => {
         ],
       ],
 
-    ])('%s - %s', async (path, orderExucute, expected ) => {
+    ])('%s - %s', async(path, orderExucute, expected ) => {
       let xml = readFileSync(joinPath(
         __dirname,
         path,
@@ -404,7 +404,7 @@ describe('Testy s bpmnRunner', () => {
           expect(processI.status).toBe(exp.processStatus)
 
         let readyNode: NodeElementInstance | undefined
-        if (orderExucute === 'fifo'){
+        if (orderExucute === 'fifo') {
           readyNode = readyNodes.shift()
         }
         else if (orderExucute === 'lifo') {
@@ -425,18 +425,18 @@ describe('Testy s bpmnRunner', () => {
       [
         '../resources/bpmn/simple/simple_scripttask.bpmn',
         [
-          { nodeInstances: 1, processStatus: ProcessStatus.Ready, },
+          { nodeInstances: 1, processStatus: ProcessStatus.Ready },
           { nodeInstances: 2, processStatus: ProcessStatus.Ready, retVal: {
             xxx: { name: 'SkriptX' },
-          },},
-          { nodeInstances: 3, processStatus: ProcessStatus.Ready, },
-          { nodeInstances: 3, processStatus: ProcessStatus.Completed, },
+          } },
+          { nodeInstances: 3, processStatus: ProcessStatus.Ready },
+          { nodeInstances: 3, processStatus: ProcessStatus.Completed },
         ],
       ],
       [
         '../resources/bpmn/simple/simple_scripttask_inputdata.bpmn',
         [
-          { nodeInstances: 1, processStatus: ProcessStatus.Ready, },
+          { nodeInstances: 1, processStatus: ProcessStatus.Ready },
           { nodeInstances: 2, processStatus: ProcessStatus.Ready, retVal: {
               xxx: {
                 name: 'SkriptX',
@@ -446,8 +446,8 @@ describe('Testy s bpmnRunner', () => {
               },
             },
           },
-          { nodeInstances: 3, processStatus: ProcessStatus.Ready, },
-          { nodeInstances: 3, processStatus: ProcessStatus.Completed, },
+          { nodeInstances: 3, processStatus: ProcessStatus.Ready },
+          { nodeInstances: 3, processStatus: ProcessStatus.Completed },
         ],
       ],
       [
@@ -480,7 +480,7 @@ describe('Testy s bpmnRunner', () => {
       [
         '../resources/bpmn/simple/simple_scripttask_inputdata_outputdata.bpmn',
         [
-          { nodeInstances: 1, processStatus: ProcessStatus.Ready, },
+          { nodeInstances: 1, processStatus: ProcessStatus.Ready },
           {
             nodeInstances: 2, processStatus: ProcessStatus.Ready, retVal: {
               xxx: {

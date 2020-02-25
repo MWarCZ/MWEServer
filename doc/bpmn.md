@@ -51,10 +51,10 @@ Strom elementů:
       - [timerEventDefinition](#timerEventDefinition)
       - [messageEventDefinition](#messageEventDefinition)
       - [signalEventDefinition](#signalEventDefinition)
-	- intermediateThrowEvent
+	- [intermediateThrowEvent](#intermediateThrowEvent)
       - outgoing
     	- ...
-  	- intermediateCatchEvent
+  	- [intermediateCatchEvent](#intermediateCatchEvent)
       - incoming
     	- ...
     - [endEvent](#endEvent) (id, name, eventDefinitionRefs)
@@ -260,6 +260,7 @@ Strom elementů:
 	<outgoing id="id">
 		id_sequenceFlow
 	</outgoing>
+	...EventDefinition
 </startEvent>
 ```
 ### endEvent 
@@ -268,7 +269,24 @@ Strom elementů:
 	<incoming id="id">
 		id_sequenceFlow
 	</incoming>
+	...EventDefinition
 </endEvent>
+```
+### intermediateThrowEvent
+```xml
+<intermediateThrowEvent id="id" name="string">
+	<incoming>id_sequenceFlow</incoming>
+	...EventDefinition
+	<linkEventDefinition id="id" name="string" />
+</intermediateThrowEvent>
+```
+### intermediateCatchEvent
+```xml
+<intermediateCatchEvent id="id" name="string">
+	<outgoing>id_sequenceFlow</outgoing>
+	...EventDefinition
+	<linkEventDefinition id="id" name="string" />
+</intermediateCatchEvent>
 ```
 ### sequenceFlow
 ```xml
@@ -368,6 +386,12 @@ Strom elementů:
 </conditionalEventDefinition>
 ```
 
+## collaboration
+```xml
+<collaboration id="id">
+	<participant id="id" name="string" processRef="id_process" />
+</collaboration>
+```
 
 ## signal
 ```xml

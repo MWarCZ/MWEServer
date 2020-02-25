@@ -140,7 +140,7 @@ describe('Testy prevodu XML na interni entity DB', () => {
     const dataObject = await connection.getRepository(DataObjectTemplate).findOneOrFail()
     expect(dataObject.name).toBe('DATA')
     expect(dataObject.strict).toBeFalsy()
-    expect(dataObject.json).toStrictEqual({ "pozdrav": "ahoj", "cislo": 10, "existuji": true })
+    expect(dataObject.json).toStrictEqual({ 'pozdrav': 'ahoj', 'cislo': 10, 'existuji': true })
     expect(dataObject.processTemplateId).toBe(process.id)
 
     const task = await connection.getRepository(NodeElementTemplate).findOneOrFail({
@@ -418,17 +418,6 @@ describe('Testy prevodu XML na interni entity DB', () => {
     })
 
   })
+
 })
 
-// function commonExcect4Task<T extends TaskTemplate>(entity: T, relations: (keyof TaskTemplate)[] = [])  {
-//   if (relations.includes('incoming')) {
-//     expect(entity.incoming).toBeArrayOfSize(1)
-//   }
-//   if (relations.includes('outgoing')) {
-//     expect(entity.outgoing).toBeArrayOfSize(1)
-//     expect(true).toBeFalsy()
-//   }
-// }
-// function commonExcect4Tasks<T extends TaskTemplate>(entitys: T[], relations: (keyof TaskTemplate)[] = []) {
-//   entitys.forEach(entity => commonExcect4Task(entity, relations))
-// }

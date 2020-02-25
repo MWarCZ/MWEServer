@@ -6,6 +6,7 @@ export type FilterProps_NodeElementTemplate = {
   bpmnId: string,
   name: string,
   implementation: string,
+  data: any,
 }
 
 /**
@@ -19,7 +20,7 @@ export interface NodeImplementation {
     scope_outputs?: 'local' | 'global',
     // Ziskat i jine uzly, ktere by mohly mit vliv na chovani (Skok v provadeni na jiny uzel)
     // Prida do `args` polozku `provideNodes` s polem uzlu, ktere vyhovuji funkci.
-    provideNodes?: (node:FilterProps_NodeElementTemplate)=>boolean,
+    provideNodes?: (node:FilterProps_NodeElementTemplate) => boolean,
   }
 
   // Akce doplnujici hodnoty (dodatky) pro predpokladany validni pruchod pres prerun.
