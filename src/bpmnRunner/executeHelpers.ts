@@ -138,7 +138,7 @@ export function executeNode(options: {
   }
   // Pomocna funkce, pro nastaveni/registraci novych dat do instance procesu.
   const registerData = (name: string, data: Json) => {
-    if(data) {
+    if (data) {
       returnValues.registerData[name] = data
     } else {
       delete returnValues.registerData[name]

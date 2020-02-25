@@ -113,30 +113,27 @@ export class Parser {
     this.preloadBaseElement(entity, process['#attr'])
     if (process['#attr']) {
       entity.isExecutable = process['#attr'].isExecutable
-      // TODO Osetrit enum
       let tmpProcessType = process['#attr'].processType
       switch (tmpProcessType) {
         case ProcessType.None:
         case ProcessType.Private:
         case ProcessType.Public:
-          entity.processType = <ProcessType>tmpProcessType
+          entity.processType = <ProcessType> tmpProcessType
           break
         case undefined: break
         default:
           throw new ParseError(`Process: Unknown value '${tmpProcessType}' in processType.`)
       }
       let tmpVerType = process['#attr'][`${this.ns.mwe}versionType` as 'versionType']
-      switch(tmpVerType) {
+      switch (tmpVerType) {
         case VersionType.number:
         case VersionType.semver:
-          entity.versionType = <VersionType>tmpVerType
+          entity.versionType = <VersionType> tmpVerType
           break
         case undefined: break
         default:
           throw new ParseError(`Process: Unknown value '${tmpVerType}' in versionType`)
       }
-      // entity.processType = <ProcessType> process['#attr'].processType
-      // entity.versionType = <VersionType> process['#attr'][`${this.ns.mwe}versionType` as 'versionType']
       entity.version = process['#attr'][`${this.ns.mwe}version` as 'version']
     }
     return {
@@ -269,9 +266,6 @@ export class Parser {
     this.preloadBaseElement(entity, gateway['#attr'])
     this.preloadNodeElement(entity, gateway['#attr'], implementation)
     if (gateway['#attr']) {
-      // entity.implementation = gateway['#attr'][`${this.ns.mwe}implementation` as 'implementation'] || implementation
-      // entity.direction = gateway['#attr'].gatewayDirections as GatewayDirection
-      // entity.type = gatewayType
       entity.data['direction'] = gateway['#attr'].gatewayDirections || null
       entity.data['type'] = implementation
     }
@@ -459,29 +453,7 @@ export class Parser {
     // LaneSet, Lane => Nacteni candidateAssignee
     let laneSets = process.data[`${this.ns.bpmn2}laneSet` as 'laneSet']
     if (typeof laneSets === 'object') {
-      laneSets.map(laneSet => {
-        // Najdi a prochazej Lane elementy.
-        let lanes = laneSet[`${this.ns.bpmn2}lane` as 'lane']
-        lanes && lanes.map(lane => {
-          // Najdi nazev Lane, ktery bude pouzit jako vyraz k nalezeni skupiny/uzivatele.
-          let { name: candidateAssignee = '' } = lane['#attr'] || {}
-          // Prochazej vsecny reference na uzly patrici do Lane.
-          let flowNodeRefs = lane[`${this.ns.bpmn2}flowNodeRef` as 'flowNodeRef']
-          if (typeof flowNodeRefs === 'string') {
-            flowNodeRefs = [flowNodeRefs] // Normalizace
-          }
-          flowNodeRefs && flowNodeRefs.map(flowNode => {
-            // Prochazej uzly a do prvniho hodiciho se prirad nazev Lane
-            allNodeElements.find(node => {
-              if(node.entity.bpmnId === flowNode){
-                node.entity.candidateAssignee = candidateAssignee
-                return true
-              }
-              return false
-            })
-          })
-        })
-      })
+      laneSets.map(laneSet => this.loadLaneSet(laneSet, {NodeElement: allNodeElements}))
     }
 
     // RELATIONS OBJECTS
@@ -570,6 +542,33 @@ export class Parser {
     //#endregion
 
     return queues
+  }
+
+  loadLaneSet(
+    attr: BpmnFxm.LaneSet,
+    queues: { NodeElement: BpmnLevel.NodeElement[] },
+  ) {
+    // Najdi a prochazej Lane elementy.
+    let lanes = attr[`${this.ns.bpmn2}lane` as 'lane']
+    lanes && lanes.map(lane => {
+      // Najdi nazev Lane, ktery bude pouzit jako vyraz k nalezeni skupiny/uzivatele.
+      let { name: candidateAssignee = '' } = lane['#attr'] || {}
+      // Prochazej vsecny reference na uzly patrici do Lane.
+      let flowNodeRefs = lane[`${this.ns.bpmn2}flowNodeRef` as 'flowNodeRef']
+      if (typeof flowNodeRefs === 'string') {
+        flowNodeRefs = [flowNodeRefs] // Normalizace
+      }
+      flowNodeRefs && flowNodeRefs.map(flowNode => {
+        // Prochazej uzly a do prvniho hodiciho se prirad nazev Lane
+        queues.NodeElement.find(node => {
+          if (node.entity.bpmnId === flowNode) {
+            node.entity.candidateAssignee = candidateAssignee
+            return true
+          }
+          return false
+        })
+      })
+    })
   }
 
   connectNode2SequenceFlow<T extends NodeElementTemplate>(
@@ -690,7 +689,6 @@ export class Parser {
   ): T {
     let script = attr[`${this.ns.bpmn2}script` as 'script']
     if (typeof script === 'string') {
-      // entity.script = script
       entity.data['script'] = script
     }
     return entity
@@ -705,14 +703,18 @@ export class Parser {
     if (typeof extensionElements === 'object') {
       extensionElements.find(ex => {
         let json = ex[`${this.ns.mwe}json` as 'json']
-        if (typeof json === 'string') {
-          entity.json = JSON.parse(json)
-          return true
-        } else if (typeof json === 'object') {
-          if (json[0]['#text']) {
-            entity.json = JSON.parse(json[0]['#text'])
+        try {
+          if (typeof json === 'string') {
+            entity.json = JSON.parse(json)
             return true
+          } else if (typeof json === 'object') {
+            if (json[0]['#text']) {
+              entity.json = JSON.parse(json[0]['#text'])
+              return true
+            }
           }
+        } catch (e) {
+          throw new ParseError(`DataObject: Problem with parsing JSON. (id: '${entity.bpmnId}')`)
         }
         return false
       })
@@ -746,39 +748,8 @@ export class Parser {
     attr: BpmnFxm.SequenceFlow,
     queues: {
       NodeElement: BpmnLevel.NodeElement[],
-      // Task: BpmnLevel.Task[],
-      // StartEvent: BpmnLevel.StartEvent[],
-      // EndEvent: BpmnLevel.EndEvent[],
-      // Gateway: BpmnLevel.Gateway[],
-      // ScriptTask: BpmnLevel.ScriptTask[],
-
-      // ServiceTask: BpmnLevel.Task[],
-      // SendTask: BpmnLevel.Task[],
-      // ReceiveTask: BpmnLevel.Task[],
-      // UserTask: BpmnLevel.Task[],
-      // ManualTask: BpmnLevel.Task[],
-      // CallActivity: BpmnLevel.Task[],
-      // BusinessRuleTask: BpmnLevel.Task[],
-      // IntermediateThrowEvent: BpmnLevel.IntermediateThrowEvent[],
-      // IntermediateCatchEvent: BpmnLevel.IntermediateCatchEvent[],
     },
   ): T {
-    // let queueNodes = [
-    //   ...queues.Task,
-    //   ...queues.StartEvent,
-    //   ...queues.EndEvent,
-    //   ...queues.Gateway,
-    //   ...queues.ScriptTask,
-    //   ...queues.ServiceTask,
-    //   ...queues.SendTask,
-    //   ...queues.ReceiveTask,
-    //   ...queues.UserTask,
-    //   ...queues.ManualTask,
-    //   ...queues.CallActivity,
-    //   ...queues.BusinessRuleTask,
-    //   ...queues.IntermediateThrowEvent,
-    //   ...queues.IntermediateCatchEvent,
-    // ]
     let queueNodes = queues.NodeElement
 
     // Source = Outgoing Propojeni Uzlu a odchoziho spoje

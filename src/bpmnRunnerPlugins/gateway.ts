@@ -102,7 +102,7 @@ export const exclusiveGatewayImplementation: NodeImplementation = {
       return result
     }).map(v => v.id)
 
-    console.warn('XOR>',$OUTGOING)
+    console.warn('XOR>', $OUTGOING)
     initNext(selectedOutgoing)
 
     return true
