@@ -433,6 +433,57 @@ export class Parser {
 
     //#endregion
 
+    let allTasks = [
+      ...queues.Task,
+      ...queues.ScriptTask,
+      ...queues.ServiceTask,
+      ...queues.SendTask,
+      ...queues.ReceiveTask,
+      ...queues.UserTask,
+      ...queues.ManualTask,
+      ...queues.CallActivity,
+      ...queues.BusinessRuleTask,
+    ]
+    let allEvents = [
+      ...queues.StartEvent,
+      ...queues.EndEvent,
+      ...queues.IntermediateThrowEvent,
+      ...queues.IntermediateCatchEvent,
+    ]
+    let allNodeElements = [
+      ...allTasks,
+      ...allEvents,
+      ...queues.Gateway,
+    ]
+
+    // LaneSet, Lane => Nacteni candidateAssignee
+    let laneSets = process.data[`${this.ns.bpmn2}laneSet` as 'laneSet']
+    if (typeof laneSets === 'object') {
+      laneSets.map(laneSet => {
+        // Najdi a prochazej Lane elementy.
+        let lanes = laneSet[`${this.ns.bpmn2}lane` as 'lane']
+        lanes && lanes.map(lane => {
+          // Najdi nazev Lane, ktery bude pouzit jako vyraz k nalezeni skupiny/uzivatele.
+          let { name: candidateAssignee = '' } = lane['#attr'] || {}
+          // Prochazej vsecny reference na uzly patrici do Lane.
+          let flowNodeRefs = lane[`${this.ns.bpmn2}flowNodeRef` as 'flowNodeRef']
+          if (typeof flowNodeRefs === 'string') {
+            flowNodeRefs = [flowNodeRefs] // Normalizace
+          }
+          flowNodeRefs && flowNodeRefs.map(flowNode => {
+            // Prochazej uzly a do prvniho hodiciho se prirad nazev Lane
+            allNodeElements.find(node => {
+              if(node.entity.bpmnId === flowNode){
+                node.entity.candidateAssignee = candidateAssignee
+                return true
+              }
+              return false
+            })
+          })
+        })
+      })
+    }
+
     // RELATIONS OBJECTS
     //#region Ralations Objects - load/parse secondary props tree
 
@@ -467,17 +518,7 @@ export class Parser {
     // ManualTask
     // CallActivity
     // BusinessRuleTask
-    ;[
-      ...queues.Task,
-      ...queues.ScriptTask,
-      ...queues.ServiceTask,
-      ...queues.SendTask,
-      ...queues.ReceiveTask,
-      ...queues.UserTask,
-      ...queues.ManualTask,
-      ...queues.CallActivity,
-      ...queues.BusinessRuleTask,
-    ].forEach(task => {
+    allTasks.forEach(task => {
       this.loadFlowElement(task.entity, process.entity)
       this.loadNodeInputs(task.entity, task.data, queues)
       this.loadNodeOutputs(task.entity, task.data, queues)
@@ -518,7 +559,7 @@ export class Parser {
     // SequenceFlow
     queues.SequenceFlow.forEach(seq => {
       this.loadFlowElement(seq.entity, process.entity)
-      this.loadSequenceFlow(seq.entity, seq.data, queues)
+      this.loadSequenceFlow(seq.entity, seq.data, {NodeElement: allNodeElements})
     })
     // Gateway
     queues.Gateway.forEach(gateway => {
@@ -704,39 +745,41 @@ export class Parser {
     entity: T,
     attr: BpmnFxm.SequenceFlow,
     queues: {
-      Task: BpmnLevel.Task[],
-      StartEvent: BpmnLevel.StartEvent[],
-      EndEvent: BpmnLevel.EndEvent[],
-      Gateway: BpmnLevel.Gateway[],
-      ScriptTask: BpmnLevel.ScriptTask[],
+      NodeElement: BpmnLevel.NodeElement[],
+      // Task: BpmnLevel.Task[],
+      // StartEvent: BpmnLevel.StartEvent[],
+      // EndEvent: BpmnLevel.EndEvent[],
+      // Gateway: BpmnLevel.Gateway[],
+      // ScriptTask: BpmnLevel.ScriptTask[],
 
-      ServiceTask: BpmnLevel.Task[],
-      SendTask: BpmnLevel.Task[],
-      ReceiveTask: BpmnLevel.Task[],
-      UserTask: BpmnLevel.Task[],
-      ManualTask: BpmnLevel.Task[],
-      CallActivity: BpmnLevel.Task[],
-      BusinessRuleTask: BpmnLevel.Task[],
-      IntermediateThrowEvent: BpmnLevel.IntermediateThrowEvent[],
-      IntermediateCatchEvent: BpmnLevel.IntermediateCatchEvent[],
+      // ServiceTask: BpmnLevel.Task[],
+      // SendTask: BpmnLevel.Task[],
+      // ReceiveTask: BpmnLevel.Task[],
+      // UserTask: BpmnLevel.Task[],
+      // ManualTask: BpmnLevel.Task[],
+      // CallActivity: BpmnLevel.Task[],
+      // BusinessRuleTask: BpmnLevel.Task[],
+      // IntermediateThrowEvent: BpmnLevel.IntermediateThrowEvent[],
+      // IntermediateCatchEvent: BpmnLevel.IntermediateCatchEvent[],
     },
   ): T {
-    let queueNodes = [
-      ...queues.Task,
-      ...queues.StartEvent,
-      ...queues.EndEvent,
-      ...queues.Gateway,
-      ...queues.ScriptTask,
-      ...queues.ServiceTask,
-      ...queues.SendTask,
-      ...queues.ReceiveTask,
-      ...queues.UserTask,
-      ...queues.ManualTask,
-      ...queues.CallActivity,
-      ...queues.BusinessRuleTask,
-      ...queues.IntermediateThrowEvent,
-      ...queues.IntermediateCatchEvent,
-    ]
+    // let queueNodes = [
+    //   ...queues.Task,
+    //   ...queues.StartEvent,
+    //   ...queues.EndEvent,
+    //   ...queues.Gateway,
+    //   ...queues.ScriptTask,
+    //   ...queues.ServiceTask,
+    //   ...queues.SendTask,
+    //   ...queues.ReceiveTask,
+    //   ...queues.UserTask,
+    //   ...queues.ManualTask,
+    //   ...queues.CallActivity,
+    //   ...queues.BusinessRuleTask,
+    //   ...queues.IntermediateThrowEvent,
+    //   ...queues.IntermediateCatchEvent,
+    // ]
+    let queueNodes = queues.NodeElement
 
     // Source = Outgoing Propojeni Uzlu a odchoziho spoje
     if (attr && attr['#attr'] && attr['#attr'].sourceRef) {

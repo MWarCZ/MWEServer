@@ -64,6 +64,13 @@ export class NodeElementTemplate implements FlowElementTemplate {
   )
   instances?: NodeElementInstance[]
 
+  //==============
+
+  @Column('varchar', { default: '', nullable: false, length: 255 })
+  candidateAssignee: string = ''
+
+  //==============
+
   constructor(options?: OptionsConstructor<NodeElementTemplate>) {
     fillElement(this, options)
   }

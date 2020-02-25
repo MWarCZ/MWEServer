@@ -277,7 +277,6 @@ export declare namespace BpmnFxm {
   type LaneAttr = {} & BaseElementAttr
   type Lane = {
     '#attr'?: LaneAttr,
-    lane?: Lane[],
     flowNodeRef?: string | string[],
   }
 

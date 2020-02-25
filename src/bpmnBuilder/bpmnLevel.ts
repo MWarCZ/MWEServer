@@ -64,4 +64,12 @@ export declare namespace BpmnLevel {
     | IntermediateThrowEvent
     | IntermediateCatchEvent
 
+type NodeElement = Task
+  | Gateway
+  | ScriptTask
+  | StartEvent
+  | EndEvent
+  | IntermediateThrowEvent
+  | IntermediateCatchEvent
+
 }
