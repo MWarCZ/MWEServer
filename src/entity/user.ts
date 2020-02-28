@@ -7,10 +7,12 @@ import {
   Entity,
   JoinTable,
   ManyToMany,
+  OneToMany,
   PrimaryGeneratedColumn,
 } from 'typeorm'
 
 import { Group } from './group'
+import { Member } from './member'
 
 @Entity()
 export class User {
@@ -21,31 +23,37 @@ export class User {
   login?: string
 
   @Column('varchar', { length: 255})
-  email?: string
+  email: string = ''
 
   @Column('varchar', { length: 100 })
-  firstName?: string
+  firstName: string = ''
 
   @Column('varchar', { length: 100 })
-  lastName?: string
+  lastName: string = ''
 
   @Column('text')
-  password?: string
+  password: string = ''
 
-  @ManyToMany(type => Group, group => group.users, {eager: true})
-  @JoinTable()
+  @Column('boolean', { default: false })
+  protected: boolean = false
+
+  @Column('boolean', { default: false })
+  locked: boolean = false
+
+  @Column('boolean', { default: false })
+  removed: boolean = false
+
+  @ManyToMany(type => Group, group => group.users)
+  @JoinTable({ name: 'member'})
   groups?: Group[]
 
-  @Column('boolean', { default: false })
-  protected?: boolean
-
-  @Column('boolean', { default: false })
-  locked?: boolean
+  @OneToMany(type => Member, entity => entity.user)
+  membership?: Member[]
 
   @BeforeRemove()
   async canBeRemoved() {
     if (this.protected)
-      throw new Error(`User '${this.login}' is protected. Impossible remove it.`)
+    throw new Error(`User '${this.login}' is protected. Impossible remove it.`)
   }
 
   @BeforeInsert()

@@ -1,18 +1,29 @@
-import * as Entities from '../../entity'
+import { API } from '../../utils/api'
 import { GQLTypes } from '../generated/types'
 
 // import { GroupResolvers, MutationResolvers, QueryResolvers, User as RUser, UserResolvers } from '../generated/types'
 export const Query: GQLTypes.QueryResolvers = {
-  user: async() => {
-
-    return null
+  /** Ziskat uzivatele */
+  user: async (_, args, context) => {
+    let user = await API.getUser({
+      connection: context.db,
+      client: undefined,
+      clientGroups: [],
+      filter: { id: args.id },
+    })
+    if(!user) return null
+    //@ts-ignore
+    return user as GQLTypes.User
   },
-  users: async() => {
-    return []
-  },
-  allUsers: async(_, args, context) => {
-    let users = await context.db.getRepository(Entities.User).find()
-    // console.log({users})
+  /** Ziskat seznam uzivatelu */
+  users: async(_, args, context) => {
+    let users = await API.getUsers({
+      connection: context.db,
+      client: undefined,
+      clientGroups: [],
+    })
+    console.log(JSON.stringify(users))
+    //@ts-ignore
     return users as GQLTypes.User[]
   },
 }
@@ -21,41 +32,58 @@ export const Mutation: GQLTypes.MutationResolvers = {
   createNewUser: async(_, { input }, context) => {
     return null
   },
+  removeUser: async() => { // Skryt/deaktivovat uzivatele
+    return null
+  },
+  lockUser: async () => {
+    return null
+  },
+  unlockUser: async () => {
+    return null
+  },
+  resetUserPassword: async () => {
+    return null
+  },
   changeUserPassword: async() => {
     return null
   },
   updateUserInfo: async() => {
     return null
   },
-  deleteUser: async() => {
-    return null
-  },
-  lockUser: async() => {
-    return null
-  },
-  unlockUser: async() => {
+  deleteUser: async() => { // trvale odstranit
     return null
   },
 }
 
 export const User: GQLTypes.UserResolvers = {
-  groups: async(parrent, args, context, info) => {
+  membership: async(parrent, args, context, info) => {
+    //@ts-ignore
+    // let user = parrent as Entities.User
     console.log({User: parrent})
-    if (parrent.groups) {
-       return parrent.groups
-    }
-    return []
+    // if (parrent.membership) {
+    //    return parrent.membership
+    // }
+    let membersips = await API.getMemberships({
+      connection: context.db,
+      clientGroups: [],
+      client: undefined,
+      filter: { userId: parrent.id },
+    })
+    //@ts-ignore
+    return membersips as GQLTypes.Member[]
   },
+
 }
 
 export const Group: GQLTypes.GroupResolvers = {
-  users: async(parrent, args, context, info) => {
-    if (parrent.users) {
-      return parrent.users
-    }
-    let group = await context.db.getRepository(Entities.Group).findOne(parrent.id, {
-      relations: ['users'],
-    })
-    return (group) ? group.users as GQLTypes.User[] : []
+  members: async(parrent, args, context, info) => {
+    // if (parrent.users) {
+    //   return parrent.users
+    // }
+    // let group = await context.db.getRepository(Entities.Group).findOne(parrent.id, {
+    //   relations: ['users'],
+    // })
+    // return (group) ? group.members as GQLTypes.User[] : []
+    return []
   },
 }

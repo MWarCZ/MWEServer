@@ -2,7 +2,7 @@ import { importSchema } from 'graphql-import'
 import { GraphQLServer } from 'graphql-yoga'
 import { join as pathJoin } from 'path'
 
-import { getContext } from './graphql/context'
+import { generateContextFunction } from './graphql/context'
 import { resolvers } from './graphql/resolvers'
 
 const typeDefs = importSchema(
@@ -37,7 +37,7 @@ const typeDefs = importSchema(
 
 const startServer = async() => {
   const server = new GraphQLServer({
-    context: await getContext(),
+    context: await generateContextFunction(),
     // middlewares,
     typeDefs,
     // @ts-ignore

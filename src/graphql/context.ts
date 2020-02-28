@@ -4,14 +4,11 @@ import { Connection } from 'typeorm'
 import { createConn } from '../utils/db'
 
 export interface MyContext extends Context, ContextParameters {
-  db: Connection
+  db: Connection,
 }
 
-// let db: Connection;
-// createConn().then(conn=>db=conn)
-
-export const getContext = async() => {
-  let db = await createConn()
+export const generateContextFunction = async(typeormConnection?: Connection) => {
+  let db = (typeormConnection)? typeormConnection : (await createConn())
   return (param: ContextParameters): MyContext => {
     // console.log('DB', { db })
     return {
@@ -21,13 +18,4 @@ export const getContext = async() => {
   }
 }
 
-// export const context = (param: ContextParameters): MyContext => {
-//   // const { request } = param
-//   console.log('DB',{db})
-//   return {
-//     ...param,
-//     db,
-//   }
-// }
-
-export default getContext
+export default generateContextFunction

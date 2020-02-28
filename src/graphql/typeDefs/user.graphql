@@ -1,31 +1,44 @@
-# import * from './group.graphql'
 
 type Query {
+  # UserAdmin => Vsechny mimo skryte (removed)
+  # SuperUserAdmin => Zcela vsechny
+  # User => Jen sebe
+  # Other => Nic
   user(id:Int!): User
+  # UserAdmin => Vsechny mimo skryte (removed)
+  # SuperUserAdmin => Zcela vsechny
+  # User => Jen sebe
+  # Other => Nic
   users: [User]!
-  allUsers: [User]!
 }
 type Mutation {
-  createNewUser(input: NewUserInput!):User
-
+  # User
   changeUserPassword(input: ChangePasswordInput, id: Int): Boolean
   updateUserInfo(input: UpdateUserInfoInput!, id: Int): User
-  deleteUser(id: Int!): Boolean
-
+  # UserAdmin
+  ## updateUserInfo => Pro vsechny uzivatele
+  createNewUser(input: NewUserInput!): User # vytvorit uzivatele
+  removeUser(id: Int): User # skrit uzivatele s id
   lockUser(id: Int!): User
   unlockUser(id: Int!): User
+  resetUserPassword: User
+  # SuperUserAdmin
+  deleteUser(id: Int!): Boolean # trvale odstranit
+  recoverUser(id: Int!): User # obnovit skriteho uzivatele s id
+
 
 }
 
 type User {
   id: Int!
   login: String!
-  email: String
-  firstName: String
-  lastName: String
-  groups: [Group!]!
+  email: String!
+  firstName: String!
+  lastName: String!
+  membership: [Member!]!
   protected: Boolean!
   locked: Boolean!
+  removed: Boolean!
 }
 
 input NewUserInput {

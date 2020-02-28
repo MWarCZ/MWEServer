@@ -1,5 +1,6 @@
-import { BeforeRemove, Column, Entity, ManyToMany, PrimaryGeneratedColumn } from 'typeorm'
+import { BeforeRemove, Column, Entity, ManyToMany, OneToMany, PrimaryGeneratedColumn } from 'typeorm'
 
+import { Member } from './member'
 import { User } from './user'
 
 @Entity()
@@ -8,13 +9,16 @@ export class Group {
   id?: number
 
   @Column('varchar', {length:255, unique: true})
-  name?: string
+  name?: string = ''
+
+  @Column('boolean', {default: false})
+  protected?: boolean = false
 
   @ManyToMany(type => User, user => user.groups)
   users?: User[]
 
-  @Column('boolean', {default: false})
-  protected?: boolean
+  @OneToMany(type=> Member, entity=>entity.group )
+  members?: Member[]
 
   @BeforeRemove()
   async canBeRemove() {
