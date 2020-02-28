@@ -1,4 +1,5 @@
 import { API } from '../../utils/api'
+import { UserOneOf } from '../../utils/OneOf'
 import { GQLTypes } from '../generated/types'
 
 // import { GroupResolvers, MutationResolvers, QueryResolvers, User as RUser, UserResolvers } from '../generated/types'
@@ -72,7 +73,13 @@ export const User: GQLTypes.UserResolvers = {
     //@ts-ignore
     return membersips as GQLTypes.Member[]
   },
-
+  removed: (parrent, args, context) => {
+    UserOneOf({
+      groupNames: [],
+      isOther: ()=>{ throw new Error('Nedistatecna opravneni')},
+    })
+    return parrent.removed
+  }
 }
 
 export const Group: GQLTypes.GroupResolvers = {

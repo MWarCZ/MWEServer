@@ -3,6 +3,9 @@ import 'jest-extended'
 import { Connection } from 'typeorm'
 
 import { DataObjectTemplate, ProcessTemplate, ProcessType, SequenceFlowTemplate, VersionType } from '../../src/entity/bpmn'
+import { Group } from '../../src/entity/group'
+import { Member } from '../../src/entity/member'
+import { User } from '../../src/entity/user'
 import { cleanDataInTables, closeConn, createConn } from '../../src/utils/db'
 
 const printJSON = false
@@ -16,6 +19,29 @@ describe('Testovani entit ', () => {
   })
   afterEach(async() => {
     await closeConn(connection)
+  })
+  it.only('xxx', async()=>{
+    let user = new User()
+    user.login = 'aaa'
+    user.password = 'aaa'
+    await connection.manager.save(user)
+    let group = new Group()
+    group.name = 'AAA'
+    group.users = [user]
+    group = await connection.manager.save(group)
+    console.log(JSON.stringify(group, null, 2))
+
+    // let tmpa = await connection.manager.findOneOrFail(Group, {
+    //   relations: ['members', 'users', 'members.user']
+    // })
+    let tmpa = await connection.manager.find(Member, {
+      where: { },
+      relations: ['user']
+    })
+    console.warn(JSON.stringify(tmpa, null, 2))
+
+
+
   })
   describe('Vytvareni novych zakladnich entit', () => {
 
