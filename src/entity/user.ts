@@ -1,17 +1,6 @@
 import { compare, hash } from 'bcryptjs'
-import {
-  BeforeInsert,
-  BeforeRemove,
-  BeforeUpdate,
-  Column,
-  Entity,
-  JoinTable,
-  ManyToMany,
-  OneToMany,
-  PrimaryGeneratedColumn,
-} from 'typeorm'
+import { BeforeInsert, BeforeRemove, BeforeUpdate, Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm'
 
-import { Group } from './group'
 import { Member } from './member'
 
 @Entity()
@@ -43,9 +32,9 @@ export class User {
   @Column('boolean', { default: false })
   removed: boolean = false
 
-  @ManyToMany(type => Group, group => group.users)
-  @JoinTable({ name: 'member'})
-  groups?: Group[]
+  // @ManyToMany(type => Group, group => group.users)
+  // @JoinTable({ name: 'member'})
+  // groups?: Group[]
 
   @OneToMany(type => Member, entity => entity.user)
   membership?: Member[]

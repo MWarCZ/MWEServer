@@ -1,7 +1,6 @@
-import { BeforeRemove, Column, Entity, ManyToMany, OneToMany, PrimaryGeneratedColumn } from 'typeorm'
+import { BeforeRemove, Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm'
 
 import { Member } from './member'
-import { User } from './user'
 
 @Entity()
 export class Group {
@@ -14,8 +13,8 @@ export class Group {
   @Column('boolean', {default: false})
   protected?: boolean = false
 
-  @ManyToMany(type => User, user => user.groups)
-  users?: User[]
+  // @ManyToMany(type => User, user => user.groups)
+  // users?: User[]
 
   @OneToMany(type=> Member, entity=>entity.group )
   members?: Member[]
