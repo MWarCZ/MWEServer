@@ -13,6 +13,9 @@ export class Group {
   @Column('boolean', {default: false})
   protected?: boolean = false
 
+  @Column('boolean', { default: false })
+  removed: boolean = false
+
   // @ManyToMany(type => User, user => user.groups)
   // users?: User[]
 

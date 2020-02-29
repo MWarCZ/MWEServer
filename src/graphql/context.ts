@@ -1,12 +1,20 @@
 import { Context, ContextParameters } from 'graphql-yoga/dist/types'
 import { Connection } from 'typeorm'
 
-import { User } from '../entity'
+import { Group, Member, User } from '../entity'
 import { createConn } from '../utils/db'
+
+
+interface ContextUserMember extends Member {
+  group: Group,
+}
+export interface ContextUser extends User {
+  membership: ContextUserMember[]
+}
 
 export interface MyContext extends Context, ContextParameters {
   db: Connection,
-  client?: User,
+  client?: ContextUser,
 }
 
 export const generateContextFunction = async(typeormConnection?: Connection) => {
@@ -14,13 +22,14 @@ export const generateContextFunction = async(typeormConnection?: Connection) => 
   return async (param: ContextParameters): Promise<MyContext> => {
     // TODO ziskani id klienta
     let clientId = 0
-    // let client = await db.manager.findOne(User, {
-    //   relations: ['membership', 'membership.group'],
-    //   where: {id: clientId}
-    // })
+    let client = await db.manager.findOne(User, {
+      relations: ['membership', 'membership.group'],
+      where: {id: clientId}
+    }) as ContextUser | undefined
     return {
       ...param,
       db,
+      client,
     }
   }
 }

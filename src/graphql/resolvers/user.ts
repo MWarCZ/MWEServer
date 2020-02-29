@@ -1,27 +1,25 @@
-import { API } from '../../utils/api'
-import { UserOneOf } from '../../utils/OneOf'
+// import { API } from '../../utils/api'
+// import { UserOneOf } from '../../utils/OneOf'
+import * as ApiUser from '../../api/user'
 import { GQLTypes } from '../generated/types'
 
 // import { GroupResolvers, MutationResolvers, QueryResolvers, User as RUser, UserResolvers } from '../generated/types'
 export const Query: GQLTypes.QueryResolvers = {
   /** Ziskat uzivatele */
   user: async (_, args, context) => {
-    let user = await API.getUser({
+    let user = await ApiUser.getUser({
       connection: context.db,
       client: undefined,
-      clientGroups: [],
       filter: { id: args.id },
     })
-    if(!user) return null
     //@ts-ignore
-    return user as GQLTypes.User
+    return user as GQLTypes.User || null
   },
   /** Ziskat seznam uzivatelu */
   users: async(_, args, context) => {
-    let users = await API.getUsers({
+    let users = await ApiUser.getUsers({
       connection: context.db,
       client: undefined,
-      clientGroups: [],
     })
     console.log(JSON.stringify(users))
     //@ts-ignore
@@ -64,9 +62,8 @@ export const User: GQLTypes.UserResolvers = {
     // if (parrent.membership) {
     //    return parrent.membership
     // }
-    let membersips = await API.getMemberships({
+    let membersips = await ApiUser.getMemberships({
       connection: context.db,
-      clientGroups: [],
       client: undefined,
       filter: { userId: parrent.id },
     })
@@ -74,7 +71,7 @@ export const User: GQLTypes.UserResolvers = {
     return membersips as GQLTypes.Member[]
   },
   removed: (parrent, args, context) => {
-    UserOneOf({
+    ApiUser.UserOneOf({
       groupNames: [],
       isOther: ()=>{ throw new Error('Nedistatecna opravneni')},
     })
