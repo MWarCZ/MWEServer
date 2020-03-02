@@ -21,7 +21,7 @@ export function UserOneOf(args: {
 export async function getUser(options: {
   connection: Connection,
   client?: ContextUser,
-  filter: { id: number }
+  filter: { id: number },
 }): Promise<User|undefined> {
   let { client, connection, filter } = options
 
@@ -53,7 +53,7 @@ export async function getUser(options: {
   //#endregion
 
   let user = await connection.manager.findOne(User, {
-    where: findConditions
+    where: findConditions,
   })
   return user
 }
@@ -90,7 +90,7 @@ export async function getUsers(options: {
   //#endregion
 
   let users = await connection.manager.find(User, {
-    where: findConditions
+    where: findConditions,
   })
   return users
 }
@@ -98,7 +98,7 @@ export async function getUsers(options: {
 export async function getMemberships(options: {
   connection: Connection,
   client?: ContextUser,
-  filter: { userId: number }
+  filter: { userId: number },
 }): Promise<Member[]> {
   let { client, connection, filter } = options
 

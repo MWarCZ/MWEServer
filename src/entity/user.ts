@@ -1,6 +1,7 @@
 import { compare, hash } from 'bcryptjs'
 import { BeforeInsert, BeforeRemove, BeforeUpdate, Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm'
 
+import { fillElement, OptionsConstructor } from './bpmn'
 import { Member } from './member'
 
 @Entity()
@@ -36,7 +37,9 @@ export class User {
   // @JoinTable({ name: 'member'})
   // groups?: Group[]
 
-  @OneToMany(type => Member, entity => entity.user)
+  @OneToMany(type => Member, entity => entity.user, {
+    onDelete: 'CASCADE',
+  })
   membership?: Member[]
 
   @BeforeRemove()
@@ -58,6 +61,10 @@ export class User {
     if (typeof this.password !== 'string')
       return false
     return compare(password, this.password)
+  }
+
+  constructor(options?: OptionsConstructor<User>) {
+    fillElement(this, options)
   }
 }
 

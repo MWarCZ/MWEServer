@@ -1,7 +1,8 @@
 # import * from './bpmn.graphql'
-# import Query.*, * from './user.graphql'
-# import Query.*, * from './group.graphql'
-# import Query.*, * from './member.graphql'
+# import Query.*, Mutation.*, * from './user.graphql'
+# import Query.*, Mutation.*, * from './group.graphql'
+# import Query.*, Mutation.*, * from './member.graphql'
+# import Mutation.*, * from './auth.graphql'
 
 type Query {
   hello(name:String):String!

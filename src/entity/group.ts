@@ -1,5 +1,6 @@
 import { BeforeRemove, Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm'
 
+import { fillElement, OptionsConstructor } from './bpmn'
 import { Member } from './member'
 
 @Entity()
@@ -19,13 +20,19 @@ export class Group {
   // @ManyToMany(type => User, user => user.groups)
   // users?: User[]
 
-  @OneToMany(type=> Member, entity=>entity.group )
+  @OneToMany(type => Member, entity => entity.group, {
+    onDelete: 'CASCADE',
+  })
   members?: Member[]
 
   @BeforeRemove()
   async canBeRemove() {
     if (this.protected)
       throw new Error(`Group '${this.name}' is protected. Impossible remove it.`)
+  }
+
+  constructor(options?: OptionsConstructor<Group>) {
+    fillElement(this, options)
   }
 }
 

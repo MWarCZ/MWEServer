@@ -1,7 +1,9 @@
 import { importSchema } from 'graphql-import'
 import { GraphQLServer } from 'graphql-yoga'
 import { join as pathJoin } from 'path'
+import { getConnection } from 'typeorm'
 
+import { passportUseStrategies } from './api/auth'
 import { generateContextFunction } from './graphql/context'
 import { resolvers } from './graphql/resolvers'
 
@@ -10,19 +12,22 @@ const typeDefs = importSchema(
 )
 
 export const createServer = async() => {
-  console.warn({__dirname})
-  return new GraphQLServer({
-    context: await generateContextFunction(),
+  let context = await generateContextFunction()
+  let server =  new GraphQLServer({
+    context,
     // middlewares,
     typeDefs,
     // @ts-ignore
     resolvers,
   })
+  let conn = getConnection()
+  passportUseStrategies(conn)
+  return server
 }
 
-export const startServer = async () => {
+export const startServer = async() => {
   const server = await createServer()
-  server.start({ port: 3000 }, () => console.log('Server running ...'))
+  return server.start({ port: 3000 }, () => console.log('Server running :3000 ...'))
 }
 
 startServer()

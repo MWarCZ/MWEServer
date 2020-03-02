@@ -8,13 +8,17 @@ export class Member {
   @PrimaryColumn()
   userId?: number
 
-  @ManyToOne(type => Group)
+  @ManyToOne(type => Group, {
+    onDelete: 'CASCADE',
+  })
   user?: User
 
   @PrimaryColumn()
   groupId?: number
 
-  @ManyToOne(type=> Group)
+  @ManyToOne(type => Group, {
+    onDelete: 'CASCADE',
+  })
   group?: Group
 
   @Column('boolean', { default: false })

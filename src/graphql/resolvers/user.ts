@@ -6,13 +6,13 @@ import { GQLTypes } from '../generated/types'
 // import { GroupResolvers, MutationResolvers, QueryResolvers, User as RUser, UserResolvers } from '../generated/types'
 export const Query: GQLTypes.QueryResolvers = {
   /** Ziskat uzivatele */
-  user: async (_, args, context) => {
+  user: async(_, args, context) => {
     let user = await ApiUser.getUser({
       connection: context.db,
       client: undefined,
       filter: { id: args.id },
     })
-    //@ts-ignore
+    // @ts-ignore
     return user as GQLTypes.User || null
   },
   /** Ziskat seznam uzivatelu */
@@ -22,7 +22,7 @@ export const Query: GQLTypes.QueryResolvers = {
       client: undefined,
     })
     console.log(JSON.stringify(users))
-    //@ts-ignore
+    // @ts-ignore
     return users as GQLTypes.User[]
   },
 }
@@ -34,13 +34,13 @@ export const Mutation: GQLTypes.MutationResolvers = {
   removeUser: async() => { // Skryt/deaktivovat uzivatele
     return null
   },
-  lockUser: async () => {
+  lockUser: async() => {
     return null
   },
-  unlockUser: async () => {
+  unlockUser: async() => {
     return null
   },
-  resetUserPassword: async () => {
+  resetUserPassword: async() => {
     return null
   },
   changeUserPassword: async() => {
@@ -56,7 +56,7 @@ export const Mutation: GQLTypes.MutationResolvers = {
 
 export const User: GQLTypes.UserResolvers = {
   membership: async(parrent, args, context, info) => {
-    //@ts-ignore
+    // @ts-ignore
     // let user = parrent as Entities.User
     console.log({User: parrent})
     // if (parrent.membership) {
@@ -67,16 +67,16 @@ export const User: GQLTypes.UserResolvers = {
       client: undefined,
       filter: { userId: parrent.id },
     })
-    //@ts-ignore
+    // @ts-ignore
     return membersips as GQLTypes.Member[]
   },
   removed: (parrent, args, context) => {
     ApiUser.UserOneOf({
       groupNames: [],
-      isOther: ()=>{ throw new Error('Nedistatecna opravneni')},
+      isOther: () => { throw new Error('Nedistatecna opravneni')},
     })
     return parrent.removed
-  }
+  },
 }
 
 export const Group: GQLTypes.GroupResolvers = {

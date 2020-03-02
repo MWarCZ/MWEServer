@@ -22,7 +22,7 @@ export function GroupOneOf(args: {
 export async function getGroup(options: {
   connection: Connection,
   client?: ContextUser,
-  filter: { id: number }
+  filter: { id: number },
 }): Promise<Group|undefined> {
   let { client, connection, filter } = options
 
@@ -55,7 +55,7 @@ export async function getGroup(options: {
   //#endregion
 
   let group = await connection.manager.findOne(Group, {
-    where: groupConditions
+    where: groupConditions,
   })
   return group
 }
@@ -85,7 +85,7 @@ export async function getGroups(options: {
     groupConditions.removed = false
   } else {
     // skupiny ve kterych uzivatel je clenem mimo smazane
-    if(groupIds.length>0) {
+    if (groupIds.length > 0) {
       groupConditions.id = In(groupIds)
     }
     groupConditions.removed = false
@@ -94,7 +94,7 @@ export async function getGroups(options: {
   //#endregion
 
   let groups = await connection.manager.find(Group, {
-    where: groupConditions
+    where: groupConditions,
   })
   return groups
 }
@@ -102,7 +102,7 @@ export async function getGroups(options: {
 export async function getMembers(options: {
   connection: Connection,
   client?: ContextUser,
-  filter: { groupId: number }
+  filter: { groupId: number },
 }): Promise<Member[]> {
   let { client, connection, filter } = options
 
