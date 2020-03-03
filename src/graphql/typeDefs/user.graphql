@@ -13,18 +13,18 @@ type Query {
 }
 type Mutation {
   # User
-  changeUserPassword(input: ChangePasswordInput, id: Int): Boolean
-  updateUserInfo(input: UpdateUserInfoInput!, id: Int): User
+  changeUserPassword(input: ChangePasswordInput!, filter: UserFilterInput!): Boolean
+  updateUserInfo(input: UpdateUserInfoInput!, filter: UserFilterInput!): User
   # UserAdmin
   ## updateUserInfo => Pro vsechny uzivatele
   createNewUser(input: NewUserInput!): User # vytvorit uzivatele
-  removeUser(id: Int): User # skrit uzivatele s id
-  lockUser(id: Int!): User
-  unlockUser(id: Int!): User
-  resetUserPassword: User
+  removeUser(filter: UserFilterInput!): Boolean # skrit uzivatele s id
+  lockUser(filter: UserFilterInput!): User
+  unlockUser(filter: UserFilterInput!): User
+  resetUserPassword(filter: UserFilterInput!): String
   # SuperUserAdmin
-  deleteUser(id: Int!): Boolean # trvale odstranit
-  recoverUser(id: Int!): User # obnovit skriteho uzivatele s id
+  deleteUser(filter: UserFilterInput!): Boolean # trvale odstranit
+  recoverUser(filter: UserFilterInput!): User # obnovit skriteho uzivatele s id
 
 
 }
@@ -39,6 +39,11 @@ type User {
   protected: Boolean!
   locked: Boolean!
   removed: Boolean!
+}
+
+input UserFilterInput {
+  id: Int
+  login: String
 }
 
 input NewUserInput {

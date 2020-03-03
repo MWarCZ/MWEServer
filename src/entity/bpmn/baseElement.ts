@@ -3,7 +3,10 @@ export type OptionsConstructor<T> = { [P in keyof T]?: any }
 export function fillElement<T>(element: any, options?: OptionsConstructor<T>) {
   if (!!options) {
     Object.keys(options).forEach(key => {
-      element[key] = (options as any)[key]
+      let value = (options as any)[key]
+      if(typeof value !== 'undefined') {
+        element[key] = (options as any)[key]
+      }
     })
   }
 }

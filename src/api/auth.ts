@@ -7,6 +7,7 @@ import { Connection } from 'typeorm'
 
 import { User } from '../entity'
 import { JwtCompletePayload, JwtPayload } from '../types/jwt'
+import { AuthorizationError } from './authorizationError'
 
 
 export function passportUseStrategies(connection: Connection) {
@@ -29,17 +30,17 @@ export function passportUseLocalStrategy(connection: Connection) {
     })
     // sada kontrol
     if (!client) {
-      return done(new Error(`Ucet uzivatele '${username}' neexistuje.`))
+      return done(new AuthorizationError(`Ucet uzivatele '${username}' neexistuje.`))
     }
     if (client.removed) {
-      return done(new Error(`Ucet uzivatele '${username}' jiz neexistuje.`))
+      return done(new AuthorizationError(`Ucet uzivatele '${username}' jiz neexistuje.`))
     }
     let compare = await client.comparePassword(password)
     if (!compare) {
-      return done(new Error(`Ucet uzivatele '${username}' ma jine heslo.`))
+      return done(new AuthorizationError(`Ucet uzivatele '${username}' ma jine heslo.`))
     }
     if (client.locked) {
-      return done(new Error(`Ucet uzivatele '${username}' je uzamknut.`))
+      return done(new AuthorizationError(`Ucet uzivatele '${username}' je uzamknut.`))
     }
     // vse ok
     return done(undefined, client, { message: `${client.id}:${username}` })
@@ -82,13 +83,13 @@ export function passportUseBearerStrategy(connection: Connection) {
       })
       // sada kontrol
       if (!client) {
-        throw new Error(`Ucet uzivatele neexistuje.`)
+        throw new AuthorizationError(`Ucet uzivatele neexistuje.`)
       }
       if (client.removed) {
-        throw new Error(`Ucet uzivatele '${client.login}' jiz neexistuje.`)
+        throw new AuthorizationError(`Ucet uzivatele '${client.login}' jiz neexistuje.`)
       }
       if (client.locked) {
-        throw new Error(`Ucet uzivatele '${client.login}' je uzamknut.`)
+        throw new AuthorizationError(`Ucet uzivatele '${client.login}' je uzamknut.`)
       }
       // vse ok
       return done(undefined, client)
@@ -143,16 +144,16 @@ export function genJwt(options:{
   expiresIn?: number | string,
   secret?: string,
 }) {
-  const { user, expiresIn = '1m', secret = Secrets.default } = options
+  const { user, expiresIn, secret = Secrets.default } = options
   let payload: JwtClientPayload = {
     client: {
       id: user.id as number,
       login: user.login as string,
     },
   }
-  let token = jwt.sign(payload, secret, {
-    expiresIn,
-  })
+  let paramToken: any = {}
+  if(expiresIn) paramToken = {...paramToken, expiresIn}
+  let token = jwt.sign(payload, secret, paramToken)
 
   return token
 }
@@ -174,7 +175,7 @@ export function validateJwtPayload(options: {
 }): JwtClientPayload {
   const {payload} = options
   if (!payload.client || typeof payload.client.id !== 'number' || typeof payload.client.login !== 'string') {
-    throw new Error('Nevalidni payload.')
+    throw new AuthorizationError('Nevalidni payload.')
   }
   return payload as JwtClientPayload
 }
