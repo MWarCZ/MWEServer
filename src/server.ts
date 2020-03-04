@@ -29,5 +29,3 @@ export const startServer = async() => {
   const server = await createServer()
   return server.start({ port: 3000 }, () => console.log('Server running :3000 ...'))
 }
-
-startServer()

@@ -13,7 +13,7 @@ export const Mutation: GQLTypes.MutationResolvers = {
     })
     if (user) {
       let token = ApiAuth.genJwt({
-        user, expiresIn: '5m',
+        user, expiresIn: '30m',
       })
       return token
     }

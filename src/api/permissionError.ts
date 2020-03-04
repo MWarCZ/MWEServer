@@ -1,7 +1,15 @@
 
 
 export class PermissionError extends Error {
-  constructor(msg: string = 'You don\'t have enough permission.') {
+  static defaultMessage = `You don't have enough permission.`
+  constructor(msg: string = PermissionError.defaultMessage) {
+    super(msg)
+  }
+}
+
+export class UnloggedUserError extends PermissionError {
+  static defaultMessage = `${PermissionError.defaultMessage} You're not logged.`
+  constructor(msg: string = UnloggedUserError.defaultMessage) {
     super(msg)
   }
 }

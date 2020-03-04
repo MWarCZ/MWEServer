@@ -22,9 +22,10 @@ export const generateContextFunction = async(typeormConnection?: Connection) => 
   return async(param: ContextParameters): Promise<MyContext> => {
     let user: User|undefined
     try {
+      let { request, response } = param
       user = await ApiAuth.authenticateBearer({
-        request: param.request,
-        response: param.response,
+        request,
+        response,
       })
     } catch {
       console.error('jwt errr')

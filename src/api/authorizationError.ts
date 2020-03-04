@@ -1,7 +1,8 @@
 
 
 export class AuthorizationError extends Error {
-  constructor(msg: string = 'We were unable to verify your identity.') {
+  static defaultMessage = `We were unable to verify your identity.`
+  constructor(msg: string = AuthorizationError.defaultMessage) {
     super(msg)
   }
 }

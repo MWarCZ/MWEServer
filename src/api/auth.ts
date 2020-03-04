@@ -56,7 +56,7 @@ export function authenticateLocal(options: {
   request.body = { ...request.body, ...auth }
   return new Promise((resolve, rejects) => {
     passport.authenticate('local', (err, client) => {
-      console.warn('authLocal: ', client)
+      // console.warn('authLocal: ', client)
       if (err) { rejects(err) }
       if (client instanceof User) {
         resolve(client)

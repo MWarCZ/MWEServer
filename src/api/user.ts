@@ -4,7 +4,7 @@ import { Member, User } from '../entity'
 import { ContextUser } from '../graphql/context'
 import { OneOf } from '../utils/OneOf'
 import { ProtectedGroups } from './helpers'
-import { PermissionError } from './permissionError'
+import { PermissionError, UnloggedUserError } from './permissionError'
 
 export function UserOneOf(args: {
   groupNames: string[],
@@ -76,7 +76,7 @@ export async function getUser(options: {
 
   //#region Rozliseni dle AUTENTIZACE
 
-  if (!client) { throw new PermissionError('Informace neni pro neprihlasene.') }
+  if (!client) { throw new UnloggedUserError() }
   let groupNames = client.membership.map(g => g.group.name) as string[]
 
   findConditions = getUserFindConditions({filter, findConditions})
@@ -156,7 +156,7 @@ export async function getMemberships(options: {
 
   //#region Rozliseni dle AUTENTIZACE
 
-  if (!client) { throw new PermissionError('Informace neni pro neprihlasene.') }
+  if (!client) { throw new UnloggedUserError() }
   let groupNames = client.membership.map(g => g.group.name)
 
   memberConditions.userId = filter.userId
@@ -201,7 +201,7 @@ export async function createNewUser(options: {
   let { client, connection, data } = options
   //#region Rozliseni dle AUTENTIZACE
 
-  if (!client) { throw new PermissionError('Nejsi znami uzivatel.') }
+  if (!client) { throw new UnloggedUserError() }
   let groupNames = client.membership.map(g => g.group.name) as string[]
 
   //#endregion
@@ -232,7 +232,7 @@ export async function removeUser(options: {
 
   //#region Rozliseni dle AUTENTIZACE
 
-  if (!client) { throw new PermissionError('Nejsi prihlaseny.') }
+  if (!client) { throw new UnloggedUserError() }
   let groupNames = client.membership.map(g => g.group.name) as string[]
 
   findConditions = getUserFindConditions({findConditions, filter})
@@ -270,7 +270,7 @@ export async function lockUser(options: {
 
   //#region Rozliseni dle AUTENTIZACE
 
-  if (!client) { throw new PermissionError('Neni pro neprihlasene.') }
+  if (!client) { throw new UnloggedUserError() }
   let groupNames = client.membership.map(g => g.group.name) as string[]
 
   findConditions = getUserFindConditions({ findConditions, filter })
@@ -320,7 +320,7 @@ export async function changeUserPassword(options: {
 
   //#region Rozliseni dle AUTENTIZACE
 
-  if (!client) { throw new PermissionError('Nejsi znami uzivatel.') }
+  if (!client) { throw new UnloggedUserError() }
   let groupNames = client.membership.map(g => g.group.name) as string[]
 
   findConditions = getUserFindConditions({ findConditions, filter })
@@ -372,7 +372,7 @@ export async function updateUserInfo(options: {
 
   //#region Rozliseni dle AUTENTIZACE
 
-  if (!client) { throw new PermissionError('Nejsi znami uzivatel.') }
+  if (!client) { throw new UnloggedUserError() }
   let groupNames = client.membership.map(g => g.group.name) as string[]
 
   findConditions = getUserFindConditions({ findConditions, filter })
@@ -418,7 +418,7 @@ export async function deleteUser(options: {
 
   //#region Rozliseni dle AUTENTIZACE
 
-  if (!client) { throw new PermissionError('Neni pro neprihlasene.') }
+  if (!client) { throw new UnloggedUserError() }
   let groupNames = client.membership.map(g => g.group.name) as string[]
 
   findConditions = getUserFindConditions({ findConditions, filter })
@@ -452,7 +452,7 @@ export async function recoverUser(options: {
 
   //#region Rozliseni dle AUTENTIZACE
 
-  if (!client) { throw new PermissionError('Nejsi prihlaseny.') }
+  if (!client) { throw new UnloggedUserError() }
   let groupNames = client.membership.map(g => g.group.name) as string[]
 
   findConditions = getUserFindConditions({ findConditions, filter })
