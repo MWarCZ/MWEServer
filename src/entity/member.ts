@@ -1,5 +1,6 @@
 import { BeforeRemove, Column, Entity, ManyToOne, PrimaryColumn } from 'typeorm'
 
+import { objectFiller, OptionsConstructor } from '../utils/objectFiller'
 import { Group } from './group'
 import { User } from './user'
 
@@ -37,5 +38,9 @@ export class Member {
   async canBeRemove() {
     if (this.protected)
       throw new Error(`Member '${this.userId}' inside '${this.groupId}' is protected. Impossible remove it.`)
+  }
+
+  constructor(options?: OptionsConstructor<Member>) {
+    objectFiller(this, options)
   }
 }

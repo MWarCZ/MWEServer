@@ -1,7 +1,7 @@
 import { compare, hash } from 'bcryptjs'
 import { BeforeInsert, BeforeRemove, BeforeUpdate, Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm'
 
-import { fillElement, OptionsConstructor } from './bpmn'
+import { objectFiller, OptionsConstructor } from '../utils/objectFiller'
 import { Member } from './member'
 
 @Entity()
@@ -64,7 +64,6 @@ export class User {
   }
 
   constructor(options?: OptionsConstructor<User>) {
-    fillElement(this, options)
+    objectFiller(this, options)
   }
 }
-

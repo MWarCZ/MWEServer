@@ -25,7 +25,7 @@ export const Query: GQLTypes.QueryResolvers = {
 }
 
 export const Mutation: GQLTypes.MutationResolvers = {
-  createNewUser: async (_, { input }, { client, db: connection }) => {
+  createNewUser: async(_, { input }, { client, db: connection }) => {
     let user = await ApiUser.createNewUser({
       connection,
       client,
@@ -35,12 +35,12 @@ export const Mutation: GQLTypes.MutationResolvers = {
         email: input.email as string,
         firstName: input.firstName as string,
         lastName: input.lastName as string,
-      }
+      },
     })
     // @ts-ignore
     return user as GQLTypes.User
   },
-  removeUser: async (_, { filter }, { client, db: connection }) => { // Skryt/deaktivovat uzivatele
+  removeUser: async(_, { filter }, { client, db: connection }) => { // Skryt/deaktivovat uzivatele
     let user = await ApiUser.removeUser({
       connection,
       client,
@@ -48,7 +48,7 @@ export const Mutation: GQLTypes.MutationResolvers = {
     })
     return !!user
   },
-  lockUser: async (_, { filter }, { client, db: connection }) => {
+  lockUser: async(_, { filter }, { client, db: connection }) => {
     let user = await ApiUser.lockUser({
       connection,
       client,
@@ -57,7 +57,7 @@ export const Mutation: GQLTypes.MutationResolvers = {
     // @ts-ignore
     return user as GQLTypes.User
   },
-  unlockUser: async (_, { filter }, { client, db: connection }) => {
+  unlockUser: async(_, { filter }, { client, db: connection }) => {
     let user = await ApiUser.lockUser({
       connection,
       client,
@@ -67,7 +67,7 @@ export const Mutation: GQLTypes.MutationResolvers = {
     // @ts-ignore
     return user as GQLTypes.User
   },
-  resetUserPassword: async (_, { filter }, { client, db: connection }) => {
+  resetUserPassword: async(_, { filter }, { client, db: connection }) => {
     let password = await ApiUser.resetUserPassword({
       connection,
       client,
@@ -75,11 +75,11 @@ export const Mutation: GQLTypes.MutationResolvers = {
     })
     return password
   },
-  changeUserPassword: async (_, { filter, input }, { client, db: connection }) => {
+  changeUserPassword: async(_, { filter, input }, { client, db: connection }) => {
     let user = await ApiUser.getUser({
       connection, client, filter: filter as ApiUser.FilterUserBy,
     })
-    if(!user || !(await user.comparePassword(input.oldPassword))) {
+    if (!user || !(await user.comparePassword(input.oldPassword))) {
       throw new Error('Nespravne zadane stare heslo uzivatele.')
     }
     user = await ApiUser.changeUserPassword({
@@ -87,12 +87,12 @@ export const Mutation: GQLTypes.MutationResolvers = {
       client,
       filter: filter as ApiUser.FilterUserBy,
       data: {
-        newPassword: input.newPassword
-      }
+        newPassword: input.newPassword,
+      },
     })
     return !!user
   },
-  updateUserInfo: async (_, { filter, input }, { client, db: connection }) => {
+  updateUserInfo: async(_, { filter, input }, { client, db: connection }) => {
     let user = await ApiUser.updateUserInfo({
       connection,
       client,
@@ -106,7 +106,7 @@ export const Mutation: GQLTypes.MutationResolvers = {
     // @ts-ignore
     return user as GQLTypes.User
   },
-  deleteUser: async (_, { filter }, { client, db: connection }) => { // trvale odstranit
+  deleteUser: async(_, { filter }, { client, db: connection }) => { // trvale odstranit
     let res = await ApiUser.deleteUser({
       connection,
       client,
@@ -115,7 +115,7 @@ export const Mutation: GQLTypes.MutationResolvers = {
     // @ts-ignore
     return res
   },
-  recoverUser: async (_, { filter }, { client, db: connection }) => { // Skryt/deaktivovat uzivatele
+  recoverUser: async(_, { filter }, { client, db: connection }) => { // Skryt/deaktivovat uzivatele
     let user = await ApiUser.recoverUser({
       connection,
       client,
@@ -127,7 +127,7 @@ export const Mutation: GQLTypes.MutationResolvers = {
 }
 
 export const User: GQLTypes.UserResolvers = {
-  membership: async (parrent, args, { client, db: connection }, info) => {
+  membership: async(parrent, args, { client, db: connection }, info) => {
     let membersips = await ApiUser.getMemberships({
       connection,
       client,

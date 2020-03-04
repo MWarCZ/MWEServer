@@ -1,6 +1,6 @@
 import { BeforeRemove, Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm'
 
-import { fillElement, OptionsConstructor } from './bpmn'
+import { objectFiller, OptionsConstructor } from '../utils/objectFiller'
 import { Member } from './member'
 
 @Entity()
@@ -32,7 +32,7 @@ export class Group {
   }
 
   constructor(options?: OptionsConstructor<Group>) {
-    fillElement(this, options)
+    objectFiller(this, options)
   }
 }
 

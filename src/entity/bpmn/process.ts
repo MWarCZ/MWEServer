@@ -2,7 +2,8 @@ import { BeforeInsert, Column, Entity, ManyToOne, OneToMany, PrimaryGeneratedCol
 import { v4 as uuid } from 'uuid'
 
 import { JsonMap } from '../../types/json'
-import { BaseElementInstance, BaseElementTemplate, fillElement, OptionsConstructor, ProcessStatus } from './baseElement'
+import { objectFiller, OptionsConstructor } from '../../utils/objectFiller'
+import { BaseElementInstance, BaseElementTemplate, ProcessStatus } from './baseElement'
 import { DataObjectInstance, DataObjectTemplate } from './dataObject'
 import { NodeElementInstance, NodeElementTemplate } from './nodeElement'
 import { SequenceFlowInstance, SequenceFlowTemplate } from './sequenceFlow'
@@ -79,7 +80,7 @@ export class ProcessTemplate implements BaseElementTemplate {
   sequenceFlows?: SequenceFlowTemplate[]
 
   constructor(options?: OptionsConstructor<ProcessTemplate>) {
-    fillElement(this, options)
+    objectFiller(this, options)
   }
 
   @BeforeInsert()
@@ -132,4 +133,7 @@ export class ProcessInstance implements BaseElementInstance {
   @OneToMany(type => SequenceFlowInstance, entity => entity.processInstance)
   sequenceFlows?: SequenceFlowInstance[]
 
+  constructor(options?: OptionsConstructor<ProcessInstance>) {
+    objectFiller(this, options)
+  }
 }

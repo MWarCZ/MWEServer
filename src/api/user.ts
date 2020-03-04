@@ -8,9 +8,9 @@ import { PermissionError } from './permissionError'
 
 export function UserOneOf(args: {
   groupNames: string[],
-  isSuperUserAdmin?: ()=>any,
-  isUserAdmin?: ()=>any,
-  isOther?: ()=>any,
+  isSuperUserAdmin?: () => any,
+  isUserAdmin?: () => any,
+  isOther?: () => any,
 }) {
   return OneOf(
     [args.groupNames.includes(ProtectedGroups.SuperUserAdmin), args.isSuperUserAdmin],
@@ -36,7 +36,7 @@ function getUserFindConditions(options: {
   let findConditions: FindConditions<User> = options.findConditions || {}
   let filter = options.filter as PossibleFilter<FilterUserById, FilterUserByLogin>
 
-  if(filter.id) {
+  if (filter.id) {
     findConditions.id = filter.id
   } else if (filter.login) {
     findConditions.login = filter.login
@@ -47,15 +47,15 @@ function getUserFindConditions(options: {
 }
 
 function checkRequestHimself(options: {client?: ContextUser, filter: FilterUserBy}): boolean {
-  if(!options.client) return false
+  if (!options.client) return false
   return options.client.id === (options.filter as FilterUserById).id
     || options.client.login === (options.filter as FilterUserByLogin).login
 }
 
 function randomString(length: number): string {
-  let result = '';
-  const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-  const charactersLength = characters.length;
+  let result = ''
+  const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
+  const charactersLength = characters.length
   for (let i = 0; i < length; i++) {
     result += characters.charAt(Math.floor(Math.random() * charactersLength))
   }
@@ -87,8 +87,8 @@ export async function getUser(options: {
 
   UserOneOf({
     groupNames,
-    isUserAdmin: ()=>{findConditions.removed = false},
-    isOther: ()=>{
+    isUserAdmin: () => {findConditions.removed = false},
+    isOther: () => {
       // Pokud se nepta sam na sebe, tak hod chybu.
       if (!checkRequestHimself({client, filter})) {
         throw new PermissionError()
@@ -127,9 +127,9 @@ export async function getUsers(options: {
     isOther: () => {
       // Ziska sam sebe
       const { id, login } = client || {}
-      if(id){
+      if (id) {
         findConditions = getUserFindConditions({ findConditions, filter: { id } })
-      } else if(login) {
+      } else if (login) {
         findConditions = getUserFindConditions({ findConditions, filter: { login } })
       }
     },
@@ -253,7 +253,7 @@ export async function removeUser(options: {
   let user = await connection.manager.findOne(User, {
     where: findConditions,
   })
-  if(!user) { throw new Error('Uzivatel nenalezen') }
+  if (!user) { throw new Error('Uzivatel nenalezen') }
   user.removed = true
   user = await connection.manager.save(user)
 
@@ -336,8 +336,8 @@ export async function changeUserPassword(options: {
     isOther: async() => {
       // Pokud nemeni heslo sam sobe.
       if (checkRequestHimself({ client, filter })) {
-        if(client && data.oldPassword) {
-          if(await client.comparePassword(data.oldPassword)){
+        if (client && data.oldPassword) {
+          if (await client.comparePassword(data.oldPassword)) {
             return
           }
         }

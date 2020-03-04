@@ -2,7 +2,7 @@ import { BeforeInsert, Column, Entity, ManyToOne, OneToMany, PrimaryGeneratedCol
 import { v4 as uuid } from 'uuid'
 
 import { Json } from '../../types/json'
-import { fillElement, OptionsConstructor } from './baseElement'
+import { objectFiller, OptionsConstructor } from '../../utils/objectFiller'
 import { FlowElementInstance, FlowElementTemplate } from './flowElement'
 import { ProcessInstance, ProcessTemplate } from './process'
 
@@ -45,7 +45,7 @@ export class DataObjectTemplate implements FlowElementTemplate {
   instances?: DataObjectInstance[]
 
   constructor(options?: OptionsConstructor<DataObjectTemplate>) {
-    fillElement(this, options)
+    objectFiller(this, options)
   }
 
   @BeforeInsert()
@@ -94,6 +94,6 @@ export class DataObjectInstance implements FlowElementInstance {
   template?: DataObjectTemplate
 
   constructor(options?: OptionsConstructor<DataObjectInstance>) {
-    fillElement(this, options)
+    objectFiller(this, options)
   }
 }
