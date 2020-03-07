@@ -38,6 +38,7 @@
     "lint": "tslint -c tslint.json -p tsconfig.json --format codeFrame",
     "lint:fix": "$npm_execpath run lint --fix",
     "gen:gql": "graphql-codegen --config .graphqlconfig.yml",
+    "typeorm": "ts-node node_modules/typeorm/cli.js",
     "copy:gql": "copyfiles -u 1 'src/**/*.css' 'src/**/*.html' 'src/**/*.gql' 'src/**/*.graphql' 'src/**/*.json' $npm_package_env_path_dist",
     "clean": "$npm_execpath run build:clean; $npm_execpath run test:clean; ",
     "clean:node": "rm -rf node_modules;",

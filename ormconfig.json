@@ -5,7 +5,7 @@
   "username": "root",
   "password": "root",
   "database": "mwe",
-  "synchronize": true,
+  "synchronize": false,
   "logging": false,
   "entities": [
     "src/entity/**/*.ts"
