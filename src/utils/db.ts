@@ -1,20 +1,10 @@
 import * as fs from 'fs'
 import { join as pathJoin } from 'path'
-import { Connection, createConnection, EntityMetadata, getConnection } from 'typeorm'
+import { Connection, createConnection, EntityMetadata, getConnection, getConnectionOptions } from 'typeorm'
 
 export async function createConn(): Promise<Connection> {
-  let conn = await createConnection({
-    type: 'mysql',
-    host: 'localhost',
-    port: 3306,
-    username: 'root',
-    password: 'root',
-    database: 'mwe',
-    synchronize: true,
-    entities: [
-      pathJoin(__dirname, '../entity/**/*.ts'),
-    ],
-  })
+  let opt = await getConnectionOptions()
+  let conn = await createConnection(opt)
   return conn
 }
 
@@ -23,7 +13,6 @@ export async function closeConn(connection?: Connection): Promise<void> {
   if (conn.isConnected) {
     await conn.close()
   }
-  conn.entityMetadatas[0].name
   // const conn = (await connection);
   // if (conn.isConnected) {
   //   await (await connection).close();
@@ -42,6 +31,11 @@ export async function cleanDataInTables(connection: Connection, entities: Entity
   } catch (error) {
     throw new Error(`ERROR: Cleaning data in test db:\n sql: ${sql} \n${error}`)
   }
+}
+
+export function loadDataToDb(connection: Connection, entities: Function[], pathFolder: string) {
+  let metadatas = entities.map(e => connection.getMetadata(e))
+  return loadDataToTables(connection, metadatas, pathFolder)
 }
 
 export async function loadDataToTables(connection: Connection, entities: EntityMetadata[], pathFolder: string) {

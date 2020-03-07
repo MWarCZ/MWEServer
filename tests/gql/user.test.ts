@@ -8,24 +8,29 @@ import { Connection, FindOneOptions, getConnection } from 'typeorm'
 import { genJwt } from '../../src/api/auth'
 import { ProtectedUsers } from '../../src/api/helpers'
 import { UnloggedUserError } from '../../src/api/permissionError'
-import { User } from '../../src/entity'
+import { Group, Member, User } from '../../src/entity'
 import { MyContext } from '../../src/graphql/context'
 import { createServer } from '../../src/server'
-import { DropAllInDb, LoadDefaultDb } from '../resources/dbHelperUtility'
+import { cleanDataInTables, loadDataToDb } from '../../src/utils/db'
 
 describe('GQL: User', () => {
   let server: GraphQLServer
   let context: MyContext
   let connection: Connection
   beforeAll(() => {
+
     return createServer()
       .then(ser => {
         server = ser
         return getConnection()
       })
       .then(conn => connection = conn)
-      .then(conn => DropAllInDb(conn))
-      .then(conn => LoadDefaultDb(conn))
+      .then(conn => {
+        return cleanDataInTables(connection, conn.entityMetadatas)
+      })
+      .then(conn => {
+        return loadDataToDb(connection, [User, Group, Member], '../resources/db/UGM')
+      })
   })
 
   beforeEach(async () => {
