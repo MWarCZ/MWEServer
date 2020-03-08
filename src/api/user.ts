@@ -3,7 +3,7 @@ import { Connection, FindConditions } from 'typeorm'
 import { Member, User } from '../entity'
 import { ContextUser } from '../graphql/context'
 import { OneOf } from '../utils/OneOf'
-import { ProtectedGroups } from './helpers'
+import { PossibleFilter, ProtectedGroups } from './helpers'
 import { PermissionError, UnloggedUserError } from './permissionError'
 
 export function UserOneOf(args: {
@@ -21,8 +21,6 @@ export function UserOneOf(args: {
 
 
 //#region Helpers
-
-export type PossibleFilter<A, B> = Partial<A> & Partial<B>
 
 export type FilterUserById = { id: number }
 export type FilterUserByLogin = { login: string }

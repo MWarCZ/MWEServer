@@ -40,7 +40,7 @@ export async function addMember(options: {
   //#region Rozliseni dle AUTORIZACE
   let user = await connection.manager.findOne(User, findConditions.user)
   let group = await connection.manager.findOne(Group, findConditions.user)
-  if(!user || !group) {
+  if (!user || !group) {
     throw new Error('Skupina nebo uzivatel neexistuje.')
   }
 
@@ -90,7 +90,7 @@ export async function removeMember(options: {
 
   await GroupOneOf({
     groupNames,
-    isOther: async () => {
+    isOther: async() => {
       let isMember = client && client.membership.find(m => group && m.group.name === group.name)
       if (isMember && isMember.removeMember) {
         // povoleno
@@ -103,10 +103,10 @@ export async function removeMember(options: {
   //#endregion
 
   let member = await connection.manager.findOne(Member, findConditions)
-  if(!member) {
+  if (!member) {
     throw new Error(`Clenstvi nenalezeno.`)
   }
-  if(member.protected) {
+  if (member.protected) {
     throw new PermissionError()
   }
   let res = await connection.manager.delete(Member, findConditions)

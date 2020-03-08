@@ -20,3 +20,5 @@ export const ProtectedMembers = {
   [ProtectedGroups.SuperGroupAdmin]: ProtectedUsers.SuperGroupAdmin,
   [ProtectedGroups.GroupAdmin]: ProtectedUsers.GroupAdmin,
 }
+
+export type PossibleFilter<A, B> = Partial<A> & Partial<B>

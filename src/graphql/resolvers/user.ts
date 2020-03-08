@@ -4,7 +4,7 @@ import { GQLTypes } from '../generated/types'
 
 export const Query: GQLTypes.QueryResolvers = {
   /** Ziskat uzivatele */
-  user: async (_, { filter }, { client, db: connection }) => {
+  user: async(_, { filter }, { client, db: connection }) => {
     let user = await ApiUser.getUser({
       connection,
       client,
@@ -14,7 +14,7 @@ export const Query: GQLTypes.QueryResolvers = {
     return user as GQLTypes.User || null
   },
   /** Ziskat seznam uzivatelu */
-  users: async (_, args, { client, db: connection }) => {
+  users: async(_, args, { client, db: connection }) => {
     let users = await ApiUser.getUsers({
       connection,
       client,

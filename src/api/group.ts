@@ -3,11 +3,9 @@ import { Connection, FindConditions, In } from 'typeorm'
 import { Group, Member } from '../entity'
 import { ContextUser } from '../graphql/context'
 import { OneOf } from '../utils/OneOf'
-import { ProtectedGroups } from './helpers'
+import { PossibleFilter, ProtectedGroups } from './helpers'
 import { PermissionError, UnloggedUserError } from './permissionError'
 
-
-export type PossibleFilter<A, B> = Partial<A> & Partial<B>
 
 export type FilterGroupById = { id: number }
 export type FilterGroupByName = { name: string }
@@ -53,7 +51,7 @@ function checkClientMembershipWithGroup(options: {
   if (!options.client) {
     return false
   } else if (filter.id) {
-    let ids = options.client.membership.map(m=>m.group.id)
+    let ids = options.client.membership.map(m => m.group.id)
     return ids.includes(filter.id)
   } else if (filter.name) {
     let names = options.client.membership.map(m => m.group.name)
@@ -90,7 +88,7 @@ export async function getGroup(options: {
   } else if (groupNames.includes(ProtectedGroups.GroupAdmin)) {
     // Vsechny skupiny mimo smazane
     groupConditions.removed = false
-  } else if (checkClientMembershipWithGroup({filter,client})) {
+  } else if (checkClientMembershipWithGroup({filter, client})) {
     // sskupiny do kterych patri kleint mimo smazane
     groupConditions.removed = false
   } else {
@@ -258,7 +256,7 @@ export async function removeGroup(options: {
     where: findConditions,
   })
   if (!group) { throw new Error('Skupina nenalezen') }
-  if(group.protected) {
+  if (group.protected) {
     throw new PermissionError()
   }
   group.removed = true

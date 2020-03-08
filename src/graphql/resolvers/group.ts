@@ -4,7 +4,7 @@ import { GQLTypes } from '../generated/types'
 
 export const Query: GQLTypes.QueryResolvers = {
   /** Ziskat uzivatele */
-  group: async (_, { filter }, { client, db: connection }) => {
+  group: async(_, { filter }, { client, db: connection }) => {
     let user = await ApiGroup.getGroup({
       connection,
       client,
@@ -14,7 +14,7 @@ export const Query: GQLTypes.QueryResolvers = {
     return user as GQLTypes.Group || null
   },
   /** Ziskat seznam uzivatelu */
-  groups: async (_, args, { client, db: connection }) => {
+  groups: async(_, args, { client, db: connection }) => {
     let users = await ApiGroup.getGroups({
       connection,
       client,
@@ -78,7 +78,7 @@ export const Mutation: GQLTypes.MutationResolvers = {
 }
 
 export const Group: GQLTypes.GroupResolvers = {
-  members: async (parrent, args, {db: connection, client}, info) => {
+  members: async(parrent, args, {db: connection, client}, info) => {
     let membersips = await ApiGroup.getMembers({
       connection,
       client,

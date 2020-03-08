@@ -59,7 +59,7 @@ export const Mutation: GQLTypes.MutationResolvers = {
 }
 
 export const Member: GQLTypes.MemberResolvers = {
-  user: async (parrent, args, {db: connection, client}, info) => {
+  user: async(parrent, args, {db: connection, client}, info) => {
     let member = parrent as EntityMember
     let user = await ApiMember.getUser({
       connection,
@@ -69,7 +69,7 @@ export const Member: GQLTypes.MemberResolvers = {
     // @ts-ignore
     return user as GQLTypes.User
   },
-  group: async (parrent, args, { db: connection, client }, info) => {
+  group: async(parrent, args, { db: connection, client }, info) => {
     let member = parrent as EntityMember
     let group = await ApiMember.getGroup({
       connection,

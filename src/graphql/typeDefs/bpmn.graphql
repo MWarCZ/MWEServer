@@ -12,8 +12,8 @@ type Query {
   NodeAdditions(idNI: Int!): NodeAdditions
 }
 type Mutation {
-  uploadProcess(xml: String): ProcessTemplate
-  initProcess(idPT: Int!, idNT: Int!): ProcessInstance
+  uploadProcess(xml: String): [ProcessTemplate]
+  initProcess(input: InitProcessInput!): ProcessInstance
 
   claimNodeInstance(idNI: Int!): NodeElementInstance
   releaseNodeInstance(idNI: Int!): NodeElementInstance
@@ -37,6 +37,13 @@ input NodeTemplateFilter {
 }
 input NodeInstanceFilter {
   id: Int
+}
+# =====================
+input InitProcessInput {
+  """ProcessInstance will create from ProcessTemplate with this id."""
+  idProcess: Int!
+  """ProcessInstance will start on NodeTemplate with this id."""
+  idFirstNode: Int!
 }
 
 # ==============================
