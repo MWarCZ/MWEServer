@@ -43,6 +43,8 @@ export async function loadDataToTables(connection: Connection, entities: EntityM
     for (const entity of entities) {
       const repository = await connection.getRepository(entity.name)
       const path = pathJoin(pathFolder, `${entity.tableName}.json`)
+      console.log(path)
+      // console.log(entities)
 
       if (fs.existsSync(path)) {
         const items = JSON.parse(fs.readFileSync(path, 'utf8'))

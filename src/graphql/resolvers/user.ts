@@ -145,16 +145,3 @@ export const User: GQLTypes.UserResolvers = {
     return parrent.removed
   },
 }
-
-export const Group: GQLTypes.GroupResolvers = {
-  members: async(parrent, args, context, info) => {
-    // if (parrent.users) {
-    //   return parrent.users
-    // }
-    // let group = await context.db.getRepository(Entities.Group).findOne(parrent.id, {
-    //   relations: ['users'],
-    // })
-    // return (group) ? group.members as GQLTypes.User[] : []
-    return []
-  },
-}

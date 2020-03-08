@@ -4,37 +4,82 @@ import { Group, Member } from '../entity'
 import { ContextUser } from '../graphql/context'
 import { OneOf } from '../utils/OneOf'
 import { ProtectedGroups } from './helpers'
+import { PermissionError, UnloggedUserError } from './permissionError'
+
+
+export type PossibleFilter<A, B> = Partial<A> & Partial<B>
+
+export type FilterGroupById = { id: number }
+export type FilterGroupByName = { name: string }
+export type FilterGroupBy = FilterGroupById | FilterGroupByName
 
 
 export function GroupOneOf(args: {
   groupNames: string[],
-  isSuperGroupAdmin?: Function,
-  isGroupAdmin?: Function,
-  isOther?: Function,
+  isSuperGroupAdmin?: () => any,
+  isGroupAdmin?: () => any,
+  isOther?: () => any,
 }) {
   return OneOf(
-    [args.groupNames.includes(ProtectedGroups.SuperGroupAdmin), args.isSuperGroupAdmin],
-    [args.groupNames.includes(ProtectedGroups.GroupAdmin), args.isGroupAdmin],
-    [true, args.isOther],
+    [() => args.groupNames.includes(ProtectedGroups.SuperGroupAdmin), args.isSuperGroupAdmin],
+    [() => args.groupNames.includes(ProtectedGroups.GroupAdmin), args.isGroupAdmin],
+    [() => true, args.isOther],
   )
 }
+
+
+export function getGroupFindConditions(options: {
+  filter: FilterGroupBy,
+  findConditions?: FindConditions<Group>,
+}) {
+  let findConditions: FindConditions<Group> = options.findConditions || {}
+  let filter = options.filter as PossibleFilter<FilterGroupById, FilterGroupByName>
+
+  if (filter.id) {
+    findConditions.id = filter.id
+  } else if (filter.name) {
+    findConditions.name = filter.name
+  } else {
+    throw new Error('Skupina lze identifikovat dle id nebo name.')
+  }
+  return findConditions
+}
+
+function checkClientMembershipWithGroup(options: {
+  filter: FilterGroupBy,
+  client?: ContextUser,
+}): boolean {
+  let filter = options.filter as PossibleFilter<FilterGroupById, FilterGroupByName>
+  if (!options.client) {
+    return false
+  } else if (filter.id) {
+    let ids = options.client.membership.map(m=>m.group.id)
+    return ids.includes(filter.id)
+  } else if (filter.name) {
+    let names = options.client.membership.map(m => m.group.name)
+    return names.includes(filter.name)
+  }
+  return false
+}
+
+// ==========================
 
 export async function getGroup(options: {
   connection: Connection,
   client?: ContextUser,
-  filter: { id: number },
+  filter: FilterGroupBy,
 }): Promise<Group|undefined> {
   let { client, connection, filter } = options
 
   //#region Rozliseni dle AUTENTIZACE
 
-  if (!client) { throw new Error('Informace neni pro neprihlasene.') }
+  if (!client) { throw new UnloggedUserError()}
 
   let groupNames = client.membership.map(g => g.group.name)
   let groupIds = client.membership.map(g => g.groupId)
   let groupConditions: FindConditions<Group> = {}
 
-  groupConditions.id = filter.id
+  groupConditions = getGroupFindConditions({filter, findConditions: groupConditions})
 
   //#endregion
 
@@ -45,11 +90,11 @@ export async function getGroup(options: {
   } else if (groupNames.includes(ProtectedGroups.GroupAdmin)) {
     // Vsechny skupiny mimo smazane
     groupConditions.removed = false
-  } else if (groupIds.includes(filter.id)) {
+  } else if (checkClientMembershipWithGroup({filter,client})) {
     // sskupiny do kterych patri kleint mimo smazane
     groupConditions.removed = false
   } else {
-    throw new Error('Nedostatecna opravneni.')
+    throw new PermissionError()
   }
 
   //#endregion
@@ -108,14 +153,14 @@ export async function getMembers(options: {
 
   //#region Rozliseni dle AUTENTIZACE
 
-  if (!client) { throw new Error('Informace neni pro neprihlasene.') }
+  if (!client) { throw new UnloggedUserError() }
   let groupNames = client.membership.map(g => g.group.name)
   let groupIds = client.membership.map(g => g.groupId)
 
   let memberConditions: FindConditions<Member> = {}
   let groupConditions: FindConditions<Group> = {}
 
-  memberConditions.userId = filter.groupId
+  memberConditions.groupId = filter.groupId
 
   //#endregion
 
@@ -134,7 +179,7 @@ export async function getMembers(options: {
     }
     groupConditions.removed = false
   } else {
-    throw new Error('Nedostatecna opravneni.')
+    throw new PermissionError()
   }
 
   //#endregion
@@ -146,7 +191,198 @@ export async function getMembers(options: {
   return memberships
 }
 
+// updateGroupInfo
+// deleteGroup
+// recoverGroup
 
 
+export async function createNewGroup(options: {
+  connection: Connection,
+  client?: ContextUser,
+  data: {
+    name: string,
+    describe?: string,
+  },
+}) {
+  let { client, connection, data } = options
+  //#region Rozliseni dle AUTENTIZACE
+
+  if (!client) { throw new UnloggedUserError() }
+  let groupNames = client.membership.map(g => g.group.name) as string[]
+
+  //#endregion
+
+  //#region Rozliseni dle AUTORIZACE
+
+  GroupOneOf({
+    groupNames,
+    // isSuperGroupAdmin: Povoleno
+    // isGroupAdmin: Povoleno
+    isOther: () => { throw new PermissionError() },
+  })()
+
+  //#endregion
+
+  let group = new Group({ ...data })
+  group = await connection.manager.save(group)
+  return group
+
+}
+export async function removeGroup(options: {
+  connection: Connection,
+  client?: ContextUser,
+  filter: FilterGroupBy,
+}) {
+  let { client, connection, filter } = options
+  let findConditions: FindConditions<Group> = {}
+
+  //#region Rozliseni dle AUTENTIZACE
+
+  if (!client) { throw new UnloggedUserError() }
+  let groupNames = client.membership.map(g => g.group.name) as string[]
+
+  findConditions = getGroupFindConditions({ findConditions, filter })
+
+  //#endregion
+
+  //#region Rozliseni dle AUTORIZACE
+
+  GroupOneOf({
+    groupNames,
+    isOther: () => { throw new PermissionError() },
+  })()
+
+  //#endregion
+
+  let group = await connection.manager.findOne(Group, {
+    where: findConditions,
+  })
+  if (!group) { throw new Error('Skupina nenalezen') }
+  if(group.protected) {
+    throw new PermissionError()
+  }
+  group.removed = true
+  group = await connection.manager.save(group)
+
+  return group
+}
 
 
+export async function updateGroupInfo(options: {
+  connection: Connection,
+  client?: ContextUser,
+  filter: FilterGroupBy,
+  data: {
+    describe?: string,
+  },
+}) {
+  let { client, connection, filter, data } = options
+  let findConditions: FindConditions<Group> = {}
+
+  //#region Rozliseni dle AUTENTIZACE
+
+  if (!client) { throw new UnloggedUserError() }
+  let groupNames = client.membership.map(g => g.group.name) as string[]
+
+  findConditions = getGroupFindConditions({ findConditions, filter })
+
+  //#endregion
+
+  //#region Rozliseni dle AUTORIZACE
+
+  GroupOneOf({
+    groupNames,
+    // isSuperUserAdmin: Povoleno
+    // isUserAdmin: Povoleno
+    isOther: () => {
+      // Pokud nemeni heslo sam sobe.
+      if (!checkClientMembershipWithGroup({ client, filter })) {
+        throw new PermissionError()
+      }
+    },
+  })()
+
+  //#endregion
+
+  let group = await connection.manager.findOne(Group, {
+    where: findConditions,
+  })
+  if (!group) { throw new Error('Uzivatel nenalezen') }
+  data.describe && (group.describe = data.describe)
+  group = await connection.manager.save(group)
+
+  return group
+
+}
+export async function deleteGroup(options: {
+  connection: Connection,
+  client?: ContextUser,
+  filter: FilterGroupBy,
+}) {
+
+  let { client, connection, filter } = options
+  let findConditions: FindConditions<Group> = {}
+
+  //#region Rozliseni dle AUTENTIZACE
+
+  if (!client) { throw new UnloggedUserError() }
+  let groupNames = client.membership.map(g => g.group.name) as string[]
+
+  findConditions = getGroupFindConditions({ findConditions, filter })
+
+  //#endregion
+
+  //#region Rozliseni dle AUTORIZACE
+
+  GroupOneOf({
+    groupNames,
+    // isSuperGroupAdmin: Povoleno
+    isGroupAdmin: () => { throw new PermissionError() },
+    isOther: () => { throw new PermissionError() },
+  })()
+
+  //#endregion
+
+  let result = await connection.manager.delete(Group, {
+    where: findConditions,
+  })
+
+  return true
+}
+export async function recoverGroup(options: {
+  connection: Connection,
+  client?: ContextUser,
+  filter: FilterGroupBy,
+}) {
+  let { client, connection, filter } = options
+  let findConditions: FindConditions<Group> = {}
+
+  //#region Rozliseni dle AUTENTIZACE
+
+  if (!client) { throw new UnloggedUserError() }
+  let groupNames = client.membership.map(g => g.group.name) as string[]
+
+  findConditions = getGroupFindConditions({ findConditions, filter })
+
+  //#endregion
+
+  //#region Rozliseni dle AUTORIZACE
+
+  GroupOneOf({
+    groupNames,
+    // isSuperGroupAdmin: Povoleno
+    isGroupAdmin: () => { throw new PermissionError() },
+    isOther: () => { throw new PermissionError() },
+  })()
+
+  //#endregion
+
+  let group = await connection.manager.findOne(Group, {
+    where: findConditions,
+  })
+  if (!group) { throw new Error('Skupina nenalezen') }
+  group.removed = false
+  group = await connection.manager.save(group)
+
+  return group
+}

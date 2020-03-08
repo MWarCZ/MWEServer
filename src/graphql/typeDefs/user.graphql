@@ -4,7 +4,7 @@ type Query {
   # SuperUserAdmin => Zcela vsechny
   # User => Jen sebe
   # Other => Nic
-  user(filter: UserFilterInput!): User
+  user(filter: UserFilter!): User
   # UserAdmin => Vsechny mimo skryte (removed)
   # SuperUserAdmin => Zcela vsechny
   # User => Jen sebe
@@ -13,18 +13,18 @@ type Query {
 }
 type Mutation {
   # User
-  changeUserPassword(input: ChangePasswordInput!, filter: UserFilterInput!): Boolean
-  updateUserInfo(input: UpdateUserInfoInput!, filter: UserFilterInput!): User
+  changeUserPassword(input: ChangePasswordInput!, filter: UserFilter!): Boolean
+  updateUserInfo(input: UpdateUserInfoInput!, filter: UserFilter!): User
   # UserAdmin
   ## updateUserInfo => Pro vsechny uzivatele
   createNewUser(input: NewUserInput!): User # vytvorit uzivatele
-  removeUser(filter: UserFilterInput!): Boolean # skrit uzivatele s id
-  lockUser(filter: UserFilterInput!): User
-  unlockUser(filter: UserFilterInput!): User
-  resetUserPassword(filter: UserFilterInput!): String
+  removeUser(filter: UserFilter!): Boolean # skrit uzivatele s id
+  lockUser(filter: UserFilter!): User
+  unlockUser(filter: UserFilter!): User
+  resetUserPassword(filter: UserFilter!): String
   # SuperUserAdmin
-  deleteUser(filter: UserFilterInput!): Boolean # trvale odstranit
-  recoverUser(filter: UserFilterInput!): User # obnovit skriteho uzivatele s id
+  deleteUser(filter: UserFilter!): Boolean # trvale odstranit
+  recoverUser(filter: UserFilter!): User # obnovit skriteho uzivatele s id
 
 
 }
@@ -41,7 +41,7 @@ type User {
   removed: Boolean!
 }
 
-input UserFilterInput {
+input UserFilter {
   id: Int
   login: String
 }

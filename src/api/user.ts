@@ -13,9 +13,9 @@ export function UserOneOf(args: {
   isOther?: () => any,
 }) {
   return OneOf(
-    [args.groupNames.includes(ProtectedGroups.SuperUserAdmin), args.isSuperUserAdmin],
-    [args.groupNames.includes(ProtectedGroups.UserAdmin), args.isUserAdmin],
-    [true, args.isOther],
+    [() => args.groupNames.includes(ProtectedGroups.SuperUserAdmin), args.isSuperUserAdmin],
+    [() => args.groupNames.includes(ProtectedGroups.UserAdmin), args.isUserAdmin],
+    [() => true, args.isOther],
   )
 }
 
@@ -29,7 +29,7 @@ export type FilterUserByLogin = { login: string }
 export type FilterUserBy = FilterUserById | FilterUserByLogin
 
 
-function getUserFindConditions(options: {
+export function getUserFindConditions(options: {
   filter: FilterUserBy,
   findConditions?: FindConditions<User>,
 }) {
@@ -292,6 +292,9 @@ export async function lockUser(options: {
     where: findConditions,
   })
   if (!user) { throw new Error('Uzivatel nenalezen') }
+  if (user.protected) {
+    throw new PermissionError()
+  }
   user.locked = !unlock
   user = await connection.manager.save(user)
 

@@ -1,0 +1,167 @@
+[
+  {
+    "email": "",
+    "firstName": "",
+    "lastName": "",
+    "password": "$2a$13$cB.JFif1FkXH1/7npeFIsOGZCVmZJGDiqMkwdB6WeQZeiyM.clg72",
+    "protected": true,
+    "locked": true,
+    "removed": false,
+    "id": 1,
+    "login": "system"
+  },
+  {
+    "email": "",
+    "firstName": "",
+    "lastName": "",
+    "password": "$2a$13$e6JuZRZh6gHQBXkztNLTteusa/vlZGhdpTa849puQVyIuF0DEhy7a",
+    "protected": true,
+    "locked": false,
+    "removed": false,
+    "id": 2,
+    "login": "useradmin"
+  },
+  {
+    "email": "",
+    "firstName": "",
+    "lastName": "",
+    "password": "$2a$13$BBXedOvKXY7J2PzOf3hduu8ock6WGJNXrN326/ZZhac636LjIs0fy",
+    "protected": true,
+    "locked": false,
+    "removed": false,
+    "id": 3,
+    "login": "superuseradmin"
+  },
+  {
+    "email": "",
+    "firstName": "",
+    "lastName": "",
+    "password": "$2a$13$RlqMU3XLkQxyrp7SMJjcr.gUNlv4PcW7ihqG.1rT2bsCr8BLP68uW",
+    "protected": true,
+    "locked": false,
+    "removed": false,
+    "id": 4,
+    "login": "groupadmin"
+  },
+  {
+    "email": "",
+    "firstName": "",
+    "lastName": "",
+    "password": "$2a$13$HSGajToLYKDu/gzL8NbYJ.5ckFGzNkUIfjx.rln8o4s29vkCLzq8.",
+    "protected": true,
+    "locked": false,
+    "removed": false,
+    "id": 5,
+    "login": "supergroupadmin"
+  },
+  {
+    "email": "user6@user.xxx",
+    "firstName": "User-6",
+    "lastName": "Resu-6",
+    "password": "$2a$13$7d./gV1yON0DUJ2quRGl8OFrNivoJ01/B5plWQoGDUPTT4uQUIKla",
+    "protected": false,
+    "locked": false,
+    "removed": false,
+    "id": 6,
+    "login": "user6"
+  },
+  {
+    "email": "user7@user.xxx",
+    "firstName": "User-7",
+    "lastName": "Resu-7",
+    "password": "$2a$13$me.t4i5ky7ivssTjpDrCl.KltzuvCk8rjLwaFlukLEWiHJBQKeHvK",
+    "protected": false,
+    "locked": false,
+    "removed": false,
+    "id": 7,
+    "login": "user7"
+  },
+  {
+    "email": "user8@user.xxx",
+    "firstName": "User-8",
+    "lastName": "Resu-8",
+    "password": "$2a$13$mFw4CCi0tlEgluxissuqpOtYY45pLyRpe6zp0YRpCrqeXy37YuB7m",
+    "protected": false,
+    "locked": false,
+    "removed": false,
+    "id": 8,
+    "login": "user8"
+  },
+  {
+    "email": "user9@user.xxx",
+    "firstName": "User-9",
+    "lastName": "Resu-9",
+    "password": "$2a$13$l1pVZwLAyuUGpQd19NQO6uu6tfJSs4dAxcWSW/ApbCWW.LNZJLOfu",
+    "protected": false,
+    "locked": false,
+    "removed": false,
+    "id": 9,
+    "login": "user9"
+  },
+  {
+    "email": "user10@user.xxx",
+    "firstName": "User-10",
+    "lastName": "Resu-10",
+    "password": "$2a$13$V4BaBtPX94tzP.2QS1n0fe2HeWm4ZhPrAQBscrnUvrr7HwDUxuaNC",
+    "protected": false,
+    "locked": true,
+    "removed": false,
+    "id": 10,
+    "login": "user10"
+  },
+  {
+    "email": "user11@user.xxx",
+    "firstName": "User-11",
+    "lastName": "Resu-11",
+    "password": "$2a$13$8lMLmuTYAJoyqwfvMkBZ7OU7iaX83PLPIxN3W824hYMhYXMomG1Uq",
+    "protected": false,
+    "locked": true,
+    "removed": true,
+    "id": 11,
+    "login": "user11"
+  },
+  {
+    "email": "user12@user.xxx",
+    "firstName": "User-12",
+    "lastName": "Resu-12",
+    "password": "$2a$13$wYzqq/5HueteRwYSSPt50uT0Ah2hxkGpmplSKBJDAlyzvhtdZeGjm",
+    "protected": false,
+    "locked": false,
+    "removed": true,
+    "id": 12,
+    "login": "user12"
+  },
+  {
+    "email": "user13@user.xxx",
+    "firstName": "User-13",
+    "lastName": "Resu-13",
+    "password": "$2a$13$cKfUPlB.DYtsXbQQWj5D3.2cjuOi.xsiEuiCSAybXbaFlg8aPc/oe",
+    "protected": false,
+    "locked": false,
+    "removed": true,
+    "id": 13,
+    "login": "user13"
+  },
+  {
+    "email": "user14@user.xxx",
+    "firstName": "User-14",
+    "lastName": "Resu-14",
+    "password": "$2a$13$7KZwqyiIh6qHbLz56KNbsuRAxfTnQYeV7MzXoilJsb3v.qmP8ooym",
+    "protected": false,
+    "locked": false,
+    "removed": true,
+    "id": 14,
+    "login": "user14"
+  },
+  {
+    "email": "user15@user.xxx",
+    "firstName": "User-15",
+    "lastName": "Resu-15",
+    "password": "$2a$13$E/aRJqG9MxaHr3IfGXZWhen.OmbEGuknQxc29SJ0boyG3Cw18Ogki",
+    "protected": false,
+    "locked": false,
+    "removed": true,
+    "id": 15,
+    "login": "user15"
+  }
+]

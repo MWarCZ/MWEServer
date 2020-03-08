@@ -3,14 +3,13 @@
 
 # }
 type Mutation {
-  addMember(groupId: Int!, userId: Int!): Member
-  removeMember(groupId: Int!, userId: Int!): Member
-  setMemberPermisions(input: MemberPermisionsInput): Member # Nastaveni lokalnich prav uzivatele
+  addMember(filter: MemberFilter!, input: MemberPermisionsInput): Member
+  removeMember(filter: MemberFilter!): Boolean
+  setMemberPermisions(filter: MemberFilter!, input: MemberPermisionsInput!): Member # Nastaveni lokalnich prav uzivatele
 
 }
 
 type Member {
-  id: Int!
   group: Group!
   user: User!
   protected: Boolean!
@@ -22,4 +21,8 @@ input MemberPermisionsInput {
   addMember: Boolean
   removeMember: Boolean
   showMembers: Boolean
+}
+input MemberFilter {
+  group: GroupFilter!
+  user: UserFilter!
 }

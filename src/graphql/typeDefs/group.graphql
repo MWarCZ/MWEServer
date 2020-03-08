@@ -3,27 +3,41 @@ type Query {
   # GroupAdmin => Vsechmi mimo skryte (removed)
   # SuperGroupAdmin => Zcela vsechny
   # Other => Nic
-  group(id: Int!): [Group]!
+  group(filter: GroupFilter!): Group
   # GroupAdmin => Vsechmi mimo skryte (removed)
   # SuperGroupAdmin => Zcela vsechny
   # Other => Nic
-  groups: [Group]!
+  groups: [Group!]!
 }
 type Mutation {
   # GroupAdmin
-  createNewGroup: Group # vytvorit skupinu
-  removeGroup: Group # skript skupinu
+  createNewGroup(input: NewGroupInput!): Group # vytvorit skupinu
+  updateGroupInfo(input: UpdateGroupInfoInput!, filter: GroupFilter!): Group
+  removeGroup(filter: GroupFilter!): Boolean # skript skupinu
     # Members->addMember: Pridat uzivatele do skupiny s id
     # Members->removeMember: Odebrat uzivatele ze skupiny s id
     # Members->setMemberPermisions: Nastaveni lokalnich prav uzivatele
   # SuperGroupAdmin
-  deleteGroup: Group # trvale odstranit skupinu
-  recoverGroup(id: Int!): Group # obnovit skritou skupinu s id
-
-
+  deleteGroup(filter: GroupFilter!): Boolean # trvale odstranit skupinu
+  recoverGroup(filter: GroupFilter!): Group # obnovit skritou skupinu s id
 }
 type Group {
   id: Int!
   name: String!
   members: [Member!]!
+  describe: String!
+  protected: Boolean!
+  removed: Boolean!
+}
+
+input GroupFilter {
+  id: Int
+  name: String
+}
+input NewGroupInput {
+  name: String!
+  describe: String
+}
+input UpdateGroupInfoInput {
+  describe: String
 }

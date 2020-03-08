@@ -6,23 +6,31 @@ import { GraphQLServer } from 'graphql-yoga'
 import { getConnection } from 'typeorm'
 
 import { ProtectedUsers } from '../../src/api/helpers'
+import { Group, Member, User } from '../../src/entity'
 import { MyContext } from '../../src/graphql/context'
 import { createServer } from '../../src/server'
-import { DropAllInDb, LoadDefaultDb } from '../resources/dbHelperUtility'
+import { cleanDataInTables, loadDataToDb } from '../../src/utils/db'
 
 
 describe('GQL: Auth', () => {
   let server: GraphQLServer
   let context: MyContext
-  beforeAll(() => {
-    return createServer()
-      .then(ser => {
-        server = ser
-        return getConnection()
-      })
-      .then(conn => DropAllInDb(conn))
-      .then(conn => LoadDefaultDb(conn))
+
+  beforeAll(async () => {
+    server = await createServer()
+    let connection = await getConnection()
+    await cleanDataInTables(connection, connection.entityMetadatas)
+    await loadDataToDb(connection, [User, Group, Member], '../resources/db/UGM')
   })
+  // beforeAll(() => {
+  //   return createServer()
+  //     .then(ser => {
+  //       server = ser
+  //       return getConnection()
+  //     })
+  //     .then(conn => DropAllInDb(conn))
+  //     .then(conn => LoadDefaultDb(conn))
+  // })
 
   beforeEach(async () => {
     context = await server.context({ request, response })

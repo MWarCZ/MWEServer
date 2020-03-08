@@ -1,51 +1,57 @@
 
-type Query {
-  listProcessTemplate(executableOnly: Boolean): ProcessTemplate[]
-  listProcessInstance(templateId: Int)
+# type Query {
+#   listProcessTemplate(executableOnly: Boolean): ProcessTemplate[]
+#   listProcessInstance(templateId: Int)
 
-}
+#   ProcessTemplates(): [ProcessTemplate]!
+
+# }
+# # type Mutation {
+
+# # }
 
 
-type ProcessTemplate {
-  id: Int!
-  bpmnId: String!
-  name: String!
-  candidateGroup: Group
-  instances: ProcessInstance[]
-}
-type ProcessInstance {
-  id: Int!
-  bpmnId: String!
-  name: String!
-  servicer: User
-  template: ProcessTemplate
-}
-type NodeElementTemplate {
-  id: Int!
-  bpmnId: String!
-  name: String!
-  candidateGroup: Group
-  instances: NodeElementInstance[]
-}
-type NodeElementInstance {
-  id: Int!
-  bpmnId: String!
-  name: String!
-  servicer: User
-  template: NodeElementTemplate
-}
-type DataObjectTemplate {
-  id: Int!
-  bpmnId: String!
-  name: String!
-  candidateGroup: Group
-  instances: DataObjectInstance[]
-}
-type DataObjectInstance {
-  id: Int!
-  bpmnId: String!
-  name: String!
-  servicer: User
-  template: DataObjectTemplate
-}
+# type ProcessTemplate {
+#   id: Int!
+#   bpmnId: String!
+#   name: String!
+#   instances: ProcessInstance[]
+#   isExecutable: String
+#   processType: String
+#   version: String
+#   versionType: String
+# }
+# type ProcessInstance {
+#   id: Int!
+#   bpmnId: String!
+#   name: String!
+#   assignee: User
+#   template: ProcessTemplate
+# }
+# type NodeElementTemplate {
+#   id: Int!
+#   bpmnId: String!
+#   name: String!
+#   candidateGroup: Group
+#   instances: NodeElementInstance[]
+# }
+# type NodeElementInstance {
+#   id: Int!
+#   bpmnId: String!
+#   name: String!
+#   assignee: User
+#   template: NodeElementTemplate
+# }
+# type DataObjectTemplate {
+#   id: Int!
+#   bpmnId: String!
+#   name: String!
+#   instances: DataObjectInstance[]
+# }
+# type DataObjectInstance {
+#   id: Int!
+#   bpmnId: String!
+#   name: String!
+#   template: DataObjectTemplate
+# }
 

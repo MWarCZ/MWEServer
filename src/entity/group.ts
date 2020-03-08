@@ -9,7 +9,10 @@ export class Group {
   id?: number
 
   @Column('varchar', {length:255, unique: true})
-  name?: string = ''
+  name: string = ''
+
+  @Column('varchar', { default: ''})
+  describe: string = ''
 
   @Column('boolean', {default: false})
   protected?: boolean = false

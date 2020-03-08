@@ -1,11 +1,14 @@
-# import * from './bpmn.graphql'
+
 # import Query.*, Mutation.*, * from './user.graphql'
 # import Query.*, Mutation.*, * from './group.graphql'
 # import Query.*, Mutation.*, * from './member.graphql'
 # import Mutation.*, * from './auth.graphql'
+# import Query.*, * from './bpmn.graphql'
+
+scalar Json
+scalar Date
 
 type Query {
   hello(name:String):String!
-  bpmn: Process
 }
 
