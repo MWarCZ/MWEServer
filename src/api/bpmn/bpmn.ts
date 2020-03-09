@@ -58,7 +58,10 @@ export async function getProcessTemplate(options: {
   const { connection, client, filter } = options
   let findConditions: FindConditions<ProcessTemplate> = {}
   findConditions = getProcessTemplateFindConditions({filter})
-  let process = await connection.manager.findOne(ProcessTemplate, findConditions)
+  let process = await connection.manager.findOne(ProcessTemplate, {
+    relations: [],
+    where: findConditions,
+  })
   return process
 }
 export async function getProcessTemplates(options: {

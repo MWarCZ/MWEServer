@@ -1,4 +1,6 @@
 import * as ApiBpmn from '../../api/bpmn'
+import * as ApiProcessT from '../../api/bpmn/process'
+import * as Bpmn from '../../entity/bpmn'
 import { GQLTypes } from '../generated/types'
 
 
@@ -64,14 +66,40 @@ export const Mutation: GQLTypes.MutationResolvers = {
 }
 
 export const ProcessTemplate: GQLTypes.ProcessTemplateResolvers = {
-  // instances: async (parrent, args, {db: connection, client}, info) => {
-  //   let member = parrent as EntityMember
-  //   let user = await ApiMember.getUser({
-  //     connection,
-  //     client,
-  //     filter: { id: member.userId as number },
-  //   })
-  //   // @ts-ignore
-  //   return user as GQLTypes.ProcessInstance[]
-  // },
+  instances: async (parrent, args, { db: connection, client }) => {
+    // @ts-ignore
+    let template = parrent as Bpmn.ProcessTemplate
+    let res: any
+    if(template.processInstances) {
+      res = template.processInstances
+    } else {
+      res = await connection.manager.find(Bpmn.ProcessInstance, {
+        where: {processTemplateId: template.id}
+      })
+    }
+    // @ts-ignore
+    return res as GQLTypes.ProcessInstance[]
+  },
+  dataObjects: async (parrent, args, { db: connection, client }) => {
+    // @ts-ignore
+    let template = parrent as { id: number }
+    let res = await ApiProcessT.getDataObjects({
+      connection,
+      client,
+      filter: { processTemplateId: template.id }
+    })
+    // @ts-ignore
+    return res as GQLTypes.DataObjectTemplate[]
+  },
+  nodeElements: async (parrent, args, { db: connection, client }) => {
+    // @ts-ignore
+    let template = parrent as { id: number }
+    let res = await ApiProcessT.getNodeElements({
+      connection,
+      client,
+      filter: { processTemplateId: template.id }
+    })
+    // @ts-ignore
+    return res as GQLTypes.NodeElementTemplate[]
+  },
 }
