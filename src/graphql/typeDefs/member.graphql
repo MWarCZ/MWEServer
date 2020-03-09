@@ -1,0 +1,28 @@
+
+# type Query {
+
+# }
+type Mutation {
+  addMember(filter: MemberFilter!, input: MemberPermisionsInput): Member
+  removeMember(filter: MemberFilter!): Boolean
+  setMemberPermisions(filter: MemberFilter!, input: MemberPermisionsInput!): Member # Nastaveni lokalnich prav uzivatele
+
+}
+
+type Member {
+  group: Group!
+  user: User!
+  protected: Boolean!
+  addMember: Boolean!
+  removeMember: Boolean!
+  showMembers: Boolean!
+}
+input MemberPermisionsInput {
+  addMember: Boolean
+  removeMember: Boolean
+  showMembers: Boolean
+}
+input MemberFilter {
+  group: GroupFilter!
+  user: UserFilter!
+}

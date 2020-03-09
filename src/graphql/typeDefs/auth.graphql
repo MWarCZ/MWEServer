@@ -1,0 +1,10 @@
+
+type Mutation {
+  login(input: LoginLocalInput!): String
+}
+
+input LoginLocalInput {
+  password: String!
+  login: String!
+}
+

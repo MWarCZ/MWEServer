@@ -1,7 +1,7 @@
 import { BeforeInsert, Column, Entity, ManyToOne, OneToMany, PrimaryGeneratedColumn } from 'typeorm'
 import { v4 as uuid } from 'uuid'
 
-import { fillElement, OptionsConstructor } from './baseElement'
+import { objectFiller, OptionsConstructor } from '../../utils/objectFiller'
 import { FlowElementInstance, FlowElementTemplate } from './flowElement'
 import { NodeElementInstance, NodeElementTemplate } from './nodeElement'
 import { ProcessInstance, ProcessTemplate } from './process'
@@ -68,7 +68,7 @@ export class SequenceFlowTemplate implements FlowElementTemplate {
   instances?: SequenceFlowInstance[]
 
   constructor(options?: OptionsConstructor<SequenceFlowTemplate>) {
-    fillElement(this, options)
+    objectFiller(this, options)
   }
 
   @BeforeInsert()
@@ -133,7 +133,7 @@ export class SequenceFlowInstance implements FlowElementInstance {
   template?: SequenceFlowTemplate
 
   constructor(options?: OptionsConstructor<SequenceFlowInstance>) {
-    fillElement(this, options)
+    objectFiller(this, options)
   }
 }
 

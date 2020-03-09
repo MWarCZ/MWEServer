@@ -1,0 +1,34 @@
+[
+  {
+    "protected": true,
+    "addMember": false,
+    "removeMember": false,
+    "showMembers": true,
+    "userId": 3,
+    "groupId": 2
+  },
+  {
+    "protected": true,
+    "addMember": false,
+    "removeMember": false,
+    "showMembers": true,
+    "userId": 2,
+    "groupId": 1
+  },
+  {
+    "protected": true,
+    "addMember": false,
+    "removeMember": false,
+    "showMembers": true,
+    "userId": 5,
+    "groupId": 4
+  },
+  {
+    "protected": true,
+    "addMember": false,
+    "removeMember": false,
+    "showMembers": true,
+    "userId": 4,
+    "groupId": 3
+  }
+]

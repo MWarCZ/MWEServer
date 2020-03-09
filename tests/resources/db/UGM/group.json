@@ -1,0 +1,62 @@
+[
+  {
+    "name": "UserAdmin",
+    "protected": true,
+    "removed": false,
+    "id": 1
+  },
+  {
+    "name": "SuperUserAdmin",
+    "protected": true,
+    "removed": false,
+    "id": 2
+  },
+  {
+    "name": "GroupAdmin",
+    "protected": true,
+    "removed": false,
+    "id": 3
+  },
+  {
+    "name": "SuperGroupAdmin",
+    "protected": true,
+    "removed": false,
+    "id": 4
+  },
+  {
+    "name": "Group5",
+    "protected": false,
+    "removed": false,
+    "id": 5
+  },
+  {
+    "name": "Group6",
+    "protected": false,
+    "removed": false,
+    "id": 6
+  },
+  {
+    "name": "Group7",
+    "protected": false,
+    "removed": true,
+    "id": 7
+  },
+  {
+    "name": "Group8",
+    "protected": false,
+    "removed": true,
+    "id": 8
+  },
+  {
+    "name": "Group9",
+    "protected": false,
+    "removed": false,
+    "id": 9
+  },
+  {
+    "name": "Group10",
+    "protected": false,
+    "removed": false,
+    "id": 10
+  }
+]

@@ -112,7 +112,10 @@ export class Parser {
     let entity = new ProcessTemplate()
     this.preloadBaseElement(entity, process['#attr'])
     if (process['#attr']) {
-      entity.isExecutable = process['#attr'].isExecutable
+      let tmpIsExecutable = process['#attr'].isExecutable
+      if (typeof tmpIsExecutable !== 'undefined') {
+        entity.isExecutable = tmpIsExecutable
+      }
       let tmpProcessType = process['#attr'].processType
       switch (tmpProcessType) {
         case ProcessType.None:
@@ -134,7 +137,8 @@ export class Parser {
         default:
           throw new ParseError(`Process: Unknown value '${tmpVerType}' in versionType`)
       }
-      entity.version = process['#attr'][`${this.ns.mwe}version` as 'version']
+      let tmpVersion = process['#attr'][`${this.ns.mwe}version` as 'version']
+      tmpVersion && (entity.version = tmpVersion)
     }
     return {
       entity,

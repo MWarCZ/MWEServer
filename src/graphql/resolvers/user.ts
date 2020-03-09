@@ -1,61 +1,147 @@
-import * as Entities from '../../entity'
+import { PermissionError } from '../../api/permissionError'
+import * as ApiUser from '../../api/user'
 import { GQLTypes } from '../generated/types'
 
-// import { GroupResolvers, MutationResolvers, QueryResolvers, User as RUser, UserResolvers } from '../generated/types'
 export const Query: GQLTypes.QueryResolvers = {
-  user: async() => {
-
-    return null
+  /** Ziskat uzivatele */
+  user: async(_, { filter }, { client, db: connection }) => {
+    let user = await ApiUser.getUser({
+      connection,
+      client,
+      filter: filter as ApiUser.FilterUserBy,
+    })
+    // @ts-ignore
+    return user as GQLTypes.User || null
   },
-  users: async() => {
-    return []
-  },
-  allUsers: async(_, args, context) => {
-    let users = await context.db.getRepository(Entities.User).find()
-    // console.log({users})
+  /** Ziskat seznam uzivatelu */
+  users: async(_, args, { client, db: connection }) => {
+    let users = await ApiUser.getUsers({
+      connection,
+      client,
+    })
+    // @ts-ignore
     return users as GQLTypes.User[]
   },
 }
 
 export const Mutation: GQLTypes.MutationResolvers = {
-  createNewUser: async(_, { input }, context) => {
-    return null
+  createNewUser: async(_, { input }, { client, db: connection }) => {
+    let user = await ApiUser.createNewUser({
+      connection,
+      client,
+      data: {
+        login: input.login,
+        password: input.password,
+        email: input.email as string,
+        firstName: input.firstName as string,
+        lastName: input.lastName as string,
+      },
+    })
+    // @ts-ignore
+    return user as GQLTypes.User
   },
-  changeUserPassword: async() => {
-    return null
+  removeUser: async(_, { filter }, { client, db: connection }) => { // Skryt/deaktivovat uzivatele
+    let user = await ApiUser.removeUser({
+      connection,
+      client,
+      filter: filter as ApiUser.FilterUserBy,
+    })
+    return !!user
   },
-  updateUserInfo: async() => {
-    return null
+  lockUser: async(_, { filter }, { client, db: connection }) => {
+    let user = await ApiUser.lockUser({
+      connection,
+      client,
+      filter: filter as ApiUser.FilterUserBy,
+    })
+    // @ts-ignore
+    return user as GQLTypes.User
   },
-  deleteUser: async() => {
-    return null
+  unlockUser: async(_, { filter }, { client, db: connection }) => {
+    let user = await ApiUser.lockUser({
+      connection,
+      client,
+      filter: filter as ApiUser.FilterUserBy,
+      unlock: true,
+    })
+    // @ts-ignore
+    return user as GQLTypes.User
   },
-  lockUser: async() => {
-    return null
+  resetUserPassword: async(_, { filter }, { client, db: connection }) => {
+    let password = await ApiUser.resetUserPassword({
+      connection,
+      client,
+      filter: filter as ApiUser.FilterUserBy,
+    })
+    return password
   },
-  unlockUser: async() => {
-    return null
+  changeUserPassword: async(_, { filter, input }, { client, db: connection }) => {
+    let user = await ApiUser.getUser({
+      connection, client, filter: filter as ApiUser.FilterUserBy,
+    })
+    if (!user || !(await user.comparePassword(input.oldPassword))) {
+      throw new Error('Nespravne zadane stare heslo uzivatele.')
+    }
+    user = await ApiUser.changeUserPassword({
+      connection,
+      client,
+      filter: filter as ApiUser.FilterUserBy,
+      data: {
+        newPassword: input.newPassword,
+      },
+    })
+    return !!user
+  },
+  updateUserInfo: async(_, { filter, input }, { client, db: connection }) => {
+    let user = await ApiUser.updateUserInfo({
+      connection,
+      client,
+      filter: filter as ApiUser.FilterUserBy,
+      data: {
+        email: input.email as string,
+        firstName: input.firstName as string,
+        lastName: input.lastName as string,
+      },
+    })
+    // @ts-ignore
+    return user as GQLTypes.User
+  },
+  deleteUser: async(_, { filter }, { client, db: connection }) => { // trvale odstranit
+    let res = await ApiUser.deleteUser({
+      connection,
+      client,
+      filter: filter as ApiUser.FilterUserBy,
+    })
+    // @ts-ignore
+    return res
+  },
+  recoverUser: async(_, { filter }, { client, db: connection }) => { // Skryt/deaktivovat uzivatele
+    let user = await ApiUser.recoverUser({
+      connection,
+      client,
+      filter: filter as ApiUser.FilterUserBy,
+    })
+    // @ts-ignore
+    return user as GQLTypes.User
   },
 }
 
 export const User: GQLTypes.UserResolvers = {
-  groups: async(parrent, args, context, info) => {
-    console.log({User: parrent})
-    if (parrent.groups) {
-       return parrent.groups
-    }
-    return []
-  },
-}
-
-export const Group: GQLTypes.GroupResolvers = {
-  users: async(parrent, args, context, info) => {
-    if (parrent.users) {
-      return parrent.users
-    }
-    let group = await context.db.getRepository(Entities.Group).findOne(parrent.id, {
-      relations: ['users'],
+  membership: async(parrent, args, { client, db: connection }, info) => {
+    let membersips = await ApiUser.getMemberships({
+      connection,
+      client,
+      filter: { userId: parrent.id },
     })
-    return (group) ? group.users as GQLTypes.User[] : []
+    // @ts-ignore
+    return membersips as GQLTypes.Member[]
+  },
+  removed: (parrent, args, { client }) => {
+    let groupNames = ((client) ? client.membership.map(g => g.group.name) : []) as string[]
+    ApiUser.UserOneOf({
+      groupNames,
+      isOther: () => { throw new PermissionError()},
+    })
+    return parrent.removed
   },
 }

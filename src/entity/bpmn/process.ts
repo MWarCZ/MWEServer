@@ -2,7 +2,8 @@ import { BeforeInsert, Column, Entity, ManyToOne, OneToMany, PrimaryGeneratedCol
 import { v4 as uuid } from 'uuid'
 
 import { JsonMap } from '../../types/json'
-import { BaseElementInstance, BaseElementTemplate, fillElement, OptionsConstructor, ProcessStatus } from './baseElement'
+import { objectFiller, OptionsConstructor } from '../../utils/objectFiller'
+import { BaseElementInstance, BaseElementTemplate, ProcessStatus } from './baseElement'
 import { DataObjectInstance, DataObjectTemplate } from './dataObject'
 import { NodeElementInstance, NodeElementTemplate } from './nodeElement'
 import { SequenceFlowInstance, SequenceFlowTemplate } from './sequenceFlow'
@@ -34,33 +35,33 @@ export class ProcessTemplate implements BaseElementTemplate {
   bpmnId?: string
 
   @Column('varchar', { length: 255, default: '' })
-  name?: string
+  name: string = ''
 
   // ===================
 
   @Column('boolean', { default: true, nullable: false })
-  isExecutable?: boolean = true
+  isExecutable: boolean = true
 
   @Column('enum', {
     enum: ProcessType,
     default: ProcessType.None,
     nullable: false,
   })
-  processType?: ProcessType = ProcessType.None
+  processType: ProcessType = ProcessType.None
 
   @Column('varchar', {
     length: 50,
     default: '1',
     nullable: false,
   })
-  version?: string = '1'
+  version: string = '1'
 
   @Column('enum', {
     enum: VersionType,
     default: VersionType.number,
     nullable: false,
   })
-  versionType?: VersionType = VersionType.number
+  versionType: VersionType = VersionType.number
 
   @OneToMany(
     type => ProcessInstance,
@@ -79,7 +80,7 @@ export class ProcessTemplate implements BaseElementTemplate {
   sequenceFlows?: SequenceFlowTemplate[]
 
   constructor(options?: OptionsConstructor<ProcessTemplate>) {
-    fillElement(this, options)
+    objectFiller(this, options)
   }
 
   @BeforeInsert()
@@ -111,7 +112,7 @@ export class ProcessInstance implements BaseElementInstance {
     default: ProcessStatus.None,
     nullable: false,
   })
-  status?: ProcessStatus = ProcessStatus.None
+  status: ProcessStatus = ProcessStatus.None
 
   @ManyToOne(
     type => ProcessTemplate,
@@ -132,4 +133,7 @@ export class ProcessInstance implements BaseElementInstance {
   @OneToMany(type => SequenceFlowInstance, entity => entity.processInstance)
   sequenceFlows?: SequenceFlowInstance[]
 
+  constructor(options?: OptionsConstructor<ProcessInstance>) {
+    objectFiller(this, options)
+  }
 }

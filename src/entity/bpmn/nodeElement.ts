@@ -2,7 +2,8 @@ import { BeforeInsert, Column, Entity, JoinTable, ManyToMany, ManyToOne, OneToMa
 import { v4 as uuid } from 'uuid'
 
 import { JsonMap } from '../../types/json'
-import { ActivityStatus, fillElement, OptionsConstructor } from './baseElement'
+import { objectFiller, OptionsConstructor } from '../../utils/objectFiller'
+import { ActivityStatus } from './baseElement'
 import { DataObjectTemplate } from './dataObject'
 import { FlowElementInstance, FlowElementTemplate } from './flowElement'
 import { ProcessInstance, ProcessTemplate } from './process'
@@ -72,7 +73,7 @@ export class NodeElementTemplate implements FlowElementTemplate {
   // ==============
 
   constructor(options?: OptionsConstructor<NodeElementTemplate>) {
-    fillElement(this, options)
+    objectFiller(this, options)
   }
 
   @BeforeInsert()
@@ -131,7 +132,7 @@ export class NodeElementInstance implements FlowElementInstance {
   template?: NodeElementTemplate
 
   constructor(options?: OptionsConstructor<NodeElementInstance>) {
-    fillElement(this, options)
+    objectFiller(this, options)
   }
 }
 

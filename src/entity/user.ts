@@ -1,16 +1,8 @@
 import { compare, hash } from 'bcryptjs'
-import {
-  BeforeInsert,
-  BeforeRemove,
-  BeforeUpdate,
-  Column,
-  Entity,
-  JoinTable,
-  ManyToMany,
-  PrimaryGeneratedColumn,
-} from 'typeorm'
+import { BeforeInsert, BeforeRemove, BeforeUpdate, Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm'
 
-import { Group } from './group'
+import { objectFiller, OptionsConstructor } from '../utils/objectFiller'
+import { Member } from './member'
 
 @Entity()
 export class User {
@@ -21,31 +13,39 @@ export class User {
   login?: string
 
   @Column('varchar', { length: 255})
-  email?: string
+  email: string = ''
 
   @Column('varchar', { length: 100 })
-  firstName?: string
+  firstName: string = ''
 
   @Column('varchar', { length: 100 })
-  lastName?: string
+  lastName: string = ''
 
   @Column('text')
-  password?: string
-
-  @ManyToMany(type => Group, group => group.users, {eager: true})
-  @JoinTable()
-  groups?: Group[]
+  password: string = ''
 
   @Column('boolean', { default: false })
-  protected?: boolean
+  protected: boolean = false
 
   @Column('boolean', { default: false })
-  locked?: boolean
+  locked: boolean = false
+
+  @Column('boolean', { default: false })
+  removed: boolean = false
+
+  // @ManyToMany(type => Group, group => group.users)
+  // @JoinTable({ name: 'member'})
+  // groups?: Group[]
+
+  @OneToMany(type => Member, entity => entity.user, {
+    onDelete: 'CASCADE',
+  })
+  membership?: Member[]
 
   @BeforeRemove()
   async canBeRemoved() {
     if (this.protected)
-      throw new Error(`User '${this.login}' is protected. Impossible remove it.`)
+    throw new Error(`User '${this.login}' is protected. Impossible remove it.`)
   }
 
   @BeforeInsert()
@@ -62,5 +62,8 @@ export class User {
       return false
     return compare(password, this.password)
   }
-}
 
+  constructor(options?: OptionsConstructor<User>) {
+    objectFiller(this, options)
+  }
+}

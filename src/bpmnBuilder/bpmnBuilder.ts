@@ -61,7 +61,7 @@ export class BpmnBuilder {
         await this.connection.manager.save([...sequenceFlows])
       }),
     )
-
+    return [...process]
   }
 
   async loadFromXml(xmlBpmn: string) {
@@ -71,7 +71,7 @@ export class BpmnBuilder {
 
     const data = parse(xmlBpmn, fxpOptions)
 
-    await this.loadFromFxp(data)
-
+    let process = await this.loadFromFxp(data)
+    return process
   }
 }

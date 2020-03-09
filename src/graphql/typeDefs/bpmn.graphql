@@ -1,19 +1,129 @@
 
-#type CallableElement {}
-#type Auditing {}
-#type Monitoring {}
-#type ProcessRole {}
-#type Property {}
-#type LaneSet {}
-#type FlowElement {}
-#type Artifact {}
-#type ResourceRole {}
-#type Supports {}
+type Query {
+  processTemplate(filter: ProcessTemplateFilter!): ProcessTemplate
+  processTemplates: [ProcessTemplate!]!
+  processInstance(filter: ProcessInstanceFilter!): ProcessInstance
+  processInstances: [ProcessInstance!]!
 
-type Definitions {
-  process: Process
+  NodeInstance(filter: NodeInstanceFilter!): NodeElementInstance
+  NodeInstances: [NodeElementInstance!]!
+
+  # Zadost. Co vse je potreba pro provedeni uzlu
+  NodeAdditions(idNI: Int!): NodeAdditions
 }
-type Process {
-  id: String
+type Mutation {
+  uploadProcess(xml: String): [ProcessTemplate]
+  initProcess(input: InitProcessInput!): ProcessInstance
+
+  claimNodeInstance(idNI: Int!): NodeElementInstance
+  releaseNodeInstance(idNI: Int!): NodeElementInstance
+}
+
+type NodeAdditions {
+  format: Json
+  describe: String
+}
+
+input ProcessTemplateFilter {
+  id: Int
+  bpmnId: String
+  version: String
+}
+input ProcessInstanceFilter {
+  id: Int
+}
+input NodeTemplateFilter {
+  id: Int
+}
+input NodeInstanceFilter {
+  id: Int
+}
+# =====================
+input InitProcessInput {
+  """ProcessInstance will create from ProcessTemplate with this id."""
+  idProcess: Int!
+  """ProcessInstance will start on NodeTemplate with this id."""
+  idFirstNode: Int!
+}
+
+# ==============================
+
+type ProcessTemplate {
+  id: Int!
+  bpmnId: String!
+  name: String!
+
+  isExecutable: Boolean!
+  processType: String!
+  version: String!
+  versionType: String!
+
+  instances: [ProcessInstance!]!
+  dataObjects: [DataObjectTemplate!]!
+  nodeElements: [NodeElementTemplate!]!
+  # sequenceFlows
+}
+type ProcessInstance {
+  id: Int!
+  startDateTime: Date
+  endDateTime: Date
+  status: String
+
+  template: ProcessTemplate!
+
+  assignee: User # TODO
+  # data
+  dataObjects: [DataObjectInstance!]!
+  nodeElements: [NodeElementInstance!]!
+  # sequenceFlows: [!]!
+}
+type NodeElementTemplate {
+  id: Int!
+  bpmnId: String!
+  name: String!
+
+  implementation: String!
+  candidateGroup: Group # TODO candidateAssignee
+
+  processTemplate: ProcessTemplate!
+  instances: [NodeElementInstance!]!
+  # inputs
+  # outputs
+  # incoming
+  # outgoing
+}
+type NodeElementInstance {
+  id: Int!
+  startDateTime: Date
+  endDateTime: Date
+  status: String
+
+  template: NodeElementTemplate!
+  processInstance: ProcessInstance!
+
+  data: Json
+  returnValue: Json
+  assignee: User # TODO
+
+}
+type DataObjectTemplate {
+  id: Int!
+  bpmnId: String!
+  name: String!
+
+  strict: Boolean!
+  json: Json
+
+  instances: [DataObjectInstance!]!
+}
+type DataObjectInstance {
+  id: Int!
+
+  template: DataObjectTemplate!
+  processInstance: ProcessInstance!
+
+  data: Json
+  # startDateTime: Date
+  # endDateTime: Date
 }
 
