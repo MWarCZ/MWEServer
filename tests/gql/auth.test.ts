@@ -3,12 +3,13 @@ import 'jest-extended'
 import { request, response } from 'express'
 import { graphql } from 'graphql'
 import { GraphQLServer } from 'graphql-yoga'
+import { join as joinPath } from 'path'
 import { getConnection } from 'typeorm'
 
 import { ProtectedUsers } from '../../src/api/helpers'
 import { Group, Member, User } from '../../src/entity'
 import { MyContext } from '../../src/graphql/context'
-import { createServer } from '../../src/server'
+import { createGQLServer } from '../../src/server'
 import { cleanDataInTables, loadDataToDb } from '../../src/utils/db'
 
 
@@ -17,10 +18,10 @@ describe('GQL: Auth', () => {
   let context: MyContext
 
   beforeAll(async () => {
-    server = await createServer()
+    server = await createGQLServer()
     let connection = await getConnection()
     await cleanDataInTables(connection, connection.entityMetadatas)
-    await loadDataToDb(connection, [User, Group, Member], '../resources/db/UGM')
+    await loadDataToDb(connection, [User, Group, Member], joinPath(__dirname, '../resources/db/UGM'))
   })
   // beforeAll(() => {
   //   return createServer()

@@ -189,7 +189,7 @@ export class BpmnRunner {
   async initAndSaveProcess(
     processTemplate: { id: number } | ProcessTemplate,
     startEvent: { id: number } | NodeElementTemplate,
-  ): Promise<ProcessInstance> {
+  ): Promise<{ process: ProcessInstance, node: NodeElementInstance}> {
     // Vyhledani sablon
     let processT = await getTemplate({
       templateClass: ProcessTemplate,
@@ -210,7 +210,10 @@ export class BpmnRunner {
     let startEventI = await this.initNodeElement(processInstance, [startEventT])
     startEventI = await this.saveElement(startEventI)
 
-    return processInstance
+    return {
+      process: processInstance,
+      node: startEventI[0],
+    }
   }
 
   initNodeElement(
@@ -607,10 +610,12 @@ export class BpmnRunner {
         }
         // Jinak pokracuje proces pokracuje dale
       }
+      processInstance.endDateTime = new Date()
     } else {
       // Neni konec, ale jiz neni co dale vykonat => proces konci chybou
       if (unfinishedNodeInstances.length === 0 && targetNodeInstances.length === 0) {
         processInstance.status = ProcessStatus.Failled
+        processInstance.endDateTime = new Date()
       }
     }
 

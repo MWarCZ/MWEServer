@@ -5,13 +5,13 @@ import { GraphQLServer } from 'graphql-yoga'
 import { getConnection } from 'typeorm'
 
 import { User } from '../../src/entity'
-import { createServer } from '../../src/server'
+import { createGQLServer } from '../../src/server'
 
 describe('GQL', () => {
   let server: GraphQLServer
 
   beforeAll(async() => {
-    server = await createServer()
+    server = await createGQLServer()
   })
 
   it('query hello: Bez parametru', async() => {

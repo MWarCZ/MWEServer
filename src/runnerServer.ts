@@ -49,19 +49,39 @@ export class RunnerServer {
    * Navic po vyprazdneni fronty uzlu dojde k cekani a opetovne aktivaci.
    */
   start() {
+    console.log('S start')
+    console.error(process.memoryUsage().heapUsed)
     this.execEnabled = true
-    this.execPromise = this.exec().then(_=>this.waitExec())
-    return this.execPromise
+    this.waitExec()
+    return this
   }
 
   /**
    * Nastavi waitTimeout po kterem se opet spusti vykonavani uzlu z fronty.
    */
-  waitExec() {
+  wait() {
+    console.log('S waiting')
     this.waitTimeout = setTimeout(
-      () => this.execPromise = this.exec().then(_=>this.waitExec()),
+      () => this.waitExec(),
       this.msWaitTime,
     )
+    return this
+  }
+  waitExec() {
+    return this.execPromise = this.exec().then(_ => this.wait())
+  }
+
+  /**
+   * Probudi opetovne provadeni ze cekani pokud ceka.
+   */
+  wake() {
+    console.log('S wake')
+    if(this.waitTimeout) {
+      console.log('S wakeUP')
+      clearTimeout(this.waitTimeout)
+      this.waitTimeout = undefined
+      this.waitExec()
+    }
     return this
   }
 
@@ -69,8 +89,10 @@ export class RunnerServer {
    * Zastavi provadeni fronty v nejblizsi mozne dobe.
    */
   stop() {
+    console.log('S stop')
     this.execEnabled = false
     this.waitTimeout && clearTimeout(this.waitTimeout)
+    this.waitTimeout = undefined
     return this.execPromise
   }
 
@@ -78,6 +100,8 @@ export class RunnerServer {
    * Provadi postupne uzly z fronty dokud neni fronta prazdna.
    */
   async exec() {
+    console.log('S exec start')
+
     let node: NodeElementInstance | undefined
     // A) Je povoleno provadeni.
     // B) Opakuj dokud je co provest.
@@ -105,6 +129,9 @@ export class RunnerServer {
         await callback(args)
       }
     }
+
+    console.log('S exec end')
+    console.warn(process.memoryUsage().heapUsed)
     return this
   }
 
@@ -126,5 +153,6 @@ export class RunnerServer {
     this.queues.nodes = this.queues.nodes.filter(node => !unready.includes(node.id as number))
     // Pridani uzlu, ktere jsou nove ready
     this.queues.nodes.push(...ready)
+    this.wake()
   }
 }

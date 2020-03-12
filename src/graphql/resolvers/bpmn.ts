@@ -52,7 +52,7 @@ export const Mutation: GQLTypes.MutationResolvers = {
     return process as GQLTypes.ProcessTemplate[]
   },
   initProcess: async(_, { input }, { client, db: connection }) => {
-    let process = await ApiBpmn.initProcess({
+    let result = await ApiBpmn.initProcess({
       connection,
       client,
       data: {
@@ -61,7 +61,7 @@ export const Mutation: GQLTypes.MutationResolvers = {
       },
     })
     // @ts-ignore
-    return process as GQLTypes.ProcessInstance
+    return result.process as GQLTypes.ProcessInstance
   },
 }
 
