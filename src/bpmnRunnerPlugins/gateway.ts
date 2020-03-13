@@ -1,21 +1,5 @@
-import { VM } from 'vm2'
-
-import { NodeImplementation, RunContext } from '../bpmnRunner'
-
-
-function evalExpression(options: {
-  context: RunContext,
-  expression: string,
-}): boolean {
-  const { context, expression } = options
-  const vm = new VM({
-    timeout: 1000,
-    eval: false,
-    sandbox: context,
-  })
-  let result = vm.run(expression)
-  return !!result
-}
+import { NodeImplementation } from '../bpmnRunner'
+import { evalExpression } from './evalExpressionHelper'
 
 /**
  * Parallel Gateway (AND)
@@ -68,12 +52,13 @@ export const inclusiveGatewayImplementation: NodeImplementation = {
     if (true) {
       let tmp = $OUTGOING.find(value => {
         let { expression = 'true' } = value
+        if (expression === '') expression = 'true'
         let result = evalExpression({ expression, context })
         return result
       })
       selectedOutgoing = (tmp) ? [tmp.id] : []
     }
-    console.warn('XOR>', $OUTGOING)
+    console.warn('OR>', $OUTGOING)
     initNext(selectedOutgoing)
 
     return true
@@ -98,6 +83,7 @@ export const exclusiveGatewayImplementation: NodeImplementation = {
     // Spustit vse splnujici vyraz
     selectedOutgoing = $OUTGOING.filter(value => {
       let { expression = 'true' } = value
+      if (expression === '') expression = 'true'
       let result = evalExpression({ expression, context })
       return result
     }).map(v => v.id)

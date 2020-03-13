@@ -35,7 +35,7 @@ export class SequenceFlowTemplate implements FlowElementTemplate {
   // ============
 
   @Column('text')
-  expression: string = 'true'
+  expression: string = ''
 
   @Column()
   flag: string = ''
