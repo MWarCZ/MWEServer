@@ -70,10 +70,10 @@ export class WorkerHelper {
   constructor(options: {
     filename: string,
   }) {
-    if(isMainThread) {
+    if (isMainThread) {
       this.worker = new Worker(options.filename)
     } else {
-      if(parentPort){
+      if (parentPort) {
         this.port = parentPort
       } else {
         throw new Error('Nenjedna se o hlavni vlakno ani pracovnika.')

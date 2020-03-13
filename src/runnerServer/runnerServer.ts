@@ -33,12 +33,12 @@ export class RunnerServer {
     connection: Connection,
     callbacks?: RunnerServerCallbacks,
     msWaitTime?: number,
-    queueNodes?: NodeElementInstance[]
+    queueNodes?: NodeElementInstance[],
   }) {
     this.connection = options.connection
     this.runner = new BpmnRunner(this.connection)
     this.callbacks = {...options.callbacks }
-    this.msWaitTime = options.msWaitTime || 1000*60
+    this.msWaitTime = options.msWaitTime || 1000 * 60
     this.queues = {
       nodes: options.queueNodes || [],
     }
@@ -76,7 +76,7 @@ export class RunnerServer {
    */
   wake() {
     console.log('S wake')
-    if(this.waitTimeout) {
+    if (this.waitTimeout) {
       console.log('S wakeUP')
       clearTimeout(this.waitTimeout)
       this.waitTimeout = undefined
@@ -112,9 +112,9 @@ export class RunnerServer {
       this.changedNodes(result.targetNodeInstances)
 
       // prochazeni zpetnych volani
-      for(let key in this.callbacks) {
+      for (let key in this.callbacks) {
         let callback = (this.callbacks as any)[key]
-        if(typeof callback !== 'function') break
+        if (typeof callback !== 'function') break
         let args: any
         switch (key) {
           case RunnerServerCallbackName.changedNodes:

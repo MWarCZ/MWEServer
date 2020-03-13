@@ -583,7 +583,7 @@ export class BpmnRunner {
 
     // Test zda vsechny vytvarene uzly maji spravny stav.
     targetNodeInstances.find(node => {
-      if(node.status === ActivityStatus.Failled) {
+      if (node.status === ActivityStatus.Failled) {
         results.finishProcess.finished = true
         results.finishProcess.forced = true
         return true
@@ -708,13 +708,13 @@ export class BpmnRunner {
         const { max_count_recurrence_node = 1 } = targetImplementation.options || {}
         // Spocitani existujicich instanci uzlu
         const count = nodeInstances.filter(instance => instance.templateId === nodeTemplate.id).length
-        if(count >= max_count_recurrence_node) {
+        if (count >= max_count_recurrence_node) {
           nodeInstance.status = ActivityStatus.Failled
           nodeInstance.returnValue = {
             error: {
               name: 'max_count_recurrence_node',
               message: `Implementace '${nodeTemplate.implementation}' povoluje jen '${max_count_recurrence_node}' opakovane vytvorit uzel.`,
-            }
+            },
           }
         } else {
           nodeInstance.status = ActivityStatus.Ready

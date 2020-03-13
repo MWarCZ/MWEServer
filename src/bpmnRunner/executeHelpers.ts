@@ -98,7 +98,7 @@ export function executeNodeRunX(options: {
   }
 }
 
-//==============================
+// ==============================
 /**
  *
  * @returns Vraci `true` pokud vse probeho OK nebo v pripade chyby vraci `false`.
@@ -122,7 +122,7 @@ export function safeExecuteNodeFunction(options: {
     nodeInstance,
     executeFunction,
     executeFunctionArgs,
-    status
+    status,
   } = options
   try {
     let result = executeFunction ? executeFunction(executeFunctionArgs) : true
@@ -151,7 +151,7 @@ export function executeNodePrerun(options: {
     finishProcess: (x: any) => void,
     registerData: (x: string, y: any) => void,
   },
-}){
+}) {
   return safeExecuteNodeFunction({
     nodeInstance: options.nodeInstance,
     status: {
@@ -172,7 +172,7 @@ export function executeNodeRun(options: {
     finishProcess: (x: any) => void,
     registerData: (x: string, y: any) => void,
   },
-}){
+}) {
   return safeExecuteNodeFunction({
     nodeInstance: options.nodeInstance,
     status: {
@@ -193,7 +193,7 @@ export function executeNodeOnCompleting(options: {
     finishProcess: (x: any) => void,
     registerData: (x: string, y: any) => void,
   },
-}){
+}) {
   return safeExecuteNodeFunction({
     nodeInstance: options.nodeInstance,
     status: {
@@ -214,7 +214,7 @@ export function executeNodeOnFailing(options: {
     finishProcess: (x: any) => void,
     registerData: (x: string, y: any) => void,
   },
-}){
+}) {
   return safeExecuteNodeFunction({
     nodeInstance: options.nodeInstance,
     status: {
@@ -226,7 +226,7 @@ export function executeNodeOnFailing(options: {
   })
 }
 
-//==========================
+// ==========================
 /**
  * @throws Pokud nastane chyba pri volani implementace onFailing, onCompleting.
  * @returns Vraci seznam s SequenceFlow.id, ktere maji byti provedeny.
@@ -290,7 +290,7 @@ export function executeNode(options: {
     },
   })
   // status = Active x Waiting
-  if(resultPrerun) {
+  if (resultPrerun) {
     // status === Actiove
     resultRun = executeNodeRun({
       nodeInstance,
@@ -304,7 +304,7 @@ export function executeNode(options: {
       },
     })
     // status = Completing x Failing
-    if(resultRun) {
+    if (resultRun) {
       // status === Completing
       resultOnCompleting = executeNodeOnCompleting({
         nodeInstance,
@@ -319,7 +319,7 @@ export function executeNode(options: {
       })
       // status = Completed x Failing
     }
-    if(!resultRun || !resultOnCompleting) {
+    if (!resultRun || !resultOnCompleting) {
       // staus === Failing
       resultOnFailing = executeNodeOnFailing({
         nodeInstance,
@@ -336,64 +336,6 @@ export function executeNode(options: {
     }
   }
   returnValues.outputs = nodeInstance.returnValue
-
-
-
-  // // taskInstance.status === Ready
-  // if (executeNodePrerun({
-  //   nodeInstance,
-  //   args,
-  //   context,
-  //   nodeImplementation,
-  //   initNext,
-  //   finishProcess,
-  //   registerData,
-  // })) {
-  //   // status === Active
-  //   if (executeNodeRun({
-  //     nodeInstance,
-  //     args,
-  //     context,
-  //     nodeImplementation,
-  //     initNext,
-  //     finishProcess,
-  //     registerData,
-  //   })) {
-  //     // status === completing
-  //     if (typeof nodeImplementation.onCompleting === 'function') {
-  //       // TODO - dovymislet onCompleting()
-  //       nodeImplementation.onCompleting({
-  //         context,
-  //         args,
-  //         initNext,
-  //         finishProcess,
-  //         registerData,
-  //       })
-  //     }
-  //     nodeInstance.status = ActivityStatus.Completed
-  //     // status === completed
-  //   } else {
-  //     // status === Failing
-  //     if (typeof nodeImplementation.onFailing === 'function') {
-  //       // TODO - dovymislet onFailing()
-  //       nodeImplementation.onFailing({
-  //         context: context,
-  //         args: args,
-  //         initNext,
-  //         finishProcess,
-  //         registerData,
-  //       })
-  //     }
-  //     nodeInstance.status = ActivityStatus.Failled
-  //     // status === Failed
-  //   }
-  //   nodeInstance.endDateTime = new Date()
-  // } else {
-  //   // status === Ready
-  //   nodeInstance.status = ActivityStatus.Waiting
-  //   // status == Waiting
-  // }
-  // returnValues.outputs = nodeInstance.returnValue
 
   return returnValues
 }

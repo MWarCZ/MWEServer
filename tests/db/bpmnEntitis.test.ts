@@ -20,7 +20,7 @@ describe('Testovani entit ', () => {
   afterEach(async() => {
     await closeConn(connection)
   })
-  it('xxx', async()=>{
+  it('xxx', async() => {
     let user = new User()
     user.login = 'aaa'
     user.password = 'aaa'
@@ -42,7 +42,7 @@ describe('Testovani entit ', () => {
     // })
     let tmpa = await connection.manager.find(Member, {
       where: { },
-      relations: ['user']
+      relations: ['user'],
     })
     console.warn(JSON.stringify(tmpa, null, 2))
 

@@ -26,7 +26,7 @@ const Entities = {
 }
 
 async function run() {
-  for(let argv of process.argv) {
+  for (let argv of process.argv) {
     try {
       let [name, path] = argv.split('=')
       let selected = (Entities as any)[name]
@@ -38,7 +38,7 @@ async function run() {
       } else {
         console.log(`(??) ${argv}`)
       }
-    } catch(e) {
+    } catch (e) {
       console.log(`(KO) ${name}: ${path}`)
       console.error(e)
     }
