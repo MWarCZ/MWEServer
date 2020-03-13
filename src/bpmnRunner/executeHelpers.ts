@@ -8,7 +8,7 @@ import { RunContext } from './runContext'
  *
  * @returns Vraci `true` pokud vse probeho OK nebo v pripade chyby vraci `false`.
  */
-export function executeNodePrerun(options: {
+export function executeNodePrerunX(options: {
   nodeInstance: NodeElementInstance,
   nodeImplementation: NodeImplementation,
   context: RunContext,
@@ -55,7 +55,7 @@ export function executeNodePrerun(options: {
  *
  * @returns Vraci `true` pokud vse probeho OK nebo v pripade chyby vraci `false`.
  */
-export function executeNodeRun(options: {
+export function executeNodeRunX(options: {
   nodeInstance: NodeElementInstance,
   nodeImplementation: NodeImplementation,
   context: RunContext,
@@ -84,7 +84,6 @@ export function executeNodeRun(options: {
     })
     nodeInstance.returnValue = context.$OUTPUT
     nodeInstance.status = ActivityStatus.Completing
-    // nodeInstance.returnValue = result
     // status === Completing
     return true
   } catch (e) {
@@ -97,9 +96,137 @@ export function executeNodeRun(options: {
     // status === Falling
     return false
   }
-
 }
 
+//==============================
+/**
+ *
+ * @returns Vraci `true` pokud vse probeho OK nebo v pripade chyby vraci `false`.
+ */
+export function safeExecuteNodeFunction(options: {
+  nodeInstance: NodeElementInstance,
+  executeFunction?: (args: any) => any,
+  executeFunctionArgs: {
+    context: RunContext,
+    args: JsonMap,
+    initNext: (x: any) => void,
+    finishProcess: (x: any) => void,
+    registerData: (x: string, y: any) => void,
+  },
+  status: {
+    onSuccess: ActivityStatus,
+    onFailure: ActivityStatus,
+  },
+}): boolean {
+  const {
+    nodeInstance,
+    executeFunction,
+    executeFunctionArgs,
+    status
+  } = options
+  try {
+    let result = executeFunction ? executeFunction(executeFunctionArgs) : true
+    nodeInstance.returnValue = executeFunctionArgs.context.$OUTPUT
+    nodeInstance.status = status.onSuccess
+    return true
+  } catch (e) {
+    let lastStatus = nodeInstance.status || ActivityStatus.None
+    nodeInstance.status = status.onFailure
+    if (e instanceof Error) {
+      nodeInstance.returnValue = { error: { name: e.name, message: e.message, lastStatus } }
+    } else {
+      throw e
+    }
+    return false
+  }
+}
+
+export function executeNodePrerun(options: {
+  nodeInstance: NodeElementInstance,
+  nodeImplementation: NodeImplementation,
+  executeArgs: {
+    context: RunContext,
+    args: JsonMap,
+    initNext: (x: any) => void,
+    finishProcess: (x: any) => void,
+    registerData: (x: string, y: any) => void,
+  },
+}){
+  return safeExecuteNodeFunction({
+    nodeInstance: options.nodeInstance,
+    status: {
+      onSuccess: ActivityStatus.Active,
+      onFailure: ActivityStatus.Waiting,
+    },
+    executeFunction: options.nodeImplementation.prerun,
+    executeFunctionArgs: options.executeArgs,
+  })
+}
+export function executeNodeRun(options: {
+  nodeInstance: NodeElementInstance,
+  nodeImplementation: NodeImplementation,
+  executeArgs: {
+    context: RunContext,
+    args: JsonMap,
+    initNext: (x: any) => void,
+    finishProcess: (x: any) => void,
+    registerData: (x: string, y: any) => void,
+  },
+}){
+  return safeExecuteNodeFunction({
+    nodeInstance: options.nodeInstance,
+    status: {
+      onSuccess: ActivityStatus.Completing,
+      onFailure: ActivityStatus.Falling,
+    },
+    executeFunction: options.nodeImplementation.run,
+    executeFunctionArgs: options.executeArgs,
+  })
+}
+export function executeNodeOnCompleting(options: {
+  nodeInstance: NodeElementInstance,
+  nodeImplementation: NodeImplementation,
+  executeArgs: {
+    context: RunContext,
+    args: JsonMap,
+    initNext: (x: any) => void,
+    finishProcess: (x: any) => void,
+    registerData: (x: string, y: any) => void,
+  },
+}){
+  return safeExecuteNodeFunction({
+    nodeInstance: options.nodeInstance,
+    status: {
+      onSuccess: ActivityStatus.Completed,
+      onFailure: ActivityStatus.Falling,
+    },
+    executeFunction: options.nodeImplementation.onCompleting,
+    executeFunctionArgs: options.executeArgs,
+  })
+}
+export function executeNodeOnFailing(options: {
+  nodeInstance: NodeElementInstance,
+  nodeImplementation: NodeImplementation,
+  executeArgs: {
+    context: RunContext,
+    args: JsonMap,
+    initNext: (x: any) => void,
+    finishProcess: (x: any) => void,
+    registerData: (x: string, y: any) => void,
+  },
+}){
+  return safeExecuteNodeFunction({
+    nodeInstance: options.nodeInstance,
+    status: {
+      onSuccess: ActivityStatus.Failled,
+      onFailure: ActivityStatus.Failled,
+    },
+    executeFunction: options.nodeImplementation.onFailing,
+    executeFunctionArgs: options.executeArgs,
+  })
+}
+
+//==========================
 /**
  * @throws Pokud nastane chyba pri volani implementace onFailing, onCompleting.
  * @returns Vraci seznam s SequenceFlow.id, ktere maji byti provedeny.
@@ -145,61 +272,128 @@ export function executeNode(options: {
     }
   }
 
-  // taskInstance.status === Ready
-  if (executeNodePrerun({
+  // status === Ready
+  let resultPrerun: boolean = false
+  let resultRun: boolean = false
+  let resultOnCompleting: boolean = false
+  let resultOnFailing: boolean = false
+
+  resultPrerun = executeNodePrerun({
     nodeInstance,
-    args,
-    context,
     nodeImplementation,
-    initNext,
-    finishProcess,
-    registerData,
-  })) {
-    // status === Active
-    if (executeNodeRun({
-      nodeInstance,
+    executeArgs: {
       args,
       context,
-      nodeImplementation,
       initNext,
       finishProcess,
       registerData,
-    })) {
-      // status === completing
-      if (typeof nodeImplementation.onCompleting === 'function') {
-        // TODO - dovymislet onCompleting()
-        nodeImplementation.onCompleting({
-          context,
+    },
+  })
+  // status = Active x Waiting
+  if(resultPrerun) {
+    // status === Actiove
+    resultRun = executeNodeRun({
+      nodeInstance,
+      nodeImplementation,
+      executeArgs: {
+        args,
+        context,
+        initNext,
+        finishProcess,
+        registerData,
+      },
+    })
+    // status = Completing x Failing
+    if(resultRun) {
+      // status === Completing
+      resultOnCompleting = executeNodeOnCompleting({
+        nodeInstance,
+        nodeImplementation,
+        executeArgs: {
           args,
+          context,
           initNext,
           finishProcess,
           registerData,
-        })
-      }
-      nodeInstance.status = ActivityStatus.Completed
-      // status === completed
-    } else {
-      // status === Failing
-      if (typeof nodeImplementation.onFailing === 'function') {
-        // TODO - dovymislet onFailing()
-        nodeImplementation.onFailing({
-          context: context,
-          args: args,
-          initNext,
-          finishProcess,
-          registerData,
-        })
-      }
-      nodeInstance.status = ActivityStatus.Failled
-      // status === Failed
+        },
+      })
+      // status = Completed x Failing
     }
-    nodeInstance.endDateTime = new Date()
-  } else {
-    // status === Ready
-    nodeInstance.status = ActivityStatus.Waiting
-    // status == Waiting
+    if(!resultRun || !resultOnCompleting) {
+      // staus === Failing
+      resultOnFailing = executeNodeOnFailing({
+        nodeInstance,
+        nodeImplementation,
+        executeArgs: {
+          args,
+          context,
+          initNext,
+          finishProcess,
+          registerData,
+        },
+      })
+      // status = Failed
+    }
   }
   returnValues.outputs = nodeInstance.returnValue
+
+
+
+  // // taskInstance.status === Ready
+  // if (executeNodePrerun({
+  //   nodeInstance,
+  //   args,
+  //   context,
+  //   nodeImplementation,
+  //   initNext,
+  //   finishProcess,
+  //   registerData,
+  // })) {
+  //   // status === Active
+  //   if (executeNodeRun({
+  //     nodeInstance,
+  //     args,
+  //     context,
+  //     nodeImplementation,
+  //     initNext,
+  //     finishProcess,
+  //     registerData,
+  //   })) {
+  //     // status === completing
+  //     if (typeof nodeImplementation.onCompleting === 'function') {
+  //       // TODO - dovymislet onCompleting()
+  //       nodeImplementation.onCompleting({
+  //         context,
+  //         args,
+  //         initNext,
+  //         finishProcess,
+  //         registerData,
+  //       })
+  //     }
+  //     nodeInstance.status = ActivityStatus.Completed
+  //     // status === completed
+  //   } else {
+  //     // status === Failing
+  //     if (typeof nodeImplementation.onFailing === 'function') {
+  //       // TODO - dovymislet onFailing()
+  //       nodeImplementation.onFailing({
+  //         context: context,
+  //         args: args,
+  //         initNext,
+  //         finishProcess,
+  //         registerData,
+  //       })
+  //     }
+  //     nodeInstance.status = ActivityStatus.Failled
+  //     // status === Failed
+  //   }
+  //   nodeInstance.endDateTime = new Date()
+  // } else {
+  //   // status === Ready
+  //   nodeInstance.status = ActivityStatus.Waiting
+  //   // status == Waiting
+  // }
+  // returnValues.outputs = nodeInstance.returnValue
 
   return returnValues
 }

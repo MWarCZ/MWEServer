@@ -20,16 +20,22 @@ describe('Testovani entit ', () => {
   afterEach(async() => {
     await closeConn(connection)
   })
-  it.only('xxx', async()=>{
+  it('xxx', async()=>{
     let user = new User()
     user.login = 'aaa'
     user.password = 'aaa'
     await connection.manager.save(user)
+
     let group = new Group()
     group.name = 'AAA'
-    group.users = [user]
     group = await connection.manager.save(group)
     console.log(JSON.stringify(group, null, 2))
+
+    let member = new Member()
+    member.group = group
+    member.user = user
+    member = await connection.manager.save(member)
+
 
     // let tmpa = await connection.manager.findOneOrFail(Group, {
     //   relations: ['members', 'users', 'members.user']

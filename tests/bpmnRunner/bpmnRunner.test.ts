@@ -191,7 +191,7 @@ describe('Testy s bpmnRunner', () => {
       it('Cyklus nekolika runNodeElement', async() => {
 
         for (let i = 0; i < 3; i++) {
-          console.log('==========', i, '=========')
+          // console.log('==========', i, '=========')
           let nodeI = await connection.manager.findOneOrFail(NodeElementInstance, {
             status: ActivityStatus.Ready,
           })
@@ -199,7 +199,7 @@ describe('Testy s bpmnRunner', () => {
           await runner.runIt({
             instance: nodeI,
           })
-          console.log('--------', i, '----------')
+          // console.log('--------', i, '----------')
         }
       })
 
@@ -390,10 +390,10 @@ describe('Testy s bpmnRunner', () => {
         let readyNodes = nodeInstances.filter(n => n.status === ActivityStatus.Ready)
         let waitNodes = nodeInstances.filter(n => n.status === ActivityStatus.Waiting)
 
-        if (path.includes('simple_without_end')) {
-          console.warn(JSON.stringify(nodeInstances, null, 2))
-          console.error(JSON.stringify(processI, null, 2))
-        }
+        // if (path.includes('simple_xor_outgoing')) {
+        //   console.warn(JSON.stringify(nodeInstances, null, 2))
+        //   console.error(JSON.stringify(processI, null, 2))
+        // }
 
         if (exp.nodeInstances)
           expect(nodeInstances).toBeArrayOfSize(exp.nodeInstances)

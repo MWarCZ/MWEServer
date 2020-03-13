@@ -5,4 +5,12 @@ export {
   NodeImplementationFunction,
   LibrariesWithNodeImplementations,
 } from './pluginNodeImplementation'
-export { RunContext } from './runContext'
+export {
+  RunContextIncoming,
+  RunContext,
+  RunContextInput,
+  RunContextMap,
+  RunContextNodeElement,
+  RunContextOutgoing,
+  RunContextOutput,
+} from './runContext'

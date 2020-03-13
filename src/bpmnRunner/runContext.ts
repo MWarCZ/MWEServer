@@ -25,8 +25,8 @@ export type RunContextMap = {
 export type RunContextInput = RunContextMap
 export type RunContextOutput = RunContextMap
 
-export type RunContextIncoming = { id: number, came: boolean, flag: string }[]
-export type RunContextOutgoing = { id: number, expression: string, flag: string }[]
+export type RunContextIncoming = { id: number, came: boolean, flag: string }
+export type RunContextOutgoing = { id: number, expression: string, flag: string }
 
 export type RunContextNodeElement = {
   // Z instance
@@ -41,8 +41,8 @@ export type RunContextNodeElement = {
 
 export type RunContext = {
   $GLOBAL: any,
-  $INCOMING: RunContextIncoming,
-  $OUTGOING: RunContextOutgoing,
+  $INCOMING: RunContextIncoming[],
+  $OUTGOING: RunContextOutgoing[],
   $INPUT: RunContextInput,
   $OUTPUT: RunContextOutput,
   $SELF: Partial<RunContextNodeElement>,
@@ -115,7 +115,7 @@ export function createContextIncoming(
     incomingSequenceTemplates: SequenceFlowTemplate[],
     incomingSequenceInstances: SequenceFlowInstance[],
   },
-): RunContextIncoming {
+): RunContextIncoming[] {
   const {
     incomingSequenceTemplates,
     incomingSequenceInstances,
@@ -126,7 +126,7 @@ export function createContextIncoming(
     return id
   }).filter(x => !!x) as number[]
 
-  let data: RunContextIncoming = incomingSequenceTemplates.map(incomingTemplate => {
+  let data: RunContextIncoming[] = incomingSequenceTemplates.map(incomingTemplate => {
     const {id = -1, flag = ''} = incomingTemplate
     return { id, came: incomingIds.includes(id), flag }
   })
@@ -138,12 +138,12 @@ export function createContextOutgoing(
   options: {
     outgoingSequenceTemplates: SequenceFlowTemplate[],
   },
-): RunContextOutgoing {
+): RunContextOutgoing[] {
   const {
     outgoingSequenceTemplates,
   } = options
 
-  let data: RunContextOutgoing = outgoingSequenceTemplates.map(outgoingTemplate => {
+  let data: RunContextOutgoing[] = outgoingSequenceTemplates.map(outgoingTemplate => {
     const { targetId: id = -1, expression = 'true', flag = '' } = outgoingTemplate
     return { id, expression, flag }
   })

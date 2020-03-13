@@ -44,7 +44,7 @@ describe('Zakladni testy pro scriptTaskImplementation.', () => {
       finishProcess: () => { },
       registerData: () => { },
     })
-    console.log(result)
+    // console.log(result)
     expect(result).toBe(33)
   })
 
@@ -63,7 +63,7 @@ describe('Zakladni testy pro scriptTaskImplementation.', () => {
       finishProcess: () => { },
       registerData: () => { },
     })
-    console.log({result, context})
+    // console.log({result, context})
   })
 
 })

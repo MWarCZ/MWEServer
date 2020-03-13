@@ -20,10 +20,10 @@ describe('GQL', () => {
     let res = await graphql(server.executableSchema, query, null, server.context)
     expect(res).toEqual(expected)
     let  con = getConnection()
-    console.log(con.entityMetadatas.map(e => [e.name, e.tableName]))
+    // console.log(con.entityMetadatas.map(e => [e.name, e.tableName]))
     const XUser = con.getMetadata(User)
-    console.warn([User.name, XUser.tableName])
-    console.log(con.entityMetadatas.map(e => e.tableName))
+    // console.warn([User.name, XUser.tableName])
+    // console.log(con.entityMetadatas.map(e => e.tableName))
 
   })
 
