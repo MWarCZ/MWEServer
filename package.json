@@ -1,5 +1,5 @@
 {
-  "name": "MWEServer",
+  "name": "mweserver",
   "version": "1.0.0",
   "devPlatform": "linux",
   "description": "My Workflow Engine Server for node.js.",
@@ -24,7 +24,7 @@
     "prebuild": "$npm_execpath run build:clean && $npm_execpath run gen:gql",
     "build": "tsc --outDir $npm_package_env_path_dist",
     "build:watch": "$npm_execpath run build -w",
-    "postbuild": "$npm_execpath copy:gql",
+    "postbuild": "$npm_execpath copy",
     "test:clean": "rm -rf $npm_package_env_path_testout",
     "test": "jest --config jest.config.json --forceExit --verbose --detectOpenHandles",
     "pretest:cov": "$npm_execpath run test:clean",
@@ -39,6 +39,7 @@
     "lint:fix": "$npm_execpath run lint --fix",
     "gen:gql": "graphql-codegen --config .graphqlconfig.yml",
     "typeorm": "ts-node node_modules/typeorm/cli.js",
+    "copy": "$npm_execpath copy:gql",
     "copy:gql": "copyfiles -u 1 'src/**/*.css' 'src/**/*.html' 'src/**/*.gql' 'src/**/*.graphql' 'src/**/*.json' $npm_package_env_path_dist",
     "clean": "$npm_execpath run build:clean; $npm_execpath run test:clean; ",
     "clean:node": "rm -rf node_modules;",

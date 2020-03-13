@@ -6,7 +6,10 @@ export function workerSetup(workerHelper: WorkerHelper) {
   if(port) {
     port.on('message', (msg: WorkerMessage) => {
       // napr. PubSub
-      console.log('GQL Server msg:', msg)
+      console.log('GQL Server: Message:', msg)
+    })
+    port.on('exit', (code)=> {
+      console.warn('GQL Server: Worker exit with code:', code)
     })
   }
 }

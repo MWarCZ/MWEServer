@@ -1,14 +1,16 @@
+import { existsSync as fsExists } from 'fs'
 import { importSchema } from 'graphql-import'
 import { GraphQLServer } from 'graphql-yoga'
 import { join as pathJoin } from 'path'
-import { getConnection } from 'typeorm'
 
 import { passportUseStrategies } from './api/auth'
 import { ActivityStatus, NodeElementInstance } from './entity/bpmn'
 import { generateContextFunction } from './graphql/context'
 import { resolvers } from './graphql/resolvers'
-import { RunnerServer } from './runnerServer'
+import { workerSetup as workerSetupGQL } from './graphql/workerSetup'
+import { RunnerServer, workerSetup as workerSetupRunner } from './runnerServer'
 import { createConn } from './utils/db'
+import { WorkerHelper } from './utils/workerHelpers'
 
 //#region GQL server
 
@@ -17,7 +19,21 @@ const typeDefs = importSchema(
 )
 
 export async function createGQLServer() {
-  let context = await generateContextFunction()
+  let connection = await createConn()
+
+  let worker: WorkerHelper | undefined
+  let filename = pathJoin(__dirname, './runnerServer.service.js')
+  if (fsExists(filename)) {
+    worker = new WorkerHelper({ filename })
+    workerSetupGQL(worker)
+  } else {
+    console.warn(`Server GQL: Worker '${filename}' nebylo mozne najit.`)
+  }
+
+  let context = await generateContextFunction({
+    typeormConnection: connection,
+    worker,
+  })
   let server =  new GraphQLServer({
     context,
     // middlewares,
@@ -25,8 +41,8 @@ export async function createGQLServer() {
     // @ts-ignore
     resolvers,
   })
-  let conn = getConnection()
-  passportUseStrategies(conn)
+  // let conn = getConnection()
+  passportUseStrategies(connection)
   return server
 }
 
@@ -43,6 +59,7 @@ export async function startGQLServer() {
 
 export async function createRunnerServer() {
   let connection = await createConn()
+
   let queueNodes = await connection.manager.find(NodeElementInstance, {
     status: ActivityStatus.Ready,
   })
@@ -50,6 +67,20 @@ export async function createRunnerServer() {
     connection,
     queueNodes,
   })
+
+  let worker: WorkerHelper | undefined
+  let filename = pathJoin(__dirname, './gqlServer.service.js')
+  if (fsExists(filename)) {
+    worker = new WorkerHelper({ filename })
+    workerSetupRunner({
+      worker,
+      server,
+    })
+    // workerSetupGQL(worker)
+  } else {
+    console.warn(`Server Runner: Worker '${filename}' nebylo mozne najit.`)
+  }
+
   return server
 }
 

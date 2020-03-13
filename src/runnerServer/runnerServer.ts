@@ -1,7 +1,7 @@
 import { Connection } from 'typeorm'
 
-import { BpmnRunner } from './bpmnRunner'
-import { ActivityStatus, NodeElementInstance, ProcessInstance } from './entity/bpmn'
+import { BpmnRunner } from '../bpmnRunner'
+import { ActivityStatus, NodeElementInstance, ProcessInstance } from '../entity/bpmn'
 
 
 export enum RunnerServerCallbackName {
