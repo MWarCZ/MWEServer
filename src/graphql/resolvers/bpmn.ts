@@ -51,7 +51,7 @@ export const Mutation: GQLTypes.MutationResolvers = {
     // @ts-ignore
     return process as GQLTypes.ProcessTemplate[]
   },
-  initProcess: async(_, { input }, { client, db: connection }) => {
+  initProcess: async(_, { input }, { client, db: connection, worker }) => {
     let result = await ApiBpmn.initProcess({
       connection,
       client,
@@ -60,6 +60,10 @@ export const Mutation: GQLTypes.MutationResolvers = {
         firstNodeId: input.idFirstNode,
       },
     })
+    if(worker) {
+      worker.postChangedProcess(result.process)
+      worker.postChangedNodes([result.node])
+    }
     // @ts-ignore
     return result.process as GQLTypes.ProcessInstance
   },
