@@ -5,7 +5,7 @@ import { join as joinPath } from 'path'
 import { Connection } from 'typeorm'
 
 import { BpmnBuilder } from '../../src/bpmnBuilder'
-import { BpmnRunner } from '../../src/bpmnRunner'
+import { BpmnRunner, SupportedNode } from '../../src/bpmnRunner'
 import {
   ActivityStatus,
   DataObjectInstance,
@@ -47,7 +47,7 @@ describe('Testy s bpmnRunner', () => {
       it('initAndSaveProcess v1', async() => {
         let startEvent = await connection.manager.findOneOrFail(NodeElementTemplate, {
           relations: ['outgoing'],
-          where: { implementation: 'startEvent' },
+          where: { implementation: SupportedNode.StartEvent },
         })
         let { process: processInstance, node: eventInstance} = await runner.initAndSaveProcess(
           { id: startEvent.processTemplateId as number },
@@ -93,7 +93,7 @@ describe('Testy s bpmnRunner', () => {
       it('initAndSaveProcess v3', async() => {
         let startEvent = await connection.manager.findOneOrFail(NodeElementTemplate, {
           relations: ['outgoing', 'processTemplate'],
-          where: { implementation: 'startEvent' },
+          where: { implementation: SupportedNode.StartEvent },
         })
         let { process: processInstance, node: eventInstance } = await runner.initAndSaveProcess(
           startEvent.processTemplate as {id:number},
@@ -123,9 +123,9 @@ describe('Testy s bpmnRunner', () => {
         nodeTemplates = []
         let xxx = await connection.manager.find(NodeElementTemplate)
         xxx.forEach(x => {
-          if (x.implementation === 'startEvent') nodeTemplates[0] = x
-          else if (x.implementation === 'task') nodeTemplates[1] = x
-          else if (x.implementation === 'endEvent') nodeTemplates[2] = x
+          if (x.implementation === SupportedNode.StartEvent) nodeTemplates[0] = x
+          else if (x.implementation === SupportedNode.Task) nodeTemplates[1] = x
+          else if (x.implementation === SupportedNode.EndEvent) nodeTemplates[2] = x
           else throw new Error('Kix')
         })
         expect(nodeTemplates).toBeArrayOfSize(3)
@@ -219,7 +219,7 @@ describe('Testy s bpmnRunner', () => {
         relations: ['nodeElements'],
       })
       let nodeElements = processTemplate.nodeElements as NodeElementTemplate[]
-      let startNode = nodeElements.find(n => `${n.implementation}`.includes('startEvent')) as NodeElementTemplate
+      let startNode = nodeElements.find(n => `${n.implementation}`.includes(SupportedNode.StartEvent)) as NodeElementTemplate
       let processInstance = await runner.initAndSaveProcess(
         processTemplate as { id: number },
         startNode,
@@ -377,7 +377,7 @@ describe('Testy s bpmnRunner', () => {
         relations: ['nodeElements'],
       })
       let nodeElements = processTemplate.nodeElements as NodeElementTemplate[]
-      let startNode = nodeElements.find(n => `${n.implementation}`.includes('startEvent')) as NodeElementTemplate
+      let startNode = nodeElements.find(n => `${n.implementation}`.includes(SupportedNode.StartEvent)) as NodeElementTemplate
       let processInstance = await runner.initAndSaveProcess(
         processTemplate as { id: number },
         startNode,
@@ -513,7 +513,7 @@ describe('Testy s bpmnRunner', () => {
         relations: ['nodeElements', 'dataObjects'],
       })
       let nodeElements = processTemplate.nodeElements as NodeElementTemplate[]
-      let startNode = nodeElements.find(n => `${n.implementation}`.includes('startEvent')) as NodeElementTemplate
+      let startNode = nodeElements.find(n => `${n.implementation}`.includes(SupportedNode.StartEvent)) as NodeElementTemplate
       let processInstance = await runner.initAndSaveProcess(
         processTemplate as { id: number },
         startNode,
@@ -571,7 +571,7 @@ describe('Testy s bpmnRunner', () => {
 
     let startEvent = await connection.manager.findOneOrFail(NodeElementTemplate, {
       relations: ['outgoing'],
-      where: { implementation: 'startEvent' },
+      where: { implementation: SupportedNode.StartEvent },
     })
     let processI = await runner.initAndSaveProcess(
       { id: startEvent.processTemplateId as number },

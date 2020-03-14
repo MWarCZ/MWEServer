@@ -1,12 +1,12 @@
 import { VM } from 'vm2'
 
 import { NodeImplementation } from '../bpmnRunner'
-import { taskImplementation } from './task'
+import { Task } from './task'
 
 /**
  * ScriptTask je uloha, ktera provede skript.
  */
-export const scriptTaskImplementation: NodeImplementation = {
+export const ScriptTask: NodeImplementation = {
   run({ context, args }) {
     const {
       script,
@@ -26,6 +26,6 @@ export const scriptTaskImplementation: NodeImplementation = {
     return result
   },
   onCompleting(options) {
-    taskImplementation.onCompleting && taskImplementation.onCompleting(options)
+    Task.onCompleting && Task.onCompleting(options)
   },
 }

@@ -1,14 +1,10 @@
 import { Connection, Equal, In } from 'typeorm'
 
-import { endEventImplementation } from '../bpmnRunnerPlugins/endEvent'
-import {
-  exclusiveGatewayImplementation,
-  inclusiveGatewayImplementation,
-  parallelGatewayImplementation,
-} from '../bpmnRunnerPlugins/gateway'
-import { scriptTaskImplementation } from '../bpmnRunnerPlugins/scriptTask'
-import { startEventImplementation } from '../bpmnRunnerPlugins/startEvent'
-import { taskImplementation } from '../bpmnRunnerPlugins/task'
+import { EndEvent } from '../bpmnRunnerPlugins/endEvent'
+import { ExclusiveGateway, InclusiveGateway, ParallelGateway } from '../bpmnRunnerPlugins/gateway'
+import { ScriptTask } from '../bpmnRunnerPlugins/scriptTask'
+import { StartEvent } from '../bpmnRunnerPlugins/startEvent'
+import { Task } from '../bpmnRunnerPlugins/task'
 import {
   ActivityStatus,
   DataObjectInstance,
@@ -31,7 +27,7 @@ import { executeNode } from './executeHelpers'
 import * as InitHelpers from './initHelpers'
 import { LibrariesWithNodeImplementations, NodeImplementation } from './pluginNodeImplementation'
 import { createContextForNode, createEmptyContext } from './runContext'
-
+import { SupportedNode } from './supportedNode'
 
 // import * as bpmn from '../entity/bpmn'
 /*
@@ -67,13 +63,15 @@ export class BpmnRunner {
     this.connection = connection
 
     this.pluginsWithImplementations = {
-      task: taskImplementation,
-      scriptTask: scriptTaskImplementation,
-      exclusiveGateway: exclusiveGatewayImplementation,
-      inclusiveGateway: inclusiveGatewayImplementation,
-      parallelGateway: parallelGatewayImplementation,
-      startEvent: startEventImplementation,
-      endEvent: endEventImplementation,
+      [SupportedNode.Task]: Task,
+      [SupportedNode.ScriptTask]: ScriptTask,
+
+      [SupportedNode.ExclusiveGateway]: ExclusiveGateway,
+      [SupportedNode.InclusiveGateway]: InclusiveGateway,
+      [SupportedNode.ParallelGateway]: ParallelGateway,
+
+      [SupportedNode.StartEvent]: StartEvent,
+      [SupportedNode.EndEvent]: EndEvent,
     }
     if (typeof pluginsWithImplementations === 'object') {
       this.pluginsWithImplementations = {

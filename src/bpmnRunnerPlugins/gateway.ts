@@ -4,7 +4,7 @@ import { evalExpression } from './evalExpressionHelper'
 /**
  * Parallel Gateway (AND)
  */
-export const parallelGatewayImplementation: NodeImplementation = {
+export const ParallelGateway: NodeImplementation = {
   prerun({ context }) {
     const {
       $INCOMING,
@@ -36,7 +36,7 @@ export const parallelGatewayImplementation: NodeImplementation = {
 /**
  * Inclusive Gateway (OR)
  */
-export const inclusiveGatewayImplementation: NodeImplementation = {
+export const InclusiveGateway: NodeImplementation = {
   options: {
     scope_inputs: 'global',
   },
@@ -68,7 +68,7 @@ export const inclusiveGatewayImplementation: NodeImplementation = {
 /**
  * Exclusive Gateway (XOR)
  */
-export const exclusiveGatewayImplementation: NodeImplementation = {
+export const ExclusiveGateway: NodeImplementation = {
   options: {
     scope_inputs: 'global',
   },

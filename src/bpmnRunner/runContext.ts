@@ -30,6 +30,7 @@ export type RunContextOutgoing = { id: number, expression: string, flag: string 
 
 export type RunContextNodeElement = {
   // Z instance
+  id: number,
   startDateTime: Date,
   endDateTime: Date,
   status: ActivityStatus,
@@ -181,6 +182,7 @@ export function createContextForNode(
     context = createEmptyContext(),
   } = options
   let {
+    id = -1,
     startDateTime,
     endDateTime,
     status,
@@ -192,6 +194,7 @@ export function createContextForNode(
   } = nodeTemplate
 
   context.$SELF = {
+    id,
     startDateTime,
     endDateTime,
     status,

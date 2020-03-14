@@ -1,7 +1,7 @@
 import 'jest-extended'
 
 import { createEmptyContext } from '../../src/bpmnRunner/runContext'
-import { taskImplementation } from '../../src/bpmnRunnerPlugins/task'
+import { Task } from '../../src/bpmnRunnerPlugins/task'
 import { ProcessInstance, ProcessTemplate } from '../../src/entity/bpmn'
 import {
   convertInstance2Template,
@@ -12,11 +12,11 @@ import {
 
 describe(`Test zakladni implamantace ulohy 'taskImplementation'`, () => {
   it('Je objekt definovan spravne dle ocekavani', () => {
-    expect(taskImplementation).toBeObject()
-    expect(taskImplementation.prerun).toBeUndefined()
-    expect(taskImplementation.run).toBeFunction()
-    expect(taskImplementation.onCompleting).toBeFunction()
-    expect(taskImplementation.onFailing).toBeUndefined()
+    expect(Task).toBeObject()
+    expect(Task.prerun).toBeUndefined()
+    expect(Task.run).toBeFunction()
+    expect(Task.onCompleting).toBeFunction()
+    expect(Task.onFailing).toBeUndefined()
   })
 
   it('Funkce run.', () => {
@@ -26,7 +26,7 @@ describe(`Test zakladni implamantace ulohy 'taskImplementation'`, () => {
       registerData: 0,
     }
     let context = createEmptyContext()
-    let result = taskImplementation.run({
+    let result = Task.run({
       context,
       initNext: (args: any) => { called.initNext++ },
       finishProcess: (args: any) => { called.finishProcess++ },
@@ -157,7 +157,7 @@ describe(`Test zakladni implamantace ulohy 'taskImplementation'`, () => {
       let context = createEmptyContext()
       context.$OUTGOING.push(...outgoing)
 
-      let result = taskImplementation.onCompleting && taskImplementation.onCompleting({
+      let result = Task.onCompleting && Task.onCompleting({
         context,
         initNext: (outs: any[]) => { called.initNext.push(...outs) },
         finishProcess: (opts: any) => { called.finishProcess.push(opts) },

@@ -14,3 +14,4 @@ export {
   RunContextOutgoing,
   RunContextOutput,
 } from './runContext'
+export * from './supportedNode'

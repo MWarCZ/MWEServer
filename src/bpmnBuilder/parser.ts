@@ -1,3 +1,4 @@
+import { SupportedNode } from '../bpmnRunner/supportedNode'
 import {
   BaseElementTemplate,
   DataObjectTemplate,
@@ -195,7 +196,7 @@ export class Parser {
   parseTask(task: BpmnFxm.Task, defaultImplementation?: string): BpmnLevel.Task {
     let entity = new NodeElementTemplate()
     this.preloadBaseElement(entity, task['#attr'])
-    this.preloadNodeElement(entity, task['#attr'], defaultImplementation || 'task')
+    this.preloadNodeElement(entity, task['#attr'], defaultImplementation || SupportedNode.Task)
     return {
       entity,
       data: task,
@@ -205,7 +206,7 @@ export class Parser {
   parseScriptTask(task: BpmnFxm.ScriptTask): BpmnLevel.ScriptTask {
     let entity = new NodeElementTemplate()
     this.preloadBaseElement(entity, task['#attr'])
-    this.preloadNodeElement(entity, task['#attr'], 'scriptTask')
+    this.preloadNodeElement(entity, task['#attr'], SupportedNode.ScriptTask)
     if (task['#attr']) {
       entity.data['scriptFormat'] = task['#attr'].scriptFormat || 'js'
     }
@@ -218,7 +219,7 @@ export class Parser {
   parseStartEvent(event: BpmnFxm.StartEvent): BpmnLevel.StartEvent {
     let entity = new NodeElementTemplate()
     this.preloadBaseElement(entity, event['#attr'])
-    this.preloadNodeElement(entity, event['#attr'], 'startEvent')
+    this.preloadNodeElement(entity, event['#attr'], SupportedNode.StartEvent)
     return {
       entity,
       data: event,
@@ -228,7 +229,7 @@ export class Parser {
   parseEndEvent(event: BpmnFxm.Task): BpmnLevel.EndEvent {
     let entity = new NodeElementTemplate()
     this.preloadBaseElement(entity, event['#attr'])
-    this.preloadNodeElement(entity, event['#attr'], 'endEvent')
+    this.preloadNodeElement(entity, event['#attr'], SupportedNode.EndEvent)
     return {
       entity,
       data: event,
@@ -238,7 +239,7 @@ export class Parser {
   parseIntermediateThrowEvent(event: BpmnFxm.IntermediateThrowEvent): BpmnLevel.IntermediateThrowEvent {
     let entity = new NodeElementTemplate()
     this.preloadBaseElement(entity, event['#attr'])
-    this.preloadNodeElement(entity, event['#attr'], 'intermediateThrowEvent')
+    this.preloadNodeElement(entity, event['#attr'], SupportedNode.IntermediateThrowEvent)
     return {
       entity,
       data: event,
@@ -248,7 +249,7 @@ export class Parser {
   parseIntermediateCatchEvent(event: BpmnFxm.IntermediateCatchEvent): BpmnLevel.IntermediateCatchEvent {
     let entity = new NodeElementTemplate()
     this.preloadBaseElement(entity, event['#attr'])
-    this.preloadNodeElement(entity, event['#attr'], 'intermediateCatchEvent')
+    this.preloadNodeElement(entity, event['#attr'], SupportedNode.IntermediateCatchEvent)
     return {
       entity,
       data: event,
@@ -385,19 +386,19 @@ export class Parser {
     let exclusiveGateways = process.data[`${this.ns.bpmn2}exclusiveGateway` as 'exclusiveGateway']
     if (typeof exclusiveGateways === 'object') {
       queues.Gateway.push(...exclusiveGateways.map(
-        g => this.parseGateway(g, 'exclusiveGateway'),
+        g => this.parseGateway(g, SupportedNode.ExclusiveGateway),
       ))
     }
     let parallelGateways = process.data[`${this.ns.bpmn2}parallelGateway` as 'parallelGateway']
     if (typeof parallelGateways === 'object') {
       queues.Gateway.push(...parallelGateways.map(g =>
-        this.parseGateway(g, 'parallelGateway'),
+        this.parseGateway(g, SupportedNode.ParallelGateway),
       ))
     }
     let inclusiveGateways = process.data[`${this.ns.bpmn2}inclusiveGateway` as 'inclusiveGateway']
     if (typeof inclusiveGateways === 'object') {
       queues.Gateway.push(...inclusiveGateways.map(g =>
-        this.parseGateway(g, 'inclusiveGateway'),
+        this.parseGateway(g, SupportedNode.InclusiveGateway),
       ))
     }
 
