@@ -239,7 +239,8 @@ export class Parser {
   parseIntermediateThrowEvent(event: BpmnFxm.IntermediateThrowEvent): BpmnLevel.IntermediateThrowEvent {
     let entity = new NodeElementTemplate()
     this.preloadBaseElement(entity, event['#attr'])
-    this.preloadNodeElement(entity, event['#attr'], SupportedNode.IntermediateThrowEvent)
+    // this.preloadNodeElement(entity, event['#attr'], SupportedNode.IntermediateThrowEvent)
+    this.preloadIntermediateThrowEvent(entity, event)
     return {
       entity,
       data: event,
@@ -249,7 +250,8 @@ export class Parser {
   parseIntermediateCatchEvent(event: BpmnFxm.IntermediateCatchEvent): BpmnLevel.IntermediateCatchEvent {
     let entity = new NodeElementTemplate()
     this.preloadBaseElement(entity, event['#attr'])
-    this.preloadNodeElement(entity, event['#attr'], SupportedNode.IntermediateCatchEvent)
+    // this.preloadNodeElement(entity, event['#attr'], SupportedNode.IntermediateCatchEvent)
+    this.preloadIntermediateCatchEvent(entity, event)
     return {
       entity,
       data: event,
@@ -773,6 +775,78 @@ export class Parser {
       })
     }
     return entity
+  }
+
+
+
+  preloadIntermediateThrowEvent(entity: NodeElementTemplate, event: BpmnFxm.IntermediateThrowEvent) {
+    let linkEventDefinition = event[`${this.ns.bpmn2}linkEventDefinition` as 'linkEventDefinition']
+    if (linkEventDefinition) {
+      let link = ''
+      if (typeof linkEventDefinition === 'string') {
+        link = linkEventDefinition
+      } else {
+        let firstLink = linkEventDefinition[0]
+        if (firstLink['#attr'] && firstLink['#attr'].name) {
+          link = firstLink['#attr'].name
+        }
+      }
+      entity.data = { ...entity.data, link }
+      this.preloadNodeElement(entity, event['#attr'], SupportedNode.LinkIntermediateThrowEvent)
+    } else {
+      this.preloadNodeElement(entity, event['#attr'], SupportedNode.IntermediateCatchEvent)
+    }
+    // TODO dalsi mozne event definice (else if)
+  }
+
+  preloadIntermediateCatchEvent(entity: NodeElementTemplate, event: BpmnFxm.IntermediateCatchEvent) {
+    let linkEventDefinition = event[`${this.ns.bpmn2}linkEventDefinition` as 'linkEventDefinition']
+    let timerEventDefinition = event[`${this.ns.bpmn2}timerEventDefinition` as 'timerEventDefinition']
+    if (linkEventDefinition) {
+      let link = ''
+      if (typeof linkEventDefinition === 'string') {
+        link = linkEventDefinition
+      } else {
+        let firstLink = linkEventDefinition[0]
+        if (firstLink['#attr'] && firstLink['#attr'].name) {
+          link = firstLink['#attr'].name
+        }
+      }
+      entity.data = { ...entity.data, link }
+      this.preloadNodeElement(entity, event['#attr'], SupportedNode.LinkIntermediateCatchEvent)
+    } else if (timerEventDefinition) {
+      let foundData: {
+        timeCycle?: string,
+        timeDate?: string,
+        timeDuration?: string,
+      } = {}
+      if (typeof timerEventDefinition !== 'string') {
+        let first = timerEventDefinition[0]
+        let timeCycle = first[`${this.ns.bpmn2}timeCycle` as 'timeCycle']
+        if (Array.isArray(timeCycle)) {
+          foundData.timeCycle = timeCycle[0]['#text']
+        } else {
+          foundData.timeCycle = timeCycle
+        }
+        let timeDate = first[`${this.ns.bpmn2}timeDate` as 'timeDate']
+        if (Array.isArray(timeDate)) {
+          foundData.timeDate = timeDate[0]['#text']
+        } else {
+          foundData.timeDate = timeDate
+        }
+        let timeDuration = first[`${this.ns.bpmn2}timeDuration` as 'timeDuration']
+        if (Array.isArray(timeDuration)) {
+          foundData.timeDuration = timeDuration[0]['#text']
+        } else {
+          foundData.timeDuration = timeDuration
+        }
+      }
+      entity.data = { ...entity.data, ...(foundData as {}) }
+      this.preloadNodeElement(entity, event['#attr'], SupportedNode.TimerIntermediateCatchEvent)
+    } else {
+      this.preloadNodeElement(entity, event['#attr'], SupportedNode.IntermediateCatchEvent)
+    }
+    // TODO dalsi mozne event definice (else if)
   }
 
 }

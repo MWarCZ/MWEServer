@@ -29,13 +29,12 @@ describe('Testovani entit ', () => {
     let group = new Group()
     group.name = 'AAA'
     group = await connection.manager.save(group)
-    console.log(JSON.stringify(group, null, 2))
+    // console.log(JSON.stringify(group, null, 2))
 
     let member = new Member()
     member.group = group
     member.user = user
     member = await connection.manager.save(member)
-
 
     // let tmpa = await connection.manager.findOneOrFail(Group, {
     //   relations: ['members', 'users', 'members.user']
@@ -44,9 +43,7 @@ describe('Testovani entit ', () => {
       where: { },
       relations: ['user'],
     })
-    console.warn(JSON.stringify(tmpa, null, 2))
-
-
+    // console.warn(JSON.stringify(tmpa, null, 2))
 
   })
   describe('Vytvareni novych zakladnich entit', () => {

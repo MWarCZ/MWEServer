@@ -173,12 +173,12 @@ export declare namespace BpmnFxm {
   type StartEvent = {
     '#attr'?: StartEventAttr,
     outgoing?: string | string[], /** */
-    conditionalEventDefinition?: string | ConditionalEventDefinitionAttr[], /** */
-    timerEventDefinition?: string | TimerEventDefinitionAttr[], /** */
+    conditionalEventDefinition?: string | ConditionalEventDefinition[], /** */
+    timerEventDefinition?: string | TimerEventDefinition[], /** */
     // linkEventDefinition?: string, /** */
-    messageEventDefinition?: string | MessageEventDefinitionAttr[], /** */
+    messageEventDefinition?: string | MessageEventDefinition[], /** */
     // errorEventDefinition?: string, /** */
-    signalEventDefinition?: string | SignalEventDefinitionAttr[], /** */
+    signalEventDefinition?: string | SignalEventDefinition[], /** */
   }
   type EndEventAttr = {
     eventDefinitionRefs?: string,
@@ -186,10 +186,10 @@ export declare namespace BpmnFxm {
   type EndEvent = {
     '#attr'?: EndEventAttr,
     incoming?: string | string[], /** */
-    // linkEventDefinition?: string, /** */
-    messageEventDefinition?: string | MessageEventDefinitionAttr[], /** */
-    errorEventDefinition?: string | ErrorEventDefinitionAttr[], /** */
-    signalEventDefinition?: string | SignalEventDefinitionAttr[], /** */
+    // linkEventDefinition?: string | LinkEventDefinition[], /** */
+    messageEventDefinition?: string | MessageEventDefinition[], /** */
+    errorEventDefinition?: string | ErrorEventDefinition[], /** */
+    signalEventDefinition?: string | SignalEventDefinition[], /** */
   }
   type IntermediateThrowEventAttr = {
     eventDefinitionRefs?: string,
@@ -197,6 +197,7 @@ export declare namespace BpmnFxm {
   type IntermediateThrowEvent = {
     '#attr'?: IntermediateThrowEventAttr,
     outgoing?: string | string[], /** */
+    linkEventDefinition?: string | LinkEventDefinition[], /** */
   }
   type IntermediateCatchEventAttr = {
     eventDefinitionRefs?: string,
@@ -204,6 +205,8 @@ export declare namespace BpmnFxm {
   type IntermediateCatchEvent = {
     '#attr'?: IntermediateCatchEventAttr,
     incoming?: string | string[], /** */
+    timerEventDefinition?: string | TimerEventDefinition[], /** */
+    linkEventDefinition?: string | LinkEventDefinition[], /** */
   }
 
   type EventDefinitionAttr = { } & BaseElementAttr
@@ -241,6 +244,11 @@ export declare namespace BpmnFxm {
   } & EventDefinitionAttr
   type SignalEventDefinition = {
     '#attr'?: SignalEventDefinitionAttr,
+  }
+  type LinkEventDefinitionAttr = {
+  } & EventDefinitionAttr
+  type LinkEventDefinition = {
+    '#attr'?: LinkEventDefinitionAttr,
   }
 
   type GatewayAttr = {

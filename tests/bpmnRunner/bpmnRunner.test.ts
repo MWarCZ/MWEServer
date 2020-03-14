@@ -366,6 +366,20 @@ describe('Testy s bpmnRunner', () => {
         ],
       ],
 
+      [
+        '../resources/bpmn/simple/link_event.bpmn',
+        'fifo',
+        [
+          { nodeInstances: 1, completedNodes: 0, readyNodes: 1, processStatus: ProcessStatus.Ready },
+          { nodeInstances: 2, completedNodes: 1, readyNodes: 1, processStatus: ProcessStatus.Ready },
+          { nodeInstances: 4, completedNodes: 2, readyNodes: 2, processStatus: ProcessStatus.Ready },
+          { nodeInstances: 5, completedNodes: 3, readyNodes: 2, processStatus: ProcessStatus.Ready },
+          { nodeInstances: 6, completedNodes: 4, readyNodes: 2, processStatus: ProcessStatus.Ready },
+          { nodeInstances: 6, completedNodes: 5, readyNodes: 1, processStatus: ProcessStatus.Ready },
+          { nodeInstances: 6, completedNodes: 6, readyNodes: 0, processStatus: ProcessStatus.Completed },
+        ],
+      ],
+
     ])('%s - %s', async(path, orderExucute, expected ) => {
       let xml = readFileSync(joinPath(
         __dirname,
@@ -390,7 +404,7 @@ describe('Testy s bpmnRunner', () => {
         let readyNodes = nodeInstances.filter(n => n.status === ActivityStatus.Ready)
         let waitNodes = nodeInstances.filter(n => n.status === ActivityStatus.Waiting)
 
-        // if (path.includes('simple_xor_outgoing')) {
+        // if (path.includes('link_event')) {
         //   console.warn(JSON.stringify(nodeInstances, null, 2))
         //   console.error(JSON.stringify(processI, null, 2))
         // }

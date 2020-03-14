@@ -2,6 +2,7 @@ import { Connection, Equal, In } from 'typeorm'
 
 import { EndEvent } from '../bpmnRunnerPlugins/endEvent'
 import { ExclusiveGateway, InclusiveGateway, ParallelGateway } from '../bpmnRunnerPlugins/gateway'
+import { LinkIntermediateCatchEvent, LinkIntermediateThrowEvent } from '../bpmnRunnerPlugins/linkIntermediateEvent'
 import { ScriptTask } from '../bpmnRunnerPlugins/scriptTask'
 import { StartEvent } from '../bpmnRunnerPlugins/startEvent'
 import { Task } from '../bpmnRunnerPlugins/task'
@@ -26,7 +27,7 @@ import { getInstance, getTemplate } from './anotherHelpers'
 import { executeNode } from './executeHelpers'
 import * as InitHelpers from './initHelpers'
 import { LibrariesWithNodeImplementations, NodeImplementation } from './pluginNodeImplementation'
-import { createContextForNode, createEmptyContext } from './runContext'
+import { convertToProvideNodes, createContextForNode, createEmptyContext, RunContextProvideNodes } from './runContext'
 import { SupportedNode } from './supportedNode'
 
 // import * as bpmn from '../entity/bpmn'
@@ -54,6 +55,21 @@ import { SupportedNode } from './supportedNode'
 
 */
 
+export const DefaultPluginsWithNodeImplementations: LibrariesWithNodeImplementations = {
+  [SupportedNode.Task]: Task,
+  [SupportedNode.ScriptTask]: ScriptTask,
+
+  [SupportedNode.ExclusiveGateway]: ExclusiveGateway,
+  [SupportedNode.InclusiveGateway]: InclusiveGateway,
+  [SupportedNode.ParallelGateway]: ParallelGateway,
+
+  [SupportedNode.StartEvent]: StartEvent,
+  [SupportedNode.EndEvent]: EndEvent,
+
+  [SupportedNode.LinkIntermediateCatchEvent]: LinkIntermediateCatchEvent,
+  [SupportedNode.LinkIntermediateThrowEvent]: LinkIntermediateThrowEvent,
+}
+
 export class BpmnRunner {
 
   connection: Connection
@@ -62,21 +78,13 @@ export class BpmnRunner {
   constructor(connection: Connection, pluginsWithImplementations?: LibrariesWithNodeImplementations) {
     this.connection = connection
 
-    this.pluginsWithImplementations = {
-      [SupportedNode.Task]: Task,
-      [SupportedNode.ScriptTask]: ScriptTask,
-
-      [SupportedNode.ExclusiveGateway]: ExclusiveGateway,
-      [SupportedNode.InclusiveGateway]: InclusiveGateway,
-      [SupportedNode.ParallelGateway]: ParallelGateway,
-
-      [SupportedNode.StartEvent]: StartEvent,
-      [SupportedNode.EndEvent]: EndEvent,
-    }
     if (typeof pluginsWithImplementations === 'object') {
       this.pluginsWithImplementations = {
-        ...this.pluginsWithImplementations,
         ...pluginsWithImplementations,
+      }
+    } else {
+      this.pluginsWithImplementations = {
+        ...DefaultPluginsWithNodeImplementations,
       }
     }
   }
@@ -490,6 +498,14 @@ export class BpmnRunner {
     // Nalezeni implementace pro dany uzel.
     let implementation = this.getImplementation(nodeTemplate.implementation as string)
 
+    // Chce dostat uzel informace i o jinych uzlech v sablone
+    const { provideNodes } = implementation.options || {}
+    let provideNodeTemplates: RunContextProvideNodes[] = []
+    if (provideNodes) {
+      let tmpNodes = convertToProvideNodes({nodeTemplates})
+      provideNodeTemplates = tmpNodes.filter(node => provideNodes(node))
+    }
+
     // Sestaveni kontextu pro dany uzel.
     let context = createEmptyContext()
     context = createContextForNode({
@@ -504,23 +520,9 @@ export class BpmnRunner {
       outputsDataTemplates,
       outputsDataInstances,
       processInstance,
+      provideNodeTemplates,
     })
 
-    // Chce dostat uzel informace i o jinych uzlech v sablone
-    const { provideNodes } = implementation.options || {}
-    if (provideNodes) {
-      let tmpNodes = nodeTemplates.map(node => {
-        return {
-          id: node.id || 0,
-          bpmnId: node.bpmnId || '',
-          name: node.name || '',
-          implementation: node.implementation || '',
-          data: node.data,
-        }
-      })
-      let nodesInArgs = tmpNodes.filter(node => provideNodes(node))
-      otherArgs['provideNodes'] = nodesInArgs
-    }
 
     // Sestaveni dodatku/argumentu pro dany uzel.
     let allArgs = this.createAdditionsArgs({

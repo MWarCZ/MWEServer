@@ -13,5 +13,6 @@ export {
   RunContextNodeElement,
   RunContextOutgoing,
   RunContextOutput,
+  RunContextProvideNodes,
 } from './runContext'
 export * from './supportedNode'
