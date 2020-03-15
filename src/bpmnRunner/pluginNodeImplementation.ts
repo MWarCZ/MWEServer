@@ -1,13 +1,5 @@
 import { Json } from '../types/json'
-import { RunContext } from './runContext'
-
-export type FilterProps_NodeElementTemplate = {
-  id: number,
-  bpmnId: string,
-  name: string,
-  implementation: string,
-  data: any,
-}
+import { RunContext, RunContextProvideNodes } from './runContext'
 
 /**
  * Rozhrani definujici podobu pluginu
@@ -22,11 +14,11 @@ export interface NodeImplementation {
     max_count_recurrence_node?: number,
     // Ziskat i jine uzly, ktere by mohly mit vliv na chovani (Skok v provadeni na jiny uzel)
     // Prida do `args` polozku `provideNodes` s polem uzlu, ktere vyhovuji funkci.
-    provideNodes?: (node:FilterProps_NodeElementTemplate) => boolean,
+    provideNodes?: (node: RunContextProvideNodes) => boolean,
   }
 
   // Akce doplnujici hodnoty (dodatky) pro predpokladany validni pruchod pres prerun.
-  additions?: NodeImplementationFunction
+  // additions?: NodeImplementationFunction
   // Vraci jake hodnoty (dotatky) jsou vyzadovany pro spusteni.
   additionsFormat?: NodeImplementationFunction
   // Akce pred spustenim hlavniho behoveho bloku uzlu

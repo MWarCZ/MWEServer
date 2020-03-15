@@ -150,9 +150,10 @@ describe('Testy behove pipeline-y.', () => {
           onCompleting({ initNext }) { initNext([3]); throw new Error('Ecompleting') },
           onFailing({ initNext }) { initNext([4]) },
         }
-        let result = () => executeNode({ context, nodeImplementation, nodeInstance, args })
-        expect(result).toThrowError()
-        expect(nodeInstance.status).toBe(ActivityStatus.Completing)
+        let result = executeNode({ context, nodeImplementation, nodeInstance, args })
+        expect(nodeInstance.status).toBe(ActivityStatus.Failled)
+        expect(result.initNext).toBeArrayOfSize(4)
+        expect(result.initNext).toMatchObject([1, 2, 3, 4])
       })
       it('Run KO, OnFailing KO + vsude initNext', () => {
         nodeImplementation = {
@@ -161,9 +162,10 @@ describe('Testy behove pipeline-y.', () => {
           onCompleting({ initNext }) { initNext([3]) },
           onFailing({ initNext }) { initNext([4]); throw new Error('Efailing') },
         }
-        let result = () => executeNode({ context, nodeImplementation, nodeInstance, args })
-        expect(result).toThrowError()
-        expect(nodeInstance.status).toBe(ActivityStatus.Falling)
+        let result = executeNode({ context, nodeImplementation, nodeInstance, args })
+        expect(nodeInstance.status).toBe(ActivityStatus.Failled)
+        expect(result.initNext).toBeArrayOfSize(3)
+        expect(result.initNext).toMatchObject([1, 2, 4])
       })
 
     })

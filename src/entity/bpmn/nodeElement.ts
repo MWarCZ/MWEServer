@@ -89,10 +89,10 @@ export class NodeElementInstance implements FlowElementInstance {
   id?: number
 
   @Column('datetime', { nullable: true })
-  startDateTime?: Date = new Date()
+  startDateTime: Date = new Date()
 
   @Column('datetime', { nullable: true })
-  endDateTime?: Date
+  endDateTime: Date | null = null
 
   // ===============
 

@@ -5,7 +5,7 @@ import { join as joinPath } from 'path'
 import { Connection } from 'typeorm'
 
 import { BpmnBuilder } from '../../src/bpmnBuilder'
-import { BpmnRunner } from '../../src/bpmnRunner'
+import { BpmnRunner, SupportedNode } from '../../src/bpmnRunner'
 import {
   ActivityStatus,
   DataObjectInstance,
@@ -47,7 +47,7 @@ describe('Testy s bpmnRunner', () => {
       it('initAndSaveProcess v1', async() => {
         let startEvent = await connection.manager.findOneOrFail(NodeElementTemplate, {
           relations: ['outgoing'],
-          where: { implementation: 'startEvent' },
+          where: { implementation: SupportedNode.StartEvent },
         })
         let { process: processInstance, node: eventInstance} = await runner.initAndSaveProcess(
           { id: startEvent.processTemplateId as number },
@@ -93,7 +93,7 @@ describe('Testy s bpmnRunner', () => {
       it('initAndSaveProcess v3', async() => {
         let startEvent = await connection.manager.findOneOrFail(NodeElementTemplate, {
           relations: ['outgoing', 'processTemplate'],
-          where: { implementation: 'startEvent' },
+          where: { implementation: SupportedNode.StartEvent },
         })
         let { process: processInstance, node: eventInstance } = await runner.initAndSaveProcess(
           startEvent.processTemplate as {id:number},
@@ -123,9 +123,9 @@ describe('Testy s bpmnRunner', () => {
         nodeTemplates = []
         let xxx = await connection.manager.find(NodeElementTemplate)
         xxx.forEach(x => {
-          if (x.implementation === 'startEvent') nodeTemplates[0] = x
-          else if (x.implementation === 'task') nodeTemplates[1] = x
-          else if (x.implementation === 'endEvent') nodeTemplates[2] = x
+          if (x.implementation === SupportedNode.StartEvent) nodeTemplates[0] = x
+          else if (x.implementation === SupportedNode.Task) nodeTemplates[1] = x
+          else if (x.implementation === SupportedNode.EndEvent) nodeTemplates[2] = x
           else throw new Error('Kix')
         })
         expect(nodeTemplates).toBeArrayOfSize(3)
@@ -191,7 +191,7 @@ describe('Testy s bpmnRunner', () => {
       it('Cyklus nekolika runNodeElement', async() => {
 
         for (let i = 0; i < 3; i++) {
-          console.log('==========', i, '=========')
+          // console.log('==========', i, '=========')
           let nodeI = await connection.manager.findOneOrFail(NodeElementInstance, {
             status: ActivityStatus.Ready,
           })
@@ -199,7 +199,7 @@ describe('Testy s bpmnRunner', () => {
           await runner.runIt({
             instance: nodeI,
           })
-          console.log('--------', i, '----------')
+          // console.log('--------', i, '----------')
         }
       })
 
@@ -219,7 +219,7 @@ describe('Testy s bpmnRunner', () => {
         relations: ['nodeElements'],
       })
       let nodeElements = processTemplate.nodeElements as NodeElementTemplate[]
-      let startNode = nodeElements.find(n => `${n.implementation}`.includes('startEvent')) as NodeElementTemplate
+      let startNode = nodeElements.find(n => `${n.implementation}`.includes(SupportedNode.StartEvent)) as NodeElementTemplate
       let processInstance = await runner.initAndSaveProcess(
         processTemplate as { id: number },
         startNode,
@@ -366,6 +366,20 @@ describe('Testy s bpmnRunner', () => {
         ],
       ],
 
+      [
+        '../resources/bpmn/simple/link_event.bpmn',
+        'fifo',
+        [
+          { nodeInstances: 1, completedNodes: 0, readyNodes: 1, processStatus: ProcessStatus.Ready },
+          { nodeInstances: 2, completedNodes: 1, readyNodes: 1, processStatus: ProcessStatus.Ready },
+          { nodeInstances: 4, completedNodes: 2, readyNodes: 2, processStatus: ProcessStatus.Ready },
+          { nodeInstances: 5, completedNodes: 3, readyNodes: 2, processStatus: ProcessStatus.Ready },
+          { nodeInstances: 6, completedNodes: 4, readyNodes: 2, processStatus: ProcessStatus.Ready },
+          { nodeInstances: 6, completedNodes: 5, readyNodes: 1, processStatus: ProcessStatus.Ready },
+          { nodeInstances: 6, completedNodes: 6, readyNodes: 0, processStatus: ProcessStatus.Completed },
+        ],
+      ],
+
     ])('%s - %s', async(path, orderExucute, expected ) => {
       let xml = readFileSync(joinPath(
         __dirname,
@@ -377,7 +391,7 @@ describe('Testy s bpmnRunner', () => {
         relations: ['nodeElements'],
       })
       let nodeElements = processTemplate.nodeElements as NodeElementTemplate[]
-      let startNode = nodeElements.find(n => `${n.implementation}`.includes('startEvent')) as NodeElementTemplate
+      let startNode = nodeElements.find(n => `${n.implementation}`.includes(SupportedNode.StartEvent)) as NodeElementTemplate
       let processInstance = await runner.initAndSaveProcess(
         processTemplate as { id: number },
         startNode,
@@ -390,19 +404,37 @@ describe('Testy s bpmnRunner', () => {
         let readyNodes = nodeInstances.filter(n => n.status === ActivityStatus.Ready)
         let waitNodes = nodeInstances.filter(n => n.status === ActivityStatus.Waiting)
 
-        if (path.includes('simple_without_end')) {
-          console.warn(JSON.stringify(nodeInstances, null, 2))
-          console.error(JSON.stringify(processI, null, 2))
-        }
+        // if (path.includes('link_event')) {
+        //   console.warn(JSON.stringify(nodeInstances, null, 2))
+        //   console.error(JSON.stringify(processI, null, 2))
+        // }
 
         if (exp.nodeInstances)
           expect(nodeInstances).toBeArrayOfSize(exp.nodeInstances)
-        if (exp.completedNodes)
+        if (exp.completedNodes){
           expect(completedNodes).toBeArrayOfSize(exp.completedNodes)
-        if (exp.readyNodes)
+          for(let node of completedNodes) {
+            expect(node.endDateTime).toBeDate()
+          }
+        }
+        if (exp.readyNodes){
           expect(readyNodes).toBeArrayOfSize(exp.readyNodes)
-        if (exp.processStatus)
+          for (let node of readyNodes) {
+            expect(node.endDateTime).toBeNull()
+          }
+        }
+        if (exp.processStatus){
           expect(processI.status).toBe(exp.processStatus)
+          if ([
+            ProcessStatus.Completed,
+            ProcessStatus.Failled,
+            ProcessStatus.Terminated,
+          ].includes(processI.status)) {
+            expect(processI.endDateTime).toBeDate()
+          } else {
+            expect(processI.endDateTime).toBeNull()
+          }
+        }
 
         let readyNode: NodeElementInstance | undefined
         if (orderExucute === 'fifo') {
@@ -513,7 +545,7 @@ describe('Testy s bpmnRunner', () => {
         relations: ['nodeElements', 'dataObjects'],
       })
       let nodeElements = processTemplate.nodeElements as NodeElementTemplate[]
-      let startNode = nodeElements.find(n => `${n.implementation}`.includes('startEvent')) as NodeElementTemplate
+      let startNode = nodeElements.find(n => `${n.implementation}`.includes(SupportedNode.StartEvent)) as NodeElementTemplate
       let processInstance = await runner.initAndSaveProcess(
         processTemplate as { id: number },
         startNode,
@@ -571,7 +603,7 @@ describe('Testy s bpmnRunner', () => {
 
     let startEvent = await connection.manager.findOneOrFail(NodeElementTemplate, {
       relations: ['outgoing'],
-      where: { implementation: 'startEvent' },
+      where: { implementation: SupportedNode.StartEvent },
     })
     let processI = await runner.initAndSaveProcess(
       { id: startEvent.processTemplateId as number },

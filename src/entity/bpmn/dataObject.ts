@@ -61,10 +61,10 @@ export class DataObjectInstance implements FlowElementInstance {
   id?: number
 
   @Column('datetime', { nullable: true })
-  startDateTime?: Date
+  startDateTime: Date | null = null
 
   @Column('datetime', { nullable: true })
-  endDateTime?: Date
+  endDateTime: Date | null = null
 
   // ===============
 

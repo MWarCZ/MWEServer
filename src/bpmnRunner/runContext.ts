@@ -25,11 +25,12 @@ export type RunContextMap = {
 export type RunContextInput = RunContextMap
 export type RunContextOutput = RunContextMap
 
-export type RunContextIncoming = { id: number, came: boolean, flag: string }[]
-export type RunContextOutgoing = { id: number, expression: string, flag: string }[]
+export type RunContextIncoming = { id: number, came: boolean, flag: string }
+export type RunContextOutgoing = { id: number, expression: string, flag: string }
 
 export type RunContextNodeElement = {
   // Z instance
+  id: number,
   startDateTime: Date,
   endDateTime: Date,
   status: ActivityStatus,
@@ -39,14 +40,30 @@ export type RunContextNodeElement = {
   implementation: string,
 }
 
+export interface RunContextProvideNodes {
+  id: number,
+  bpmnId: string,
+  name: string,
+  implementation: string,
+  data: JsonMap,
+}
+
 export type RunContext = {
   $GLOBAL: any,
-  $INCOMING: RunContextIncoming,
-  $OUTGOING: RunContextOutgoing,
+  // Info o prichozich tocich.
+  $INCOMING: RunContextIncoming[],
+  // Info o odchozich tocich.
+  $OUTGOING: RunContextOutgoing[],
+  // Data vstupu.
   $INPUT: RunContextInput,
+  // Data vystupu.
   $OUTPUT: RunContextOutput,
+  // Vytazek informaci o uzlu (z instance a sablony).
   $SELF: Partial<RunContextNodeElement>,
+  // Data ulozena v registru instance procesu.
   $REGISTER: JsonMap,
+  // Vytazek sablon uzlu, ke kterym ma implementace pristup.
+  $NODES: RunContextProvideNodes[],
 }
 
 //#endregion
@@ -62,6 +79,7 @@ export function createEmptyContext(): RunContext {
     $INCOMING: [],
     $OUTGOING: [],
     $REGISTER: {},
+    $NODES: [],
   }
 }
 
@@ -115,7 +133,7 @@ export function createContextIncoming(
     incomingSequenceTemplates: SequenceFlowTemplate[],
     incomingSequenceInstances: SequenceFlowInstance[],
   },
-): RunContextIncoming {
+): RunContextIncoming[] {
   const {
     incomingSequenceTemplates,
     incomingSequenceInstances,
@@ -126,7 +144,7 @@ export function createContextIncoming(
     return id
   }).filter(x => !!x) as number[]
 
-  let data: RunContextIncoming = incomingSequenceTemplates.map(incomingTemplate => {
+  let data: RunContextIncoming[] = incomingSequenceTemplates.map(incomingTemplate => {
     const {id = -1, flag = ''} = incomingTemplate
     return { id, came: incomingIds.includes(id), flag }
   })
@@ -138,12 +156,12 @@ export function createContextOutgoing(
   options: {
     outgoingSequenceTemplates: SequenceFlowTemplate[],
   },
-): RunContextOutgoing {
+): RunContextOutgoing[] {
   const {
     outgoingSequenceTemplates,
   } = options
 
-  let data: RunContextOutgoing = outgoingSequenceTemplates.map(outgoingTemplate => {
+  let data: RunContextOutgoing[] = outgoingSequenceTemplates.map(outgoingTemplate => {
     const { targetId: id = -1, expression = 'true', flag = '' } = outgoingTemplate
     return { id, expression, flag }
   })
@@ -165,6 +183,7 @@ export function createContextForNode(
     incomingSequenceInstances: SequenceFlowInstance[],
     outgoingSequenceTemplates: SequenceFlowTemplate[],
     context?: RunContext,
+    provideNodeTemplates: RunContextProvideNodes[],
   },
 ): RunContext {
   const {
@@ -179,8 +198,10 @@ export function createContextForNode(
     incomingSequenceTemplates,
     incomingSequenceInstances,
     context = createEmptyContext(),
+    provideNodeTemplates,
   } = options
   let {
+    id = -1,
     startDateTime,
     endDateTime,
     status,
@@ -192,6 +213,7 @@ export function createContextForNode(
   } = nodeTemplate
 
   context.$SELF = {
+    id,
     startDateTime,
     endDateTime,
     status,
@@ -199,6 +221,8 @@ export function createContextForNode(
     name,
     implementation,
   }
+
+  context.$NODES = [...provideNodeTemplates]
 
   context.$REGISTER = {
     ...processInstance.data,
@@ -275,86 +299,19 @@ export async function loadFilteredSequenceInstances(options: {
   return sequenceInstances
 }
 
-
-// export async function loadContextForNodeElement(
-//   taskInstance: { id: number },
-//   typeormConnection: Connection,
-// ): Promise<RunContext>  {
-//   // [x] Ziskat instanci ulohy.
-//   // [x] Ziskat sablonu ulohy.
-//   // [x] Ziskat datove vstupy dane sablony ulohy.
-//   // [x] Ziskat existujici instance datovych vstupu.
-//   //    [x] Stejna instance procesu pro instanci ulohy a instance datoveho objektu.
-//   //    [x] Instance datoveho objektu je vytvorena dle sablon datovych vstupu sablony ulohy.
-//   //
-//   let context: RunContext = createEmptyContext()
-//   let taskI = await typeormConnection.getRepository(NodeElementInstance).findOneOrFail(taskInstance.id, {
-//     relations: [
-//       'template',
-//       'template.inputs', 'template.outputs',
-//       'template.outgoing', 'template.incoming',
-//     ],
-//   })
-//   // console.log(JSON.stringify(taskI, null, 2))
-
-//   if (taskI && taskI.template) {
-//     let inputsDataTemplates: DataObjectTemplate[] = []
-//     let inputsDataInstances: DataObjectInstance[] = []
-//     let outputsDataTemplates: DataObjectTemplate[] = []
-//     let outputsDataInstances: DataObjectInstance[] = []
-//     let incomingSequenceTemplates: SequenceFlowTemplate[] = []
-//     let incomingSequenceInstances: SequenceFlowInstance[] = []
-//     let outgoingSequenceTemplates: SequenceFlowTemplate[] = []
-
-//     if (taskI.template.inputs) {
-//       inputsDataTemplates = taskI.template.inputs
-//       inputsDataInstances = await loadFilteredDataInstances({
-//         typeormConnection,
-//         processInstanceId: taskI.processInstanceId as number,
-//         dataTemplates: inputsDataTemplates,
-//       })
-
-//     }
-//     if (taskI.template.outputs) {
-//       outputsDataTemplates = taskI.template.outputs
-//       outputsDataInstances = await loadFilteredDataInstances({
-//         typeormConnection,
-//         processInstanceId: taskI.processInstanceId as number,
-//         dataTemplates: outputsDataTemplates,
-//       })
-//     }
-
-//     if (taskI.template.outgoing) {
-//       outgoingSequenceTemplates = taskI.template.outgoing
-//         .filter(x => !!x) as SequenceFlowTemplate[]
-//     }
-//     if (taskI.template.incoming) {
-//       incomingSequenceTemplates = taskI.template.incoming
-//         .filter(x => !!x) as SequenceFlowTemplate[]
-//       incomingSequenceInstances = await loadFilteredSequenceInstances({
-//         typeormConnection,
-//         processInstanceId: taskI.processInstanceId as number,
-//         sequenceTemplates: incomingSequenceTemplates,
-//       })
-//     }
-
-//     context = createContextForNode({
-//       context,
-//       nodeTemplate: taskI.template,
-//       nodeInstance: taskI,
-//       inputsDataTemplates,
-//       inputsDataInstances,
-//       outputsDataTemplates,
-//       outputsDataInstances,
-//       incomingSequenceTemplates,
-//       incomingSequenceInstances,
-//       outgoingSequenceTemplates,
-//     })
-//   }
-//   // console.log(JSON.stringify(context, null, 2))
-//   return context
-// }
-
+export function convertToProvideNodes(options: {
+  nodeTemplates: NodeElementTemplate[],
+}): RunContextProvideNodes[] {
+  return options.nodeTemplates.map(node => {
+    return {
+      id: node.id || 0,
+      bpmnId: node.bpmnId || '',
+      name: node.name || '',
+      implementation: node.implementation || '',
+      data: node.data,
+    }
+  })
+}
 
 //#endregion
 

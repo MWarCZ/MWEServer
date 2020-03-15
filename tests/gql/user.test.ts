@@ -33,13 +33,13 @@ describe('GQL: User', () => {
       })
   })
 
-  beforeEach(async () => {
+  beforeEach(async() => {
     context = await server.context({ request, response })
   })
 
   describe('Neprihlaseny uzivatel', () => {
     describe('query users = Ziskani seznamu uzivatelu.', () => {
-      it('Uspesny dotaz => Prazdny seznam', async()=>{
+      it('Uspesny dotaz => Prazdny seznam', async() => {
         let query = `query {
           users {
             id
@@ -50,7 +50,7 @@ describe('GQL: User', () => {
 
         expect(res.errors).toBeUndefined()
         expect(res.data).toBeObject()
-        if(res.data) {
+        if (res.data) {
           expect(res.data.users).toBeArrayOfSize(0)
         }
       })
@@ -69,7 +69,7 @@ describe('GQL: User', () => {
             login
           }
         }`],
-      ])('Neuspesny pokus ziskat uzivatele s pres jeho %s.', async (_, query) => {
+      ])('Neuspesny pokus ziskat uzivatele s pres jeho %s.', async(_, query) => {
 
         let res = await graphql(server.executableSchema, query, null, context)
 
@@ -129,7 +129,7 @@ describe('GQL: User', () => {
               login
             }
         }`],
-      ])('Mutace %s.', async (mutationName, query) => {
+      ])('Mutace %s.', async(mutationName, query) => {
 
         let res = await graphql(server.executableSchema, query, null, context)
 
@@ -159,9 +159,9 @@ describe('GQL: User', () => {
       ProtectedUsers.GroupAdmin,
       { where: { removed: false, login: ProtectedUsers.GroupAdmin.toLowerCase() } } as FindOneOptions<User>,
     ],
-  ])(`Prihlaseny uzivatel %s`, (userLogin, findOptions)=>{
+  ])(`Prihlaseny uzivatel %s`, (userLogin, findOptions) => {
     let jwt: string = ''
-    beforeAll(()=>{
+    beforeAll(() => {
       return connection.manager.findOne(User, { login: userLogin})
         .then(user => {
           user && (jwt = genJwt({user}))
@@ -169,7 +169,7 @@ describe('GQL: User', () => {
         })
     })
 
-    it('query users = Ziskani seznamu uzivatelu', async () => {
+    it('query users = Ziskani seznamu uzivatelu', async() => {
       let query = `query {
         users {
           id
@@ -185,9 +185,9 @@ describe('GQL: User', () => {
       if (res.data) {
         expect(res.data.users).toBeArrayOfSize(expected.length)
         res.data.users && res.data.users.forEach((user:{id:number, login: string}) => {
-          let exp = expected.find(u=>u.id === user.id)
+          let exp = expected.find(u => u.id === user.id)
           expect(exp).toBeDefined()
-          if(exp) {
+          if (exp) {
             expect(user.login).toBe(exp.login)
           }
         })
@@ -197,7 +197,7 @@ describe('GQL: User', () => {
   })
 
 
-  it.skip('query hello: S parametrem', async () => {
+  it.skip('query hello: S parametrem', async() => {
     let args = {
       login: ProtectedUsers.UserAdmin.toLowerCase(),
       password: ProtectedUsers.UserAdmin,

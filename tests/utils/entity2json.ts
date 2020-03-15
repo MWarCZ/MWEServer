@@ -53,8 +53,8 @@ function getDefaultMembers(options: { users: User[], groups: Group[] }) {
 function getNormalUsers(options:{ count: number, fromId: number}) {
   let {count = 1, fromId = 1} = options
   let users: User[] = []
-  for(let i = 0; i<count; i++) {
-    let newId = fromId+i
+  for (let i = 0; i < count; i++) {
+    let newId = fromId + i
     users.push(new User({
       id: newId,
       login: `user${newId}`,
@@ -90,7 +90,7 @@ async function xbin() {
     user: 1,
     group: 1,
   }
-  for(let argv of process.argv) {
+  for (let argv of process.argv) {
     let tmp: any[]
     switch (argv) {
       case 'default_user':
@@ -112,10 +112,10 @@ async function xbin() {
         break
       case 'normal_user':
         tmp = (await getNormalUsers({
-          count: 10, fromId: keys.user
-        })).map(user=>{
+          count: 10, fromId: keys.user,
+        })).map(user => {
           if ([keys.user + 4, keys.user + 5].includes(user.id as number)) user.locked = true // 2xZamlky
-          if (user.id as number >= keys.user+5) user.removed = true // 5xSmazany
+          if (user.id as number >= keys.user + 5) user.removed = true // 5xSmazany
           return user
         })
         keys.user += tmp.length
@@ -123,7 +123,7 @@ async function xbin() {
         break
       case 'normal_group':
         tmp = getNormalGroups({
-          count: 6, fromId: keys.group++
+          count: 6, fromId: keys.group++,
         }).map(group => {
           if ([keys.group + 1, keys.group + 2].includes(group.id as number)) group.removed = true // 2xSmazany
           return group

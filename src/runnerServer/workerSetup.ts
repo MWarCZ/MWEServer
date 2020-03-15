@@ -13,11 +13,11 @@ export function workerSetup(options: {
   server: RunnerServer,
 }) {
   let port = options.worker.get()
-  if(port) {
+  if (port) {
     // Naslouchani prichozich zprav.
     port.on('message', (msg: WorkerMessage) => {
       // napr. Vlozit uzly do zasobniku serveru.
-      switch(msg.code) {
+      switch (msg.code) {
         case WorkerMessageCode.nodesChanged:
           options.server.changedNodes(msg.data)
           break
@@ -44,7 +44,7 @@ export function workerSetup(options: {
           data: process,
         }
         port && port.postMessage(msg)
-      }
+      },
     }
   }
 }

@@ -1,14 +1,11 @@
 import { Connection, Equal, In } from 'typeorm'
 
-import { endEventImplementation } from '../bpmnRunnerPlugins/endEvent'
-import {
-  exclusiveGatewayImplementation,
-  inclusiveGatewayImplementation,
-  parallelGatewayImplementation,
-} from '../bpmnRunnerPlugins/gateway'
-import { scriptTaskImplementation } from '../bpmnRunnerPlugins/scriptTask'
-import { startEventImplementation } from '../bpmnRunnerPlugins/startEvent'
-import { taskImplementation } from '../bpmnRunnerPlugins/task'
+import { EndEvent } from '../bpmnRunnerPlugins/endEvent'
+import { ExclusiveGateway, InclusiveGateway, ParallelGateway } from '../bpmnRunnerPlugins/gateway'
+import { LinkIntermediateCatchEvent, LinkIntermediateThrowEvent } from '../bpmnRunnerPlugins/linkIntermediateEvent'
+import { ScriptTask } from '../bpmnRunnerPlugins/scriptTask'
+import { StartEvent } from '../bpmnRunnerPlugins/startEvent'
+import { Task } from '../bpmnRunnerPlugins/task'
 import {
   ActivityStatus,
   DataObjectInstance,
@@ -30,8 +27,8 @@ import { getInstance, getTemplate } from './anotherHelpers'
 import { executeNode } from './executeHelpers'
 import * as InitHelpers from './initHelpers'
 import { LibrariesWithNodeImplementations, NodeImplementation } from './pluginNodeImplementation'
-import { createContextForNode, createEmptyContext } from './runContext'
-
+import { convertToProvideNodes, createContextForNode, createEmptyContext, RunContextProvideNodes } from './runContext'
+import { SupportedNode } from './supportedNode'
 
 // import * as bpmn from '../entity/bpmn'
 /*
@@ -58,6 +55,21 @@ import { createContextForNode, createEmptyContext } from './runContext'
 
 */
 
+export const DefaultPluginsWithNodeImplementations: LibrariesWithNodeImplementations = {
+  [SupportedNode.Task]: Task,
+  [SupportedNode.ScriptTask]: ScriptTask,
+
+  [SupportedNode.ExclusiveGateway]: ExclusiveGateway,
+  [SupportedNode.InclusiveGateway]: InclusiveGateway,
+  [SupportedNode.ParallelGateway]: ParallelGateway,
+
+  [SupportedNode.StartEvent]: StartEvent,
+  [SupportedNode.EndEvent]: EndEvent,
+
+  [SupportedNode.LinkIntermediateCatchEvent]: LinkIntermediateCatchEvent,
+  [SupportedNode.LinkIntermediateThrowEvent]: LinkIntermediateThrowEvent,
+}
+
 export class BpmnRunner {
 
   connection: Connection
@@ -66,19 +78,13 @@ export class BpmnRunner {
   constructor(connection: Connection, pluginsWithImplementations?: LibrariesWithNodeImplementations) {
     this.connection = connection
 
-    this.pluginsWithImplementations = {
-      task: taskImplementation,
-      scriptTask: scriptTaskImplementation,
-      exclusiveGateway: exclusiveGatewayImplementation,
-      inclusiveGateway: inclusiveGatewayImplementation,
-      parallelGateway: parallelGatewayImplementation,
-      startEvent: startEventImplementation,
-      endEvent: endEventImplementation,
-    }
     if (typeof pluginsWithImplementations === 'object') {
       this.pluginsWithImplementations = {
-        ...this.pluginsWithImplementations,
         ...pluginsWithImplementations,
+      }
+    } else {
+      this.pluginsWithImplementations = {
+        ...DefaultPluginsWithNodeImplementations,
       }
     }
   }
@@ -492,6 +498,14 @@ export class BpmnRunner {
     // Nalezeni implementace pro dany uzel.
     let implementation = this.getImplementation(nodeTemplate.implementation as string)
 
+    // Chce dostat uzel informace i o jinych uzlech v sablone
+    const { provideNodes } = implementation.options || {}
+    let provideNodeTemplates: RunContextProvideNodes[] = []
+    if (provideNodes) {
+      let tmpNodes = convertToProvideNodes({nodeTemplates})
+      provideNodeTemplates = tmpNodes.filter(node => provideNodes(node))
+    }
+
     // Sestaveni kontextu pro dany uzel.
     let context = createEmptyContext()
     context = createContextForNode({
@@ -506,23 +520,9 @@ export class BpmnRunner {
       outputsDataTemplates,
       outputsDataInstances,
       processInstance,
+      provideNodeTemplates,
     })
 
-    // Chce dostat uzel informace i o jinych uzlech v sablone
-    const { provideNodes } = implementation.options || {}
-    if (provideNodes) {
-      let tmpNodes = nodeTemplates.map(node => {
-        return {
-          id: node.id || 0,
-          bpmnId: node.bpmnId || '',
-          name: node.name || '',
-          implementation: node.implementation || '',
-          data: node.data,
-        }
-      })
-      let nodesInArgs = tmpNodes.filter(node => provideNodes(node))
-      otherArgs['provideNodes'] = nodesInArgs
-    }
 
     // Sestaveni dodatku/argumentu pro dany uzel.
     let allArgs = this.createAdditionsArgs({
@@ -583,7 +583,7 @@ export class BpmnRunner {
 
     // Test zda vsechny vytvarene uzly maji spravny stav.
     targetNodeInstances.find(node => {
-      if(node.status === ActivityStatus.Failled) {
+      if (node.status === ActivityStatus.Failled) {
         results.finishProcess.finished = true
         results.finishProcess.forced = true
         return true
@@ -602,15 +602,17 @@ export class BpmnRunner {
           node.status = ActivityStatus.Withdrawn
           return node
         })
+        processInstance.endDateTime = new Date()
       } else {
         // Ukonci proces kdyz:
         // Neexistuje cekajici/pripraveny uzel a ani nebyl pripraven zadny novy uzel.
         if (unfinishedNodeInstances.length === 0 && targetNodeInstances.length === 0) {
           processInstance.status = ProcessStatus.Completed
+          processInstance.endDateTime = new Date()
         }
         // Jinak pokracuje proces pokracuje dale
       }
-      processInstance.endDateTime = new Date()
+
     } else {
       // Neni konec, ale jiz neni co dale vykonat => proces konci chybou
       if (unfinishedNodeInstances.length === 0 && targetNodeInstances.length === 0) {
@@ -708,13 +710,13 @@ export class BpmnRunner {
         const { max_count_recurrence_node = 1 } = targetImplementation.options || {}
         // Spocitani existujicich instanci uzlu
         const count = nodeInstances.filter(instance => instance.templateId === nodeTemplate.id).length
-        if(count >= max_count_recurrence_node) {
+        if (count >= max_count_recurrence_node) {
           nodeInstance.status = ActivityStatus.Failled
           nodeInstance.returnValue = {
             error: {
               name: 'max_count_recurrence_node',
               message: `Implementace '${nodeTemplate.implementation}' povoluje jen '${max_count_recurrence_node}' opakovane vytvorit uzel.`,
-            }
+            },
           }
         } else {
           nodeInstance.status = ActivityStatus.Ready

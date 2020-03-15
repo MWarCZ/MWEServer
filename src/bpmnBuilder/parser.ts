@@ -1,3 +1,4 @@
+import { SupportedNode } from '../bpmnRunner/supportedNode'
 import {
   BaseElementTemplate,
   DataObjectTemplate,
@@ -195,7 +196,7 @@ export class Parser {
   parseTask(task: BpmnFxm.Task, defaultImplementation?: string): BpmnLevel.Task {
     let entity = new NodeElementTemplate()
     this.preloadBaseElement(entity, task['#attr'])
-    this.preloadNodeElement(entity, task['#attr'], defaultImplementation || 'task')
+    this.preloadNodeElement(entity, task['#attr'], defaultImplementation || SupportedNode.Task)
     return {
       entity,
       data: task,
@@ -205,7 +206,7 @@ export class Parser {
   parseScriptTask(task: BpmnFxm.ScriptTask): BpmnLevel.ScriptTask {
     let entity = new NodeElementTemplate()
     this.preloadBaseElement(entity, task['#attr'])
-    this.preloadNodeElement(entity, task['#attr'], 'scriptTask')
+    this.preloadNodeElement(entity, task['#attr'], SupportedNode.ScriptTask)
     if (task['#attr']) {
       entity.data['scriptFormat'] = task['#attr'].scriptFormat || 'js'
     }
@@ -218,7 +219,7 @@ export class Parser {
   parseStartEvent(event: BpmnFxm.StartEvent): BpmnLevel.StartEvent {
     let entity = new NodeElementTemplate()
     this.preloadBaseElement(entity, event['#attr'])
-    this.preloadNodeElement(entity, event['#attr'], 'startEvent')
+    this.preloadNodeElement(entity, event['#attr'], SupportedNode.StartEvent)
     return {
       entity,
       data: event,
@@ -228,7 +229,7 @@ export class Parser {
   parseEndEvent(event: BpmnFxm.Task): BpmnLevel.EndEvent {
     let entity = new NodeElementTemplate()
     this.preloadBaseElement(entity, event['#attr'])
-    this.preloadNodeElement(entity, event['#attr'], 'endEvent')
+    this.preloadNodeElement(entity, event['#attr'], SupportedNode.EndEvent)
     return {
       entity,
       data: event,
@@ -238,7 +239,8 @@ export class Parser {
   parseIntermediateThrowEvent(event: BpmnFxm.IntermediateThrowEvent): BpmnLevel.IntermediateThrowEvent {
     let entity = new NodeElementTemplate()
     this.preloadBaseElement(entity, event['#attr'])
-    this.preloadNodeElement(entity, event['#attr'], 'intermediateThrowEvent')
+    // this.preloadNodeElement(entity, event['#attr'], SupportedNode.IntermediateThrowEvent)
+    this.preloadIntermediateThrowEvent(entity, event)
     return {
       entity,
       data: event,
@@ -248,7 +250,8 @@ export class Parser {
   parseIntermediateCatchEvent(event: BpmnFxm.IntermediateCatchEvent): BpmnLevel.IntermediateCatchEvent {
     let entity = new NodeElementTemplate()
     this.preloadBaseElement(entity, event['#attr'])
-    this.preloadNodeElement(entity, event['#attr'], 'intermediateCatchEvent')
+    // this.preloadNodeElement(entity, event['#attr'], SupportedNode.IntermediateCatchEvent)
+    this.preloadIntermediateCatchEvent(entity, event)
     return {
       entity,
       data: event,
@@ -385,19 +388,19 @@ export class Parser {
     let exclusiveGateways = process.data[`${this.ns.bpmn2}exclusiveGateway` as 'exclusiveGateway']
     if (typeof exclusiveGateways === 'object') {
       queues.Gateway.push(...exclusiveGateways.map(
-        g => this.parseGateway(g, 'exclusiveGateway'),
+        g => this.parseGateway(g, SupportedNode.ExclusiveGateway),
       ))
     }
     let parallelGateways = process.data[`${this.ns.bpmn2}parallelGateway` as 'parallelGateway']
     if (typeof parallelGateways === 'object') {
       queues.Gateway.push(...parallelGateways.map(g =>
-        this.parseGateway(g, 'parallelGateway'),
+        this.parseGateway(g, SupportedNode.ParallelGateway),
       ))
     }
     let inclusiveGateways = process.data[`${this.ns.bpmn2}inclusiveGateway` as 'inclusiveGateway']
     if (typeof inclusiveGateways === 'object') {
       queues.Gateway.push(...inclusiveGateways.map(g =>
-        this.parseGateway(g, 'inclusiveGateway'),
+        this.parseGateway(g, SupportedNode.InclusiveGateway),
       ))
     }
 
@@ -772,6 +775,78 @@ export class Parser {
       })
     }
     return entity
+  }
+
+
+
+  preloadIntermediateThrowEvent(entity: NodeElementTemplate, event: BpmnFxm.IntermediateThrowEvent) {
+    let linkEventDefinition = event[`${this.ns.bpmn2}linkEventDefinition` as 'linkEventDefinition']
+    if (linkEventDefinition) {
+      let link = ''
+      if (typeof linkEventDefinition === 'string') {
+        link = linkEventDefinition
+      } else {
+        let firstLink = linkEventDefinition[0]
+        if (firstLink['#attr'] && firstLink['#attr'].name) {
+          link = firstLink['#attr'].name
+        }
+      }
+      entity.data = { ...entity.data, link }
+      this.preloadNodeElement(entity, event['#attr'], SupportedNode.LinkIntermediateThrowEvent)
+    } else {
+      this.preloadNodeElement(entity, event['#attr'], SupportedNode.IntermediateCatchEvent)
+    }
+    // TODO dalsi mozne event definice (else if)
+  }
+
+  preloadIntermediateCatchEvent(entity: NodeElementTemplate, event: BpmnFxm.IntermediateCatchEvent) {
+    let linkEventDefinition = event[`${this.ns.bpmn2}linkEventDefinition` as 'linkEventDefinition']
+    let timerEventDefinition = event[`${this.ns.bpmn2}timerEventDefinition` as 'timerEventDefinition']
+    if (linkEventDefinition) {
+      let link = ''
+      if (typeof linkEventDefinition === 'string') {
+        link = linkEventDefinition
+      } else {
+        let firstLink = linkEventDefinition[0]
+        if (firstLink['#attr'] && firstLink['#attr'].name) {
+          link = firstLink['#attr'].name
+        }
+      }
+      entity.data = { ...entity.data, link }
+      this.preloadNodeElement(entity, event['#attr'], SupportedNode.LinkIntermediateCatchEvent)
+    } else if (timerEventDefinition) {
+      let foundData: {
+        timeCycle?: string,
+        timeDate?: string,
+        timeDuration?: string,
+      } = {}
+      if (typeof timerEventDefinition !== 'string') {
+        let first = timerEventDefinition[0]
+        let timeCycle = first[`${this.ns.bpmn2}timeCycle` as 'timeCycle']
+        if (Array.isArray(timeCycle)) {
+          foundData.timeCycle = timeCycle[0]['#text']
+        } else {
+          foundData.timeCycle = timeCycle
+        }
+        let timeDate = first[`${this.ns.bpmn2}timeDate` as 'timeDate']
+        if (Array.isArray(timeDate)) {
+          foundData.timeDate = timeDate[0]['#text']
+        } else {
+          foundData.timeDate = timeDate
+        }
+        let timeDuration = first[`${this.ns.bpmn2}timeDuration` as 'timeDuration']
+        if (Array.isArray(timeDuration)) {
+          foundData.timeDuration = timeDuration[0]['#text']
+        } else {
+          foundData.timeDuration = timeDuration
+        }
+      }
+      entity.data = { ...entity.data, ...(foundData as {}) }
+      this.preloadNodeElement(entity, event['#attr'], SupportedNode.TimerIntermediateCatchEvent)
+    } else {
+      this.preloadNodeElement(entity, event['#attr'], SupportedNode.IntermediateCatchEvent)
+    }
+    // TODO dalsi mozne event definice (else if)
   }
 
 }

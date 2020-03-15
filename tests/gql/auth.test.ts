@@ -17,7 +17,7 @@ describe('GQL: Auth', () => {
   let server: GraphQLServer
   let context: MyContext
 
-  beforeAll(async () => {
+  beforeAll(async() => {
     server = await createGQLServer()
     let connection = await getConnection()
     await cleanDataInTables(connection, connection.entityMetadatas)
@@ -33,11 +33,11 @@ describe('GQL: Auth', () => {
   //     .then(conn => LoadDefaultDb(conn))
   // })
 
-  beforeEach(async () => {
+  beforeEach(async() => {
     context = await server.context({ request, response })
   })
 
-  it('Uspesne prihlaseni = Ziskani tokenu', async () => {
+  it('Uspesne prihlaseni = Ziskani tokenu', async() => {
     let args = {
       login: ProtectedUsers.UserAdmin.toLowerCase(),
       password: ProtectedUsers.UserAdmin,
@@ -50,13 +50,13 @@ describe('GQL: Auth', () => {
 
     expect(res.errors).toBeUndefined()
     expect(res.data).toBeObject()
-    if(res.data) {
+    if (res.data) {
       expect(res.data.login).toBeString()
       let partOfKey = (res.data.login as string).split('.')
       expect(partOfKey.length).toBe(3)
     }
   })
-  it('Neuspesne prihlaseni: Chybne heslo', async () => {
+  it('Neuspesne prihlaseni: Chybne heslo', async() => {
     let args = {
       login: ProtectedUsers.UserAdmin.toLowerCase(),
       password: 'aaa',
@@ -73,7 +73,7 @@ describe('GQL: Auth', () => {
       expect(res.data.login).toBeNull()
     }
   })
-  it('Neuspesne prihlaseni: Neexistujici uzivatel', async () => {
+  it('Neuspesne prihlaseni: Neexistujici uzivatel', async() => {
     let args = {
       login: 'aaa',
       password: 'aaa',

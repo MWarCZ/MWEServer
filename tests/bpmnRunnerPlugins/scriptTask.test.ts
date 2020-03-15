@@ -1,18 +1,18 @@
 import 'jest-extended'
 
 import { createEmptyContext } from '../../src/bpmnRunner/runContext'
-import { scriptTaskImplementation as scriptTask } from '../../src/bpmnRunnerPlugins/scriptTask'
+import { ScriptTask } from '../../src/bpmnRunnerPlugins/scriptTask'
 
 describe('Zakladni testy pro scriptTaskImplementation.', () => {
   it('Spravnost struktury pluginu.', () => {
-    expect(scriptTask).toBeObject()
-    expect(scriptTask.prerun).toBeUndefined()
-    expect(scriptTask.run).toBeFunction()
+    expect(ScriptTask).toBeObject()
+    expect(ScriptTask.prerun).toBeUndefined()
+    expect(ScriptTask.run).toBeFunction()
   })
   it('Skript obsahuje jednoduchy aritmeticky vyraz.', () => {
     let context = createEmptyContext()
     let args = { script: `(5+6*2)*3` }
-    let result = scriptTask.run({
+    let result = ScriptTask.run({
       context, args,
       initNext: () => { },
       finishProcess: () => { },
@@ -23,7 +23,7 @@ describe('Zakladni testy pro scriptTaskImplementation.', () => {
   it('Skript obsahuje prikaz pro vyhozeni chyby.', () => {
     let context = createEmptyContext()
     let args = { script: `throw new Error('abc')` }
-    expect(() => scriptTask.run({
+    expect(() => ScriptTask.run({
       context, args,
       initNext: () => { },
       finishProcess: () => { },
@@ -38,13 +38,13 @@ describe('Zakladni testy pro scriptTaskImplementation.', () => {
       }
       add(11,22)
     ` }
-    let result = scriptTask.run({
+    let result = ScriptTask.run({
       context, args,
       initNext: () => { },
       finishProcess: () => { },
       registerData: () => { },
     })
-    console.log(result)
+    // console.log(result)
     expect(result).toBe(33)
   })
 
@@ -57,13 +57,13 @@ describe('Zakladni testy pro scriptTaskImplementation.', () => {
       }
       $OUTGOING.push(11)
     ` }
-    let result = scriptTask.run({
+    let result = ScriptTask.run({
       context, args,
       initNext: () => { },
       finishProcess: () => { },
       registerData: () => { },
     })
-    console.log({result, context})
+    // console.log({result, context})
   })
 
 })
