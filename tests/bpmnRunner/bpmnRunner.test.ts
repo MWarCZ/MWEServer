@@ -49,14 +49,14 @@ describe('Testy s bpmnRunner', () => {
           relations: ['outgoing'],
           where: { implementation: 'startEvent' },
         })
-        let processInstance = await runner.initAndSaveProcess(
+        let { process: processInstance, node: eventInstance} = await runner.initAndSaveProcess(
           { id: startEvent.processTemplateId as number },
           startEvent,
         )
-        let eventInstance = await connection.getRepository(NodeElementInstance).findOneOrFail({
-          processInstanceId: processInstance.id,
-          templateId: startEvent.id,
-        })
+        // let eventInstanceInDb = await connection.getRepository(NodeElementInstance).findOneOrFail({
+        //   processInstanceId: processInstance.id,
+        //   templateId: startEvent.id,
+        // })
         expect(processInstance).toBeInstanceOf(ProcessInstance)
         expect(processInstance.id).toBeNumber()
         expect(processInstance.processTemplateId).toBe(startEvent.processTemplateId)
@@ -72,14 +72,14 @@ describe('Testy s bpmnRunner', () => {
           relations: ['outgoing'],
           where: { implementation: 'startEvent' },
         })
-        let processInstance = await runner.initAndSaveProcess(
+        let { process: processInstance, node: eventInstance } = await runner.initAndSaveProcess(
           { id: startEvent.processTemplateId as number },
           { id: startEvent.id as number },
         )
-        let eventInstance = await connection.getRepository(NodeElementInstance).findOneOrFail({
-          processInstanceId: processInstance.id,
-          templateId: startEvent.id,
-        })
+        // let eventInstanceInDb = await connection.getRepository(NodeElementInstance).findOneOrFail({
+        //   processInstanceId: processInstance.id,
+        //   templateId: startEvent.id,
+        // })
         expect(processInstance).toBeInstanceOf(ProcessInstance)
         expect(processInstance.id).toBeNumber()
         expect(processInstance.processTemplateId).toBe(startEvent.processTemplateId)
@@ -95,14 +95,14 @@ describe('Testy s bpmnRunner', () => {
           relations: ['outgoing', 'processTemplate'],
           where: { implementation: 'startEvent' },
         })
-        let processInstance = await runner.initAndSaveProcess(
+        let { process: processInstance, node: eventInstance } = await runner.initAndSaveProcess(
           startEvent.processTemplate as {id:number},
           startEvent,
         )
-        let eventInstance = await connection.getRepository(NodeElementInstance).findOneOrFail({
-          processInstanceId: processInstance.id,
-          templateId: startEvent.id,
-        })
+        // let eventInstanceInDb = await connection.getRepository(NodeElementInstance).findOneOrFail({
+        //   processInstanceId: processInstance.id,
+        //   templateId: startEvent.id,
+        // })
         expect(processInstance).toBeInstanceOf(ProcessInstance)
         expect(processInstance.id).toBeNumber()
         expect(processInstance.processTemplateId).toBe(startEvent.processTemplateId)
@@ -132,10 +132,11 @@ describe('Testy s bpmnRunner', () => {
 
         let processTemplate = await connection.manager.findOneOrFail(ProcessTemplate)
 
-        processInstance = await runner.initAndSaveProcess(
+        let result = await runner.initAndSaveProcess(
           processTemplate as { id: number },
           nodeTemplates[0],
         )
+        processInstance = result.process
       })
 
       describe('initNodeElement', () => {

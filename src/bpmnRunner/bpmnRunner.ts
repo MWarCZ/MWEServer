@@ -189,7 +189,7 @@ export class BpmnRunner {
   async initAndSaveProcess(
     processTemplate: { id: number } | ProcessTemplate,
     startEvent: { id: number } | NodeElementTemplate,
-  ): Promise<ProcessInstance> {
+  ): Promise<{ process: ProcessInstance, node: NodeElementInstance}> {
     // Vyhledani sablon
     let processT = await getTemplate({
       templateClass: ProcessTemplate,
@@ -210,7 +210,10 @@ export class BpmnRunner {
     let startEventI = await this.initNodeElement(processInstance, [startEventT])
     startEventI = await this.saveElement(startEventI)
 
-    return processInstance
+    return {
+      process: processInstance,
+      node: startEventI[0],
+    }
   }
 
   initNodeElement(
@@ -305,7 +308,7 @@ export class BpmnRunner {
   //    [ ] Uzly z fronty Y do fronty X
   //
   async runIt(options: {
-    instance: NodeElementInstance,
+    instance: NodeElementInstance | { id: number },
   }) {
 
     //#region Find and load data from DB.
@@ -364,7 +367,7 @@ export class BpmnRunner {
     let implementation = this.getImplementation(nodeTemplate.implementation as string)
 
     // Potrebuji data v globalnim meritku procesu?
-    const { scope_inputs, scope_outputs } = implementation.options || {}
+    const { scope_inputs, scope_outputs, max_count_recurrence_node = 1 } = implementation.options || {}
 
     if (scope_inputs === 'global') {
       // Data dostupna v celem procesu jako vstupy
@@ -445,9 +448,9 @@ export class BpmnRunner {
     await this.connection.manager.save(result.targetSequenceInstances) // Nove pripravene instance seqenci
     await this.connection.manager.save(result.processInstance) // Proces mohl skoncit
 
-
     //#endregion
 
+    return result
   }
   runNode(options: {
     nodeInstance: NodeElementInstance,
@@ -566,6 +569,7 @@ export class BpmnRunner {
       processInstance,
       nodeTemplates: targetNodeTemplates,
       unfinishedNodeInstances,
+      nodeInstances,
     })
     // Pripravit instance sekvenci, ktere vedou k uzlum pro pristi spusteni.
     let targetSequenceInstances = this.prepareTargetSequenceInstances({
@@ -576,6 +580,16 @@ export class BpmnRunner {
       outgoingSequenceInstances,
     })
     // console.error(JSON.stringify(targetNodeInstances,null,2))
+
+    // Test zda vsechny vytvarene uzly maji spravny stav.
+    targetNodeInstances.find(node => {
+      if(node.status === ActivityStatus.Failled) {
+        results.finishProcess.finished = true
+        results.finishProcess.forced = true
+        return true
+      }
+      return false
+    })
 
     // Ukoncit proces? TODO
     // TODO Zamyslet se nad ukoncovanim procesu
@@ -594,11 +608,14 @@ export class BpmnRunner {
         if (unfinishedNodeInstances.length === 0 && targetNodeInstances.length === 0) {
           processInstance.status = ProcessStatus.Completed
         }
+        // Jinak pokracuje proces pokracuje dale
       }
+      processInstance.endDateTime = new Date()
     } else {
       // Neni konec, ale jiz neni co dale vykonat => proces konci chybou
       if (unfinishedNodeInstances.length === 0 && targetNodeInstances.length === 0) {
         processInstance.status = ProcessStatus.Failled
+        processInstance.endDateTime = new Date()
       }
     }
 
@@ -674,16 +691,35 @@ export class BpmnRunner {
   prepareTargetNodeInstances(options: {
     processInstance: ProcessInstance,
     nodeTemplates: NodeElementTemplate[],
+    nodeInstances: NodeElementInstance[],
     unfinishedNodeInstances: NodeElementInstance[],
   }): NodeElementInstance[] {
-    const { processInstance, nodeTemplates, unfinishedNodeInstances } = options
+    const { processInstance, nodeTemplates, unfinishedNodeInstances, nodeInstances } = options
 
     let result = nodeTemplates.map(nodeTemplate => {
       let nodeInstance = unfinishedNodeInstances.find(n => n.templateId === nodeTemplate.id)
-      if (!nodeInstance) {
+      if (nodeInstance) {
+        nodeInstance.status = ActivityStatus.Ready
+      } else {
         nodeInstance = InitHelpers.initNewNodeElement(processInstance, nodeTemplate)
+
+        // Test na pocet existujicich instanci
+        const targetImplementation = this.getImplementation(nodeTemplate.implementation as string)
+        const { max_count_recurrence_node = 1 } = targetImplementation.options || {}
+        // Spocitani existujicich instanci uzlu
+        const count = nodeInstances.filter(instance => instance.templateId === nodeTemplate.id).length
+        if(count >= max_count_recurrence_node) {
+          nodeInstance.status = ActivityStatus.Failled
+          nodeInstance.returnValue = {
+            error: {
+              name: 'max_count_recurrence_node',
+              message: `Implementace '${nodeTemplate.implementation}' povoluje jen '${max_count_recurrence_node}' opakovane vytvorit uzel.`,
+            }
+          }
+        } else {
+          nodeInstance.status = ActivityStatus.Ready
+        }
       }
-      nodeInstance.status = ActivityStatus.Ready
       return nodeInstance
     })
     return result

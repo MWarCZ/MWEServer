@@ -10,7 +10,7 @@ import { ProtectedUsers } from '../../src/api/helpers'
 import { UnloggedUserError } from '../../src/api/permissionError'
 import { Group, Member, User } from '../../src/entity'
 import { MyContext } from '../../src/graphql/context'
-import { createServer } from '../../src/server'
+import { createGQLServer } from '../../src/server'
 import { cleanDataInTables, loadDataToDb } from '../../src/utils/db'
 
 describe('GQL: User', () => {
@@ -19,7 +19,7 @@ describe('GQL: User', () => {
   let connection: Connection
   beforeAll(() => {
 
-    return createServer()
+    return createGQLServer()
       .then(ser => {
         server = ser
         return getConnection()

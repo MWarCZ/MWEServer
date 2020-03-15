@@ -18,6 +18,8 @@ export interface NodeImplementation {
     scope_inputs?: 'local' | 'global',
     // Obdrzi datove objekty A) vedou primo do uzlu X B) Vsechny datove objekty instance procesu.
     scope_outputs?: 'local' | 'global',
+    // Pocet kolikrat dana instance jednoho uzlu muze existovat. (Resi problem nekonecne smycky a moznost jedinacka.)
+    max_count_recurrence_node?: number,
     // Ziskat i jine uzly, ktere by mohly mit vliv na chovani (Skok v provadeni na jiny uzel)
     // Prida do `args` polozku `provideNodes` s polem uzlu, ktere vyhovuji funkci.
     provideNodes?: (node:FilterProps_NodeElementTemplate) => boolean,
