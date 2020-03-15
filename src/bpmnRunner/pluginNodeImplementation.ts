@@ -18,7 +18,7 @@ export interface NodeImplementation {
   }
 
   // Akce doplnujici hodnoty (dodatky) pro predpokladany validni pruchod pres prerun.
-  additions?: NodeImplementationFunction
+  // additions?: NodeImplementationFunction
   // Vraci jake hodnoty (dotatky) jsou vyzadovany pro spusteni.
   additionsFormat?: NodeImplementationFunction
   // Akce pred spustenim hlavniho behoveho bloku uzlu

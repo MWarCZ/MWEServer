@@ -602,15 +602,17 @@ export class BpmnRunner {
           node.status = ActivityStatus.Withdrawn
           return node
         })
+        processInstance.endDateTime = new Date()
       } else {
         // Ukonci proces kdyz:
         // Neexistuje cekajici/pripraveny uzel a ani nebyl pripraven zadny novy uzel.
         if (unfinishedNodeInstances.length === 0 && targetNodeInstances.length === 0) {
           processInstance.status = ProcessStatus.Completed
+          processInstance.endDateTime = new Date()
         }
         // Jinak pokracuje proces pokracuje dale
       }
-      processInstance.endDateTime = new Date()
+
     } else {
       // Neni konec, ale jiz neni co dale vykonat => proces konci chybou
       if (unfinishedNodeInstances.length === 0 && targetNodeInstances.length === 0) {

@@ -8,101 +8,6 @@ import { RunContext } from './runContext'
  *
  * @returns Vraci `true` pokud vse probeho OK nebo v pripade chyby vraci `false`.
  */
-export function executeNodePrerunX(options: {
-  nodeInstance: NodeElementInstance,
-  nodeImplementation: NodeImplementation,
-  context: RunContext,
-  args: JsonMap,
-  initNext: (x: any) => void,
-  finishProcess: (x: any) => void,
-  registerData: (x: string, y: any) => void,
-}): boolean {
-  const {
-    nodeInstance,
-    nodeImplementation,
-    context,
-    args,
-    initNext,
-    finishProcess,
-    registerData,
-  } = options
-  // status === Ready
-  try {
-    let result = nodeImplementation.prerun ? nodeImplementation.prerun({
-      context,
-      args,
-      initNext,
-      finishProcess,
-      registerData,
-    }) : true
-    // nodeInstance.returnValue = result
-    nodeInstance.returnValue = context.$OUTPUT
-    nodeInstance.status = ActivityStatus.Active
-    // status === Active
-    return true
-  } catch (e) {
-    if (e instanceof Error) {
-      nodeInstance.returnValue = { error: { name: e.name, message: e.message } }
-    } else {
-      throw e
-    }
-    // status === Ready
-    return false
-  }
-}
-
-/**
- *
- * @returns Vraci `true` pokud vse probeho OK nebo v pripade chyby vraci `false`.
- */
-export function executeNodeRunX(options: {
-  nodeInstance: NodeElementInstance,
-  nodeImplementation: NodeImplementation,
-  context: RunContext,
-  args: JsonMap,
-  initNext: (x:any) => void,
-  finishProcess: (x:any) => void,
-  registerData: (x:string, y:any) => void,
-}): boolean {
-  const {
-    nodeInstance,
-    nodeImplementation,
-    context,
-    args,
-    initNext,
-    finishProcess,
-    registerData,
-  } = options
-  // status === Active
-  try {
-    let result = nodeImplementation.run({
-      context,
-      args,
-      initNext,
-      finishProcess,
-      registerData,
-    })
-    nodeInstance.returnValue = context.$OUTPUT
-    nodeInstance.status = ActivityStatus.Completing
-    // status === Completing
-    return true
-  } catch (e) {
-    nodeInstance.status = ActivityStatus.Falling
-    if (e instanceof Error) {
-      nodeInstance.returnValue = { error: { name: e.name, message: e.message } }
-    } else {
-      throw e
-    }
-    // status === Falling
-    return false
-  }
-}
-
-// ==============================
-/**
- *
- * @returns Vraci `true` pokud vse probeho OK nebo v pripade chyby vraci `false`.
- */
 export function safeExecuteNodeFunction(options: {
   nodeInstance: NodeElementInstance,
   executeFunction?: (args: any) => any,
@@ -334,6 +239,7 @@ export function executeNode(options: {
       })
       // status = Failed
     }
+    nodeInstance.endDateTime = new Date()
   }
   returnValues.outputs = nodeInstance.returnValue
 

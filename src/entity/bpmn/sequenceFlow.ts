@@ -85,10 +85,10 @@ export class SequenceFlowInstance implements FlowElementInstance {
   id?: number
 
   @Column('datetime', { nullable: true })
-  startDateTime?: Date
+  startDateTime: Date = new Date()
 
   @Column('datetime', { nullable: true })
-  endDateTime?: Date
+  endDateTime: Date | null = null
 
   // ===============
 

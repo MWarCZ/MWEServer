@@ -14,8 +14,8 @@ export interface BaseElementTemplate {
  */
 export interface BaseElementInstance {
   id?: number
-  startDateTime?: Date
-  endDateTime?: Date
+  startDateTime: Date | null
+  endDateTime: Date | null
 }
 
 /**
