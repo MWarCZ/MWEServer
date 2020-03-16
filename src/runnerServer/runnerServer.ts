@@ -19,6 +19,7 @@ export class RunnerServer {
   waitTimeout?: NodeJS.Timeout
   execPromise: Promise<this> = Promise.resolve(this)
   execEnabled: boolean = false
+  stepper: boolean = false
 
   callbacks: RunnerServerCallbacks
 
@@ -111,6 +112,11 @@ export class RunnerServer {
       // Upraveni fronty s uzly na zaklade vysledku
       this.changedNodes(result.targetNodeInstances)
 
+      // Stepper => pro ladeni, vykona vzdy jen jeden krok.
+      if(this.stepper) {
+        this.stop()
+      }
+
       // prochazeni zpetnych volani
       for (let key in this.callbacks) {
         let callback = (this.callbacks as any)[key]
@@ -154,5 +160,15 @@ export class RunnerServer {
     // Pridani uzlu, ktere jsou nove ready
     this.queues.nodes.push(...ready)
     this.wake()
+  }
+
+  enableStepper() {
+    this.stepper = true
+  }
+  disableStepper() {
+    this.stepper = false
+  }
+  step() {
+    this.start()
   }
 }
