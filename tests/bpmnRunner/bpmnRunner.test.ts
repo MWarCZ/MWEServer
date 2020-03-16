@@ -405,8 +405,8 @@ describe('Testy s bpmnRunner', () => {
         let waitNodes = nodeInstances.filter(n => n.status === ActivityStatus.Waiting)
 
         // if (path.includes('link_event')) {
-        //   console.warn(JSON.stringify(nodeInstances, null, 2))
-        //   console.error(JSON.stringify(processI, null, 2))
+          // console.warn(JSON.stringify(nodeInstances, null, 2))
+          // console.error(JSON.stringify(processI, null, 2))
         // }
 
         if (exp.nodeInstances)

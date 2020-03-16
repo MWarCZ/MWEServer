@@ -1,6 +1,6 @@
 import { ActivityStatus, NodeElementInstance } from '../entity/bpmn'
 import { Json, JsonMap } from '../types/json'
-import { NodeImplementation } from './pluginNodeImplementation'
+import { NodeImplementation, NodeImplementationFnRegister } from './pluginNodeImplementation'
 import { RunContext } from './runContext'
 
 
@@ -14,9 +14,7 @@ export function safeExecuteNodeFunction(options: {
   executeFunctionArgs: {
     context: RunContext,
     args: JsonMap,
-    initNext: (x: any) => void,
-    finishProcess: (x: any) => void,
-    registerData: (x: string, y: any) => void,
+    fn: NodeImplementationFnRegister,
   },
   status: {
     onSuccess: ActivityStatus,
@@ -52,9 +50,7 @@ export function executeNodePrerun(options: {
   executeArgs: {
     context: RunContext,
     args: JsonMap,
-    initNext: (x: any) => void,
-    finishProcess: (x: any) => void,
-    registerData: (x: string, y: any) => void,
+    fn: NodeImplementationFnRegister,
   },
 }) {
   return safeExecuteNodeFunction({
@@ -73,9 +69,7 @@ export function executeNodeRun(options: {
   executeArgs: {
     context: RunContext,
     args: JsonMap,
-    initNext: (x: any) => void,
-    finishProcess: (x: any) => void,
-    registerData: (x: string, y: any) => void,
+    fn: NodeImplementationFnRegister,
   },
 }) {
   return safeExecuteNodeFunction({
@@ -94,9 +88,7 @@ export function executeNodeOnCompleting(options: {
   executeArgs: {
     context: RunContext,
     args: JsonMap,
-    initNext: (x: any) => void,
-    finishProcess: (x: any) => void,
-    registerData: (x: string, y: any) => void,
+    fn: NodeImplementationFnRegister,
   },
 }) {
   return safeExecuteNodeFunction({
@@ -115,9 +107,7 @@ export function executeNodeOnFailing(options: {
   executeArgs: {
     context: RunContext,
     args: JsonMap,
-    initNext: (x: any) => void,
-    finishProcess: (x: any) => void,
-    registerData: (x: string, y: any) => void,
+    fn: NodeImplementationFnRegister,
   },
 }) {
   return safeExecuteNodeFunction({
@@ -148,33 +138,45 @@ export function executeNode(options: {
     initNext: number[],
     // Informace o ukoceni procesu.
     finishProcess: { finished: boolean, forced: boolean },
-    registerData: JsonMap,
+    registerGlobal: JsonMap,
+    registerLocal: JsonMap,
     outputs?: JsonMap,
   } = {
     initNext: [],
     finishProcess: { finished: false, forced: false },
-    registerData: {},
+    registerGlobal: {},
+    registerLocal: {},
   }
 
-  // Pomocna funkce (callback), ktera pridava id sequenceFlow do seznamu pro provedeni.
-  const initNext = (sequenceIds: (number | { id: number })[]) => {
-    let ids = sequenceIds.map(seq => typeof seq === 'number' ? seq : seq.id)
-    returnValues.initNext.push(...ids)
-  }
-  // Pomocna funkce (callback), pro nastaveni priznaku pro pripadny konec procesu.
-  const finishProcess = (options?: { forced: boolean }) => {
-    returnValues.finishProcess.finished = true
-    if (options) {
-      returnValues.finishProcess.forced = !!options.forced
-    }
-  }
-  // Pomocna funkce, pro nastaveni/registraci novych dat do instance procesu.
-  const registerData = (name: string, data: Json) => {
-    if (data) {
-      returnValues.registerData[name] = data
-    } else {
-      delete returnValues.registerData[name]
-    }
+  const fn: NodeImplementationFnRegister = {
+    // Pomocna funkce (callback), ktera pridava id sequenceFlow do seznamu pro provedeni.
+    initNext: (sequenceIds: (number | { id: number })[]) => {
+      let ids = sequenceIds.map(seq => typeof seq === 'number' ? seq : seq.id)
+      returnValues.initNext.push(...ids)
+    },
+    // Pomocna funkce (callback), pro nastaveni priznaku pro pripadny konec procesu.
+    finishProcess: (options?: { forced: boolean }) => {
+      returnValues.finishProcess.finished = true
+      if (options) {
+        returnValues.finishProcess.forced = !!options.forced
+      }
+    },
+    // Pomocna funkce, pro nastaveni/registraci novych dat do instance procesu.
+    registerGlobal: (name: string, data?: Json) => {
+      if (typeof data !== 'undefined') {
+        returnValues.registerGlobal[name] = data
+      } else {
+        delete returnValues.registerGlobal[name]
+      }
+    },
+    // Pomocna funkce, pro nastaveni/registraci novych dat do instance procesu.
+    registerLocal: (name: string, data?: Json) => {
+      if (typeof data !== 'undefined') {
+        returnValues.registerLocal[name] = data
+      } else {
+        delete returnValues.registerLocal[name]
+      }
+    },
   }
 
   // status === Ready
@@ -189,9 +191,7 @@ export function executeNode(options: {
     executeArgs: {
       args,
       context,
-      initNext,
-      finishProcess,
-      registerData,
+      fn,
     },
   })
   // status = Active x Waiting
@@ -203,9 +203,7 @@ export function executeNode(options: {
       executeArgs: {
         args,
         context,
-        initNext,
-        finishProcess,
-        registerData,
+        fn,
       },
     })
     // status = Completing x Failing
@@ -217,9 +215,7 @@ export function executeNode(options: {
         executeArgs: {
           args,
           context,
-          initNext,
-          finishProcess,
-          registerData,
+          fn,
         },
       })
       // status = Completed x Failing
@@ -232,9 +228,7 @@ export function executeNode(options: {
         executeArgs: {
           args,
           context,
-          initNext,
-          finishProcess,
-          registerData,
+          fn,
         },
       })
       // status = Failed

@@ -552,7 +552,8 @@ export class BpmnRunner {
     })
 
     // results.registerData
-    processInstance.data = { ...processInstance.data, ...results.registerData }
+    processInstance.data = { ...processInstance.data, ...results.registerGlobal }
+    nodeInstance.data = { ...nodeInstance.data, ...results.registerLocal }
 
     // Najit sablony uzlu, ktere maji byt spusteny dale.
     let targetNodeTemplates = nodeTemplates.filter(

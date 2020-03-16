@@ -69,7 +69,7 @@ describe('Testy behove pipeline-y.', () => {
 
     it('Implementace: run(initNext(1)):void', () => {
       nodeImplementation = {
-        run({initNext}) { initNext([23])},
+        run({ fn }) { fn.initNext([23])},
       }
       let result = executeNode({ context, nodeImplementation, nodeInstance, args })
       expect(nodeInstance.status).toBe(ActivityStatus.Completed)
@@ -78,7 +78,7 @@ describe('Testy behove pipeline-y.', () => {
     })
     it('Implementace: run(initNext(5)):void', () => {
       nodeImplementation = {
-        run({ initNext }) { initNext([11, 22, 33, 44, 55]) },
+        run({ fn }) { fn.initNext([11, 22, 33, 44, 55]) },
       }
       let result = executeNode({ context, nodeImplementation, nodeInstance, args })
       expect(nodeInstance.status).toBe(ActivityStatus.Completed)
@@ -87,7 +87,7 @@ describe('Testy behove pipeline-y.', () => {
     })
     it('Implementace: run(initNext(2,3)):void', () => {
       nodeImplementation = {
-        run({ initNext }) { initNext([11, 22]); initNext([33, 44, 55]) },
+        run({ fn }) { fn.initNext([11, 22]); fn.initNext([33, 44, 55]) },
       }
       let result = executeNode({ context, nodeImplementation, nodeInstance, args })
       expect(nodeInstance.status).toBe(ActivityStatus.Completed)
@@ -96,7 +96,7 @@ describe('Testy behove pipeline-y.', () => {
     })
     it('Implementace: run(initNext(2)):never', () => {
       nodeImplementation = {
-        run({ initNext }) { initNext([11, 22]); throw new Error('test') },
+        run({ fn }) { fn.initNext([11, 22]); throw new Error('test') },
       }
       let result = executeNode({ context, nodeImplementation, nodeInstance, args })
       expect(nodeInstance.status).toBe(ActivityStatus.Failled)
@@ -108,10 +108,10 @@ describe('Testy behove pipeline-y.', () => {
 
       it('Vsechno OK + vsude initNext', () => {
         nodeImplementation = {
-          prerun({ initNext }) { initNext([1]) },
-          run({ initNext }) { initNext([2]) },
-          onCompleting({ initNext }) { initNext([3]) },
-          onFailing({ initNext }) { initNext([4]) },
+          prerun({ fn }) { fn.initNext([1]) },
+          run({ fn }) { fn.initNext([2]) },
+          onCompleting({ fn }) { fn.initNext([3]) },
+          onFailing({ fn }) { fn.initNext([4]) },
         }
         let result = executeNode({ context, nodeImplementation, nodeInstance, args })
         expect(nodeInstance.status).toBe(ActivityStatus.Completed)
@@ -120,10 +120,10 @@ describe('Testy behove pipeline-y.', () => {
       })
       it('Prerun KO + vsude initNext', () => {
         nodeImplementation = {
-          prerun({ initNext }) { initNext([1]); throw new Error('Eprerun') },
-          run({ initNext }) { initNext([2]) },
-          onCompleting({ initNext }) { initNext([3]) },
-          onFailing({ initNext }) { initNext([4]) },
+          prerun({ fn }) { fn.initNext([1]); throw new Error('Eprerun') },
+          run({ fn }) { fn.initNext([2]) },
+          onCompleting({ fn }) { fn.initNext([3]) },
+          onFailing({ fn }) { fn.initNext([4]) },
         }
         let result = executeNode({ context, nodeImplementation, nodeInstance, args })
         expect(nodeInstance.status).toBe(ActivityStatus.Waiting)
@@ -132,10 +132,10 @@ describe('Testy behove pipeline-y.', () => {
       })
       it('Run KO + vsude initNext', () => {
         nodeImplementation = {
-          prerun({ initNext }) { initNext([1]) },
-          run({ initNext }) { initNext([2]); throw new Error('Erun') },
-          onCompleting({ initNext }) { initNext([3]) },
-          onFailing({ initNext }) { initNext([4]) },
+          prerun({ fn }) { fn.initNext([1]) },
+          run({ fn }) { fn.initNext([2]); throw new Error('Erun') },
+          onCompleting({ fn }) { fn.initNext([3]) },
+          onFailing({ fn }) { fn.initNext([4]) },
         }
         let result = executeNode({ context, nodeImplementation, nodeInstance, args })
         expect(nodeInstance.status).toBe(ActivityStatus.Failled)
@@ -145,10 +145,10 @@ describe('Testy behove pipeline-y.', () => {
 
       it('OnCompleting KO + vsude initNext', () => {
         nodeImplementation = {
-          prerun({ initNext }) { initNext([1]) },
-          run({ initNext }) { initNext([2]) },
-          onCompleting({ initNext }) { initNext([3]); throw new Error('Ecompleting') },
-          onFailing({ initNext }) { initNext([4]) },
+          prerun({ fn }) { fn.initNext([1]) },
+          run({ fn }) { fn.initNext([2]) },
+          onCompleting({ fn }) { fn.initNext([3]); throw new Error('Ecompleting') },
+          onFailing({ fn }) { fn.initNext([4]) },
         }
         let result = executeNode({ context, nodeImplementation, nodeInstance, args })
         expect(nodeInstance.status).toBe(ActivityStatus.Failled)
@@ -157,10 +157,10 @@ describe('Testy behove pipeline-y.', () => {
       })
       it('Run KO, OnFailing KO + vsude initNext', () => {
         nodeImplementation = {
-          prerun({ initNext }) { initNext([1]) },
-          run({ initNext }) { initNext([2]); throw new Error('Erun') },
-          onCompleting({ initNext }) { initNext([3]) },
-          onFailing({ initNext }) { initNext([4]); throw new Error('Efailing') },
+          prerun({ fn }) { fn.initNext([1]) },
+          run({ fn }) { fn.initNext([2]); throw new Error('Erun') },
+          onCompleting({ fn }) { fn.initNext([3]) },
+          onFailing({ fn }) { fn.initNext([4]); throw new Error('Efailing') },
         }
         let result = executeNode({ context, nodeImplementation, nodeInstance, args })
         expect(nodeInstance.status).toBe(ActivityStatus.Failled)

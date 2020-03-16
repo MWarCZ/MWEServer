@@ -8,7 +8,7 @@ export const BasicTask: NodeImplementation = {
   run() {
     return true
   },
-  onCompleting({ initNext, context }) {
-    initNext(context.$OUTGOING)
+  onCompleting({ fn, context }) {
+    fn.initNext(context.$OUTGOING)
   },
 }

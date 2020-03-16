@@ -32,13 +32,24 @@ export interface NodeImplementation {
   onFailing?: NodeImplementationFunction,
 }
 
+export interface NodeImplementationFnRegister {
+  // Funkce ktera vytvori dalsi instance elementu dle vybranych id sablon elementu
+  initNext: (sequenceFlowIds: number[] | { id: number }[]) => void,
+  // Funkce oznamujici ukonceni procesu.
+  finishProcess: (options?: { forced: boolean }) => void,
+  registerGlobal: (name: string, data?: Json) => void,
+  registerLocal: (name: string, data?: Json) => void,
+  [key: string]: (...args: any[]) => void,
+}
+
 export interface NodeImplementationFunctionOptions {
   context: RunContext,
   args?: any,
-  // Funkce ktera vytvori dalsi instance elementu dle vybranych id sablon elementu
-  initNext: (sequenceFlowIds: number[]|{id: number}[]) => void,
-  finishProcess: (options?: { forced: boolean }) => void,
-  registerData: (name: string, data: Json) => void,
+  fn: NodeImplementationFnRegister,
+  // // Funkce ktera vytvori dalsi instance elementu dle vybranych id sablon elementu
+  // initNext: (sequenceFlowIds: number[]|{id: number}[]) => void,
+  // finishProcess: (options?: { forced: boolean }) => void,
+  // registerData: (name: string, data: Json) => void,
 }
 
 export interface NodeImplementationFunction {

@@ -9,7 +9,7 @@ export const Task: NodeImplementation = {
   run() {
     return true
   },
-  onCompleting({ initNext, context }) {
+  onCompleting({ fn, context }) {
     let outgoings = context.$OUTGOING.reduce((acc, value) => {
       if (value.flag === 'default') {
         acc.default.push(value)
@@ -25,7 +25,7 @@ export const Task: NodeImplementation = {
       default: RunContextOutgoing[], and: RunContextOutgoing[], or: RunContextOutgoing[],
     })
     // Start AND
-    if (outgoings.and.length) initNext(outgoings.and)
+    if (outgoings.and.length) fn.initNext(outgoings.and)
     // Eval OR
     let founded = outgoings.or.find(value => {
       let { expression = 'true' } = value
@@ -34,10 +34,10 @@ export const Task: NodeImplementation = {
     })
     if (founded) {
       // Nalezen povoleny odchozi
-      initNext([founded])
+      fn.initNext([founded])
     } else {
       // Nenalezen => spust vychozi
-      if (outgoings.default.length) initNext(outgoings.default)
+      if (outgoings.default.length) fn.initNext(outgoings.default)
     }
   },
 }

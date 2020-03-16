@@ -9,18 +9,18 @@ export const LinkIntermediateThrowEvent: NodeImplementation = {
       return node.implementation === SupportedNode.LinkIntermediateCatchEvent
     },
   },
-  run({ initNext, context }) {
+  run({ fn, context }) {
     let links = context.$NODES.filter(node => {
       return node.name === context.$SELF.name
     })
-    initNext(links)
+    fn.initNext(links)
     return links
   },
 }
 
 export const LinkIntermediateCatchEvent: NodeImplementation = {
   run() { return true },
-  onCompleting({ initNext, context }) {
-    initNext(context.$OUTGOING)
+  onCompleting({ fn, context }) {
+    fn.initNext(context.$OUTGOING)
   },
 }

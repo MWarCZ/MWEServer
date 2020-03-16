@@ -7,15 +7,15 @@ import { Task } from './task'
  * ScriptTask je uloha, ktera provede skript.
  */
 export const ScriptTask: NodeImplementation = {
-  run({ context, args }) {
-    const {
-      script,
-      scriptFormat = 'js',
-    }: { script: string, scriptFormat?: string } = args || {}
+  run({ context }) {
+    const { script, scriptFormat = 'js' } = context.$LOCAL
+
     if (typeof script !== 'string') {
       throw new Error('Skript nenalezen.')
+    } else if (typeof scriptFormat !== 'string') {
+      throw new Error(`Nevhodny vstup pro skriptFormat.`)
     } else if (!['js', 'JS', 'javascript', 'JavaScript'].includes(scriptFormat)) {
-      throw new Error('Neznami format skriptu.')
+      throw new Error(`Neznami format skriptu '${scriptFormat}'.`)
     }
     const vm = new VM({
       sandbox: context,
