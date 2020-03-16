@@ -491,8 +491,6 @@ export class BpmnRunner {
       nodeInstances,
     } = options
 
-    let otherArgs: JsonMap = {}
-
     //#region Predpripravy pro vykonani uzlu.
 
     // Nalezeni implementace pro dany uzel.
@@ -523,20 +521,11 @@ export class BpmnRunner {
       provideNodeTemplates,
     })
 
-
-    // Sestaveni dodatku/argumentu pro dany uzel.
-    let allArgs = this.createAdditionsArgs({
-      nodeTemplate,
-      nodeInstance,
-      otherArgs,
-    })
-
     //#endregion
 
     // Vykonani uzlu nad pripravenymi daty a implementaci.
     let results = executeNode({
       nodeInstance,
-      args: allArgs,
       context,
       nodeImplementation: implementation,
     })
@@ -640,25 +629,7 @@ export class BpmnRunner {
     }
     return implementation
   }
-  createAdditionsArgs(options: {
-    nodeTemplate?: NodeElementTemplate,
-    nodeInstance?: NodeElementInstance,
-    otherArgs?: JsonMap,
-  }): JsonMap {
-    const { nodeInstance, nodeTemplate, otherArgs } = options
-    let instanceArgs: JsonMap = {}, templateArgs: JsonMap = {}, someArgs: JsonMap = {}
-    if (typeof nodeTemplate === 'object' && typeof nodeTemplate.data === 'object') {
-      templateArgs = nodeTemplate.data
-    }
-    if (typeof nodeInstance === 'object' && typeof nodeInstance.data === 'object') {
-      instanceArgs = nodeInstance.data
-    }
-    if (typeof otherArgs === 'object') {
-      someArgs = otherArgs
-    }
 
-    return { ...templateArgs, ...instanceArgs,  ...someArgs }
-  }
   storeDataToDataObject(options: {
     dataObject?: JsonMap,
     outputsDataTemplates: DataObjectTemplate[],

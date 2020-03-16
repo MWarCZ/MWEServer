@@ -44,7 +44,7 @@ export interface NodeImplementationFnRegister {
 
 export interface NodeImplementationFunctionOptions {
   context: RunContext,
-  args?: any,
+  // args?: any,
   fn: NodeImplementationFnRegister,
   // // Funkce ktera vytvori dalsi instance elementu dle vybranych id sablon elementu
   // initNext: (sequenceFlowIds: number[]|{id: number}[]) => void,

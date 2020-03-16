@@ -13,7 +13,6 @@ export function safeExecuteNodeFunction(options: {
   executeFunction?: (args: any) => any,
   executeFunctionArgs: {
     context: RunContext,
-    args: JsonMap,
     fn: NodeImplementationFnRegister,
   },
   status: {
@@ -49,7 +48,6 @@ export function executeNodePrerun(options: {
   nodeImplementation: NodeImplementation,
   executeArgs: {
     context: RunContext,
-    args: JsonMap,
     fn: NodeImplementationFnRegister,
   },
 }) {
@@ -68,7 +66,6 @@ export function executeNodeRun(options: {
   nodeImplementation: NodeImplementation,
   executeArgs: {
     context: RunContext,
-    args: JsonMap,
     fn: NodeImplementationFnRegister,
   },
 }) {
@@ -87,7 +84,6 @@ export function executeNodeOnCompleting(options: {
   nodeImplementation: NodeImplementation,
   executeArgs: {
     context: RunContext,
-    args: JsonMap,
     fn: NodeImplementationFnRegister,
   },
 }) {
@@ -106,7 +102,6 @@ export function executeNodeOnFailing(options: {
   nodeImplementation: NodeImplementation,
   executeArgs: {
     context: RunContext,
-    args: JsonMap,
     fn: NodeImplementationFnRegister,
   },
 }) {
@@ -130,9 +125,8 @@ export function executeNode(options: {
   nodeInstance: NodeElementInstance,
   nodeImplementation: NodeImplementation,
   context: RunContext,
-  args: JsonMap,
 }) {
-  const { nodeInstance, args, nodeImplementation, context } = options
+  const { nodeInstance, nodeImplementation, context } = options
   let returnValues: {
     // Seznam obsahujici id sequenceFlow, ktere maji byt provedeny.
     initNext: number[],
@@ -189,7 +183,6 @@ export function executeNode(options: {
     nodeInstance,
     nodeImplementation,
     executeArgs: {
-      args,
       context,
       fn,
     },
@@ -201,7 +194,6 @@ export function executeNode(options: {
       nodeInstance,
       nodeImplementation,
       executeArgs: {
-        args,
         context,
         fn,
       },
@@ -213,7 +205,6 @@ export function executeNode(options: {
         nodeInstance,
         nodeImplementation,
         executeArgs: {
-          args,
           context,
           fn,
         },
@@ -226,7 +217,6 @@ export function executeNode(options: {
         nodeInstance,
         nodeImplementation,
         executeArgs: {
-          args,
           context,
           fn,
         },
