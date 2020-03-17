@@ -9,6 +9,7 @@ export const BasicTask: NodeImplementation = {
     return true
   },
   onCompleting({ fn, context }) {
+    if(!fn.initNext) return
     fn.initNext(context.$OUTGOING)
   },
 }

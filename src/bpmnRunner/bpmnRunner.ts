@@ -26,7 +26,12 @@ import { convertTemplate2Instance } from '../utils/entityHelpers'
 import { getInstance, getTemplate } from './anotherHelpers'
 import { executeNode } from './executeHelpers'
 import * as InitHelpers from './initHelpers'
-import { LibrariesWithNodeImplementations, NodeImplementation } from './pluginNodeImplementation'
+import { DataRegister, FinishProcess, IDsCollector } from './plugins'
+import {
+  LibrariesWithNodeImplementations,
+  LibrariesWithServiceImplementations,
+  NodeImplementation,
+} from './pluginsImplementation'
 import { convertToProvideNodes, createContextForNode, createEmptyContext, RunContextProvideNodes } from './runContext'
 import { SupportedNode } from './supportedNode'
 
@@ -46,12 +51,23 @@ export const DefaultPluginsWithNodeImplementations: LibrariesWithNodeImplementat
   [SupportedNode.LinkIntermediateThrowEvent]: LinkIntermediateThrowEvent,
 }
 
+export const DefaultPluginsWithServiceImplementations: LibrariesWithServiceImplementations = [
+  new IDsCollector({
+    name: 'initNext'
+  })
+]
+
 export class BpmnRunner {
 
   connection: Connection
   pluginsWithImplementations: LibrariesWithNodeImplementations
+  pluginsWithServices: LibrariesWithServiceImplementations
 
-  constructor(connection: Connection, pluginsWithImplementations?: LibrariesWithNodeImplementations) {
+  constructor(
+    connection: Connection,
+    pluginsWithImplementations?: LibrariesWithNodeImplementations,
+    pluginsWithServices?: LibrariesWithServiceImplementations,
+  ) {
     this.connection = connection
 
     if (typeof pluginsWithImplementations === 'object') {
@@ -62,6 +78,11 @@ export class BpmnRunner {
       this.pluginsWithImplementations = {
         ...DefaultPluginsWithNodeImplementations,
       }
+    }
+    if (Array.isArray(pluginsWithServices)) {
+      this.pluginsWithServices = pluginsWithServices
+    } else {
+      this.pluginsWithServices = []
     }
   }
 
@@ -499,30 +520,81 @@ export class BpmnRunner {
 
     //#endregion
 
+    let returnValues: {
+      // Seznam obsahujici id sequenceFlow, ktere maji byt provedeny.
+      initNext: number[],
+      // Informace o ukoceni procesu.
+      finishProcess: { finished: boolean, forced: boolean },
+      registerGlobal: JsonMap,
+      registerLocal: JsonMap,
+      outputs?: JsonMap,
+    } = {
+      initNext: [],
+      finishProcess: { finished: false, forced: false },
+      registerGlobal: {},
+      registerLocal: {},
+    }
+
+    let services = [
+      ...this.pluginsWithServices,
+      new IDsCollector({
+        name: 'initNext',
+        done: (...ids) => {
+          returnValues.initNext.push(...ids)
+        },
+      }),
+      new FinishProcess({
+        name: 'finishProcess',
+        done: (data) => {
+          // returnValues.finishProcess = data
+          if(data.finished) {
+            returnValues.finishProcess.finished = data.finished
+            if(data.forced) {
+              returnValues.finishProcess.forced = data.forced
+            }
+          }
+        },
+      }),
+      new DataRegister({
+        name: 'registerGlobal',
+        done: (allData, name, newData) => {
+          returnValues.registerGlobal = allData
+        }
+      }),
+      new DataRegister({
+        name: 'registerLocal',
+        done: (allData, name, newData) => {
+          returnValues.registerLocal = allData
+        }
+      }),
+    ]
+
     // Vykonani uzlu nad pripravenymi daty a implementaci.
     let results = executeNode({
       nodeInstance,
       context,
       nodeImplementation: implementation,
+      services,
     })
 
     //#region Zpracovani vysledku po vykonani uzlu.
 
     // Uloz data z results.outputs do DataObject Instance
     outputsDataInstances = this.storeDataToDataObject({
-      dataObject: results.outputs,
+      dataObject: results,
       outputsDataTemplates,
       outputsDataInstances,
       processInstance,
     })
 
     // results.registerData
-    processInstance.data = { ...processInstance.data, ...results.registerGlobal }
-    nodeInstance.data = { ...nodeInstance.data, ...results.registerLocal }
+    processInstance.data = { ...processInstance.data, ...returnValues.registerGlobal }
+    nodeInstance.data = { ...nodeInstance.data, ...returnValues.registerLocal }
+
 
     // Najit sablony uzlu, ktere maji byt spusteny dale.
     let targetNodeTemplates = nodeTemplates.filter(
-      node => results.initNext.includes(node.id as number),
+      node => returnValues.initNext.includes(node.id as number),
     )
     // Najit nedokoncene instance uzlu pro dany proces.
     let unfinishedNodeInstances = nodeInstances.filter(
@@ -550,8 +622,8 @@ export class BpmnRunner {
     // Test zda vsechny vytvarene uzly maji spravny stav.
     targetNodeInstances.find(node => {
       if (node.status === ActivityStatus.Failled) {
-        results.finishProcess.finished = true
-        results.finishProcess.forced = true
+        returnValues.finishProcess.finished = true
+        returnValues.finishProcess.forced = true
         return true
       }
       return false
@@ -559,8 +631,8 @@ export class BpmnRunner {
 
     // Ukoncit proces? TODO
     // TODO Zamyslet se nad ukoncovanim procesu
-    if (results.finishProcess.finished) {
-      if (results.finishProcess.forced) {
+    if (returnValues.finishProcess.finished) {
+      if (returnValues.finishProcess.forced) {
         // Ukoncit proces a vsechny cekajici a pripravene uzly
         processInstance.status = ProcessStatus.Terminated
         // Ukoncit pripravene/cekajici uzly

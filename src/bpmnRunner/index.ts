@@ -1,5 +1,5 @@
 
 export * from './bpmnRunner'
-export * from './pluginNodeImplementation'
+export * from './pluginsImplementation'
 export * from './runContext'
 export * from './supportedNode'

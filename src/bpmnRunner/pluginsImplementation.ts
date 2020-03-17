@@ -1,4 +1,3 @@
-import { Json } from '../types/json'
 import { RunContext, RunContextProvideNodes } from './runContext'
 
 //#region NodeImplementation
@@ -34,13 +33,13 @@ export interface NodeImplementation {
 }
 
 export interface NodeImplementationFnRegister {
-  // Funkce ktera vytvori dalsi instance elementu dle vybranych id sablon elementu
-  initNext: (sequenceFlowIds: number[] | { id: number }[]) => void,
-  // Funkce oznamujici ukonceni procesu.
-  finishProcess: (options?: { forced: boolean }) => void,
-  registerGlobal: (name: string, data?: Json) => void,
-  registerLocal: (name: string, data?: Json) => void,
-  [key: string]: (...args: any[]) => void,
+  // // Funkce ktera vytvori dalsi instance elementu dle vybranych id sablon elementu
+  // initNext: (sequenceFlowIds: number[] | { id: number }[]) => void,
+  // // Funkce oznamujici ukonceni procesu.
+  // finishProcess: (options?: { forced: boolean }) => void,
+  // registerGlobal: (name: string, data?: Json) => void,
+  // registerLocal: (name: string, data?: Json) => void,
+  [key: string]: ((...args: any[]) => void) | undefined,
 }
 
 export interface NodeImplementationFunctionOptions {
@@ -59,14 +58,18 @@ export type LibrariesWithNodeImplementations = {
 //#endregion
 
 //#region ServiceImplementation
-
 export interface ServiceImplementation {
   name: string,
-  generateFn: ServiceImplementationGenerateFn,
+  fn: (...args: any[]) => void,
 }
 
-export interface ServiceImplementationGenerateFn {
-  (done?: ServiceImplementationCallback): ServiceImplementationCallback,
+export interface xServiceImplementation {
+  name: string,
+  fn: ServiceImplementationFn,
+}
+
+export interface ServiceImplementationFn {
+  (done?: ServiceImplementationCallback): void,
 }
 export interface ServiceImplementationCallback {
   (...args: any[]): void,
@@ -80,18 +83,16 @@ export type LibrariesWithServiceImplementations = ServiceImplementation[]
 
 let serviceObjImp: ServiceImplementation = {
   name: 'doNothing1',
-  generateFn(done) {
-    return (...allArgs) => {
-      done && done(...allArgs)
-    }
+  fn(...args) {
+    // do xyz
   },
 }
 class ServiceClassImp implements ServiceImplementation {
+  done?: (...args: any[])=>void
   name = 'doNothing2';
-  generateFn(done?: ServiceImplementationCallback): ServiceImplementationCallback{
-    return (...allArgs)=>{
-      done && done(...allArgs)
-    }
+  fn(...args: any[]) {
+    // do some
+    this.done && this.done(...args)
   }
 }
 let serviceClassImp = new ServiceClassImp()

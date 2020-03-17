@@ -1,8 +1,6 @@
 import { ActivityStatus, NodeElementInstance } from '../entity/bpmn'
-import { Json, JsonMap } from '../types/json'
-import { NodeImplementation, NodeImplementationFnRegister, ServiceImplementation } from './pluginNodeImplementation'
+import { NodeImplementation, NodeImplementationFnRegister, ServiceImplementation } from './pluginsImplementation'
 import { RunContext } from './runContext'
-
 
 /**
  *
@@ -125,52 +123,18 @@ export function executeNode(options: {
   nodeInstance: NodeElementInstance,
   nodeImplementation: NodeImplementation,
   context: RunContext,
+  services: ServiceImplementation[],
 }) {
-  const { nodeInstance, nodeImplementation, context } = options
-  let returnValues: {
-    // Seznam obsahujici id sequenceFlow, ktere maji byt provedeny.
-    initNext: number[],
-    // Informace o ukoceni procesu.
-    finishProcess: { finished: boolean, forced: boolean },
-    registerGlobal: JsonMap,
-    registerLocal: JsonMap,
-    outputs?: JsonMap,
-  } = {
-    initNext: [],
-    finishProcess: { finished: false, forced: false },
-    registerGlobal: {},
-    registerLocal: {},
-  }
+  const { nodeInstance, nodeImplementation, context, services } = options
 
-  const fn: NodeImplementationFnRegister = {
-    // Pomocna funkce (callback), ktera pridava id sequenceFlow do seznamu pro provedeni.
-    initNext: (sequenceIds: (number | { id: number })[]) => {
-      let ids = sequenceIds.map(seq => typeof seq === 'number' ? seq : seq.id)
-      returnValues.initNext.push(...ids)
-    },
-    // Pomocna funkce (callback), pro nastaveni priznaku pro pripadny konec procesu.
-    finishProcess: (options?: { forced: boolean }) => {
-      returnValues.finishProcess.finished = true
-      if (options) {
-        returnValues.finishProcess.forced = !!options.forced
-      }
-    },
-    // Pomocna funkce, pro nastaveni/registraci novych dat do instance procesu.
-    registerGlobal: (name: string, data?: Json) => {
-      if (typeof data !== 'undefined') {
-        returnValues.registerGlobal[name] = data
-      } else {
-        delete returnValues.registerGlobal[name]
-      }
-    },
-    // Pomocna funkce, pro nastaveni/registraci novych dat do instance procesu.
-    registerLocal: (name: string, data?: Json) => {
-      if (typeof data !== 'undefined') {
-        returnValues.registerLocal[name] = data
-      } else {
-        delete returnValues.registerLocal[name]
-      }
-    },
+  let queues: { [key: string]: any[] } = {}
+  const fn: NodeImplementationFnRegister = {}
+  // Mapovani nahradni funkce a zasobnik argumentu.
+  for (let service of services) {
+    queues[service.name] = []
+    fn[service.name] = (...args) => {
+      queues[service.name].push(args)
+    }
   }
 
   // status === Ready
@@ -225,18 +189,57 @@ export function executeNode(options: {
     }
     nodeInstance.endDateTime = new Date()
   }
-  returnValues.outputs = nodeInstance.returnValue
 
-  return returnValues
+  // Volani callbacku z services
+  for (let service of services) {
+    for (let args of queues[service.name]) {
+      service.fn(...args)
+    }
+  }
+
+  return nodeInstance.returnValue
 }
 
 
-function xxx(defaultFn: NodeImplementationFnRegister, services: ServiceImplementation[]) {
-  let fn: NodeImplementationFnRegister = {
-    ...defaultFn,
+/**
+ * Ukazka implementace sluzky se zpetnym volanim.
+ * fn: pole obsahujici polozky id nebo objekt s id
+ * done: pole obsahujici polozky id
+ */
+class InitNext implements ServiceImplementation {
+  done?: (...ids: number[])=>void
+  name = 'initNext'
+  fn(...targetIds: (number | { id: number })[]) {
+    let ids = targetIds.map(t => typeof t === 'number' ? t : t.id)
+    this.done && this.done(...ids)
   }
+  constructor(options?: {
+    name?: string,
+    done?: (...ids: number[])=>void,
+  }) {
+    let {name, done} = options || {}
+    name && (this.name = name)
+    done && (this.done = done)
+  }
+}
+
+
+function aaa(services: ServiceImplementation[]) {
+  let queues: {[key: string]: any[] } = {}
+  let fn: Partial<NodeImplementationFnRegister> = {}
+  // Mapovani nahradni funkce a zasobnik argumentu.
   for(let service of services) {
-    fn[service.name] = service.generateFn()
+    queues[service.name] = []
+    fn[service.name] = (...args) => {
+      queues[service.name].push(args)
+    }
+  }
+  // run()
+  // Volani callbacku z service
+  for (let service of services) {
+    for (let args of queues[service.name]) {
+      service.fn(...args)
+    }
   }
 
 }

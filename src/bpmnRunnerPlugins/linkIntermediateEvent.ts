@@ -13,6 +13,7 @@ export const LinkIntermediateThrowEvent: NodeImplementation = {
     let links = context.$NODES.filter(node => {
       return node.name === context.$SELF.name
     })
+    if (!fn.initNext) return
     fn.initNext(links)
     return links
   },
@@ -21,6 +22,7 @@ export const LinkIntermediateThrowEvent: NodeImplementation = {
 export const LinkIntermediateCatchEvent: NodeImplementation = {
   run() { return true },
   onCompleting({ fn, context }) {
+    if(!fn.initNext) return
     fn.initNext(context.$OUTGOING)
   },
 }
