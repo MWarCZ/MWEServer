@@ -11,10 +11,9 @@ describe('Zakladni testy pro scriptTaskImplementation.', () => {
   })
   it('Skript obsahuje jednoduchy aritmeticky vyraz.', () => {
     let context = createEmptyContext()
-    let args = { script: `(5+6*2)*3` }
-    context.$LOCAL = args
+    context.$LOCAL = { script: `(5+6*2)*3` }
     let result = ScriptTask.run({
-      context, args,
+      context,
       fn: {
         initNext: () => { },
         finishProcess: () => { },
@@ -26,10 +25,9 @@ describe('Zakladni testy pro scriptTaskImplementation.', () => {
   })
   it('Skript obsahuje prikaz pro vyhozeni chyby.', () => {
     let context = createEmptyContext()
-    let args = { script: `throw new Error('abc')` }
-    context.$LOCAL = args
+    context.$LOCAL = { script: `throw new Error('abc')` }
     expect(() => ScriptTask.run({
-      context, args,
+      context,
       fn: {
         initNext: () => { },
         finishProcess: () => { },
@@ -40,15 +38,14 @@ describe('Zakladni testy pro scriptTaskImplementation.', () => {
   })
   it('Skript obsahuje jednoduchy aritmeticky vyraz.', () => {
     let context = createEmptyContext()
-    let args = { script: `
+    context.$LOCAL = { script: `
       function add(x, y) {
         return x+y
       }
       add(11,22)
     ` }
-    context.$LOCAL = args
     let result = ScriptTask.run({
-      context, args,
+      context,
       fn: {
         initNext: () => { },
         finishProcess: () => { },
@@ -62,16 +59,15 @@ describe('Zakladni testy pro scriptTaskImplementation.', () => {
 
   it('xxx.', () => {
     let context = createEmptyContext()
-    let args = {
+    context.$LOCAL = {
       script: `
       function add(x, y) {
         return x+y
       }
       $OUTGOING.push(11)
     ` }
-    context.$LOCAL = args
     let result = ScriptTask.run({
-      context, args,
+      context,
       fn: {
         initNext: () => { },
         finishProcess: () => { },

@@ -32,6 +32,8 @@ describe(`Test zakladni implamantace ulohy 'taskImplementation'`, () => {
         initNext: (args: any) => { called.initNext++ },
         finishProcess: (args: any) => { called.finishProcess++ },
         registerData: (args: any) => { called.registerData++ },
+        registerGlobal: () => { },
+        registerLocal: () => { },
       },
     })
     expect(result).toBeTrue()
@@ -165,6 +167,8 @@ describe(`Test zakladni implamantace ulohy 'taskImplementation'`, () => {
           initNext: (outs: any[]) => { called.initNext.push(...outs) },
           finishProcess: (opts: any) => { called.finishProcess.push(opts) },
           registerData: (name: string, data: any) => { called.registerData.push([name, data]) },
+          registerGlobal: () => {},
+          registerLocal: () => {},
         },
       })
       expect(called.finishProcess).toBeArrayOfSize(expSize.finishProcess)
