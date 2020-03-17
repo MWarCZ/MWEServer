@@ -5,8 +5,9 @@ import { NodeImplementation } from '../bpmnRunner'
  */
 export const EndEvent: NodeImplementation = {
   run() { },
-  onCompleting({ finishProcess, context }) {
+  onCompleting({ fn, context }) {
     // console.warn(JSON.stringify(context, null, 2))
-    finishProcess()
+    if (!fn.finishProcess) return
+    fn.finishProcess()
   },
 }

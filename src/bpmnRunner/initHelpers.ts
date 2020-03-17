@@ -124,6 +124,10 @@ export function initNewNodeElement(
     templateClass: NodeElementTemplate,
     elementTemplate: nodeTemplate,
     processInstance,
+    callSetup: (instance, template) => {
+      instance.data = template.data
+      return instance
+    },
   })
 }
 

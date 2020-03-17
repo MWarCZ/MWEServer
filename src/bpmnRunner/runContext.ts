@@ -31,8 +31,8 @@ export type RunContextOutgoing = { id: number, expression: string, flag: string 
 export type RunContextNodeElement = {
   // Z instance
   id: number,
-  startDateTime: Date,
-  endDateTime: Date,
+  startDateTime: Date | null,
+  endDateTime: Date | null,
   status: ActivityStatus,
   // Ze sablony
   name: string,
@@ -49,7 +49,10 @@ export interface RunContextProvideNodes {
 }
 
 export type RunContext = {
-  $GLOBAL: any,
+  // Data ulozena v registru instance procesu.
+  $GLOBAL: JsonMap,
+  // Data ulozena v registru instance uzlu.
+  $LOCAL: JsonMap,
   // Info o prichozich tocich.
   $INCOMING: RunContextIncoming[],
   // Info o odchozich tocich.
@@ -60,8 +63,6 @@ export type RunContext = {
   $OUTPUT: RunContextOutput,
   // Vytazek informaci o uzlu (z instance a sablony).
   $SELF: Partial<RunContextNodeElement>,
-  // Data ulozena v registru instance procesu.
-  $REGISTER: JsonMap,
   // Vytazek sablon uzlu, ke kterym ma implementace pristup.
   $NODES: RunContextProvideNodes[],
 }
@@ -73,12 +74,12 @@ export type RunContext = {
 export function createEmptyContext(): RunContext {
   return {
     $GLOBAL: {},
+    $LOCAL: {},
     $INPUT: {},
     $OUTPUT: {},
     $SELF: {},
     $INCOMING: [],
     $OUTGOING: [],
-    $REGISTER: {},
     $NODES: [],
   }
 }
@@ -100,6 +101,8 @@ export function createContextInputs(
     return {
       // Data z instance maji prednost pred daty z sablony
       [name]: (inputInstance) ? inputInstance.data : json,
+      [name]: (inputInstance) ? JSON.parse(JSON.stringify(inputInstance.data))
+        : JSON.parse(JSON.stringify(json)),
     }
   }).reduce((acc: any, value) => {
     return {
@@ -126,7 +129,6 @@ export function createContextOutputs(
   })
   return data
 }
-
 
 export function createContextIncoming(
   options: {
@@ -169,7 +171,6 @@ export function createContextOutgoing(
   return data
 }
 
-
 export function createContextForNode(
   options: {
     nodeTemplate: NodeElementTemplate,
@@ -200,13 +201,13 @@ export function createContextForNode(
     context = createEmptyContext(),
     provideNodeTemplates,
   } = options
-  let {
+  const {
     id = -1,
     startDateTime,
     endDateTime,
     status,
   } = nodeInstance
-  let {
+  const {
     name,
     bpmnId,
     implementation,
@@ -222,11 +223,17 @@ export function createContextForNode(
     implementation,
   }
 
-  context.$NODES = [...provideNodeTemplates]
+  // context.$GLOBAL = {
+  //   ...processInstance.data,
+  // }
+  context.$GLOBAL = JSON.parse(JSON.stringify(processInstance.data))
 
-  context.$REGISTER = {
-    ...processInstance.data,
-  }
+  // context.$LOCAL = {
+  //   ...nodeInstance.data,
+  // }
+  context.$LOCAL = JSON.parse(JSON.stringify(nodeInstance.data))
+
+  context.$NODES = [...provideNodeTemplates]
 
   let inputsData = createContextInputs({
     inputsDataInstances,
@@ -249,7 +256,6 @@ export function createContextForNode(
   // console.log(JSON.stringify(context, null, 4))
   return context
 }
-
 
 //#endregion
 

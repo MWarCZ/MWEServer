@@ -5,8 +5,9 @@ import { NodeImplementation } from '../bpmnRunner'
  */
 export const StartEvent: NodeImplementation = {
   run() { },
-  onCompleting({ initNext, context }) {
+  onCompleting({ fn, context }) {
     // console.log({ o: context.$OUTGOING})
-    initNext(context.$OUTGOING)
+    if (!fn.initNext) return
+    fn.initNext(context.$OUTGOING)
   },
 }

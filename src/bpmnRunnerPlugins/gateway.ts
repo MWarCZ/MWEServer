@@ -18,7 +18,7 @@ export const ParallelGateway: NodeImplementation = {
     }
     return true
   },
-  run({ context, initNext }) {
+  run({ context, fn }) {
     // Vyhodnotit podminy odchozich
     const { $OUTGOING } = context
     let selectedOutgoing: number[] = []
@@ -27,7 +27,8 @@ export const ParallelGateway: NodeImplementation = {
 
     // Vsechny incoming musi biti prichozi
     selectedOutgoing = $OUTGOING.map(v => v.id)
-    initNext(selectedOutgoing)
+    if (!fn.initNext) return
+    fn.initNext(selectedOutgoing)
 
     return true
   },
@@ -43,7 +44,7 @@ export const InclusiveGateway: NodeImplementation = {
   prerun() {
     return true
   },
-  run({ context, initNext }) {
+  run({ context, fn }) {
     // Vyhodnotit podminy odchozich
     const { $OUTGOING } = context
     let selectedOutgoing: number[] = []
@@ -59,7 +60,8 @@ export const InclusiveGateway: NodeImplementation = {
       selectedOutgoing = (tmp) ? [tmp.id] : []
     }
     console.warn('OR>', $OUTGOING)
-    initNext(selectedOutgoing)
+    if (!fn.initNext) return
+    fn.initNext(selectedOutgoing)
 
     return true
   },
@@ -75,7 +77,7 @@ export const ExclusiveGateway: NodeImplementation = {
   prerun() {
     return true
   },
-  run({ context, initNext }) {
+  run({ context, fn }) {
     // Vyhodnotit podminy odchozich
     const { $OUTGOING } = context
     let selectedOutgoing: number[] = []
@@ -89,7 +91,8 @@ export const ExclusiveGateway: NodeImplementation = {
     }).map(v => v.id)
 
     console.warn('XOR>', $OUTGOING)
-    initNext(selectedOutgoing)
+    if (!fn.initNext) return
+    fn.initNext(selectedOutgoing)
 
     return true
   },

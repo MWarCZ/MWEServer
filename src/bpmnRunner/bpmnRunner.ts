@@ -26,34 +26,15 @@ import { convertTemplate2Instance } from '../utils/entityHelpers'
 import { getInstance, getTemplate } from './anotherHelpers'
 import { executeNode } from './executeHelpers'
 import * as InitHelpers from './initHelpers'
-import { LibrariesWithNodeImplementations, NodeImplementation } from './pluginNodeImplementation'
+import { DataRegister, FinishProcess, IDsCollector } from './plugins'
+import {
+  LibrariesWithNodeImplementations,
+  LibrariesWithServiceImplementations,
+  NodeImplementation,
+} from './pluginsImplementation'
 import { convertToProvideNodes, createContextForNode, createEmptyContext, RunContextProvideNodes } from './runContext'
 import { SupportedNode } from './supportedNode'
 
-// import * as bpmn from '../entity/bpmn'
-/*
-  [x] Vytvorit instanci procesu. PT => PI
-    [x] Vytvorit instanci procesu.
-    [x] Vytvorit instanci udalosti, ktera spistila proces.
-  [ ] Vytvorit instanci ulohy. TT => TI
-    [x] Task
-    [x] ScriptTask
-    [ ] ...
-  [x] Vytvorit instanci udalosti. ET => EI
-    [x] StartEvent
-    [x] EndEvent
-  [x] Vytvorit instanci brany. GT => GI
-  [x] Vytvorit instanci dat.
-    [x] DataObject
-
-  [ ] Zpracovat instanci ulohy. TI
-  [ ] Zpracovat instanci udalosti. EI
-  [ ] Zpracovat instanci brany. GI
-
-  [ ] Vytvorit nasledujici instance (HARD AS FUCK)
-  [ ] Poskladat datovy kontext (pr. pro data ulohy, pro data k vyhodnoceni vyrazu, ...)
-
-*/
 
 export const DefaultPluginsWithNodeImplementations: LibrariesWithNodeImplementations = {
   [SupportedNode.Task]: Task,
@@ -70,12 +51,23 @@ export const DefaultPluginsWithNodeImplementations: LibrariesWithNodeImplementat
   [SupportedNode.LinkIntermediateThrowEvent]: LinkIntermediateThrowEvent,
 }
 
+export const DefaultPluginsWithServiceImplementations: LibrariesWithServiceImplementations = [
+  new IDsCollector({
+    name: 'initNext',
+  }),
+]
+
 export class BpmnRunner {
 
   connection: Connection
   pluginsWithImplementations: LibrariesWithNodeImplementations
+  pluginsWithServices: LibrariesWithServiceImplementations
 
-  constructor(connection: Connection, pluginsWithImplementations?: LibrariesWithNodeImplementations) {
+  constructor(
+    connection: Connection,
+    pluginsWithImplementations?: LibrariesWithNodeImplementations,
+    pluginsWithServices?: LibrariesWithServiceImplementations,
+  ) {
     this.connection = connection
 
     if (typeof pluginsWithImplementations === 'object') {
@@ -86,6 +78,11 @@ export class BpmnRunner {
       this.pluginsWithImplementations = {
         ...DefaultPluginsWithNodeImplementations,
       }
+    }
+    if (Array.isArray(pluginsWithServices)) {
+      this.pluginsWithServices = pluginsWithServices
+    } else {
+      this.pluginsWithServices = []
     }
   }
 
@@ -282,12 +279,12 @@ export class BpmnRunner {
   //    [x] Nacist data ze sablony uzlu
   //    [x] Nacist data z instance uzlu
   //    [x] Spojit data ze sablony, instance a jine.
-  // [ ] Spustit instanci uzlu
+  // [x] Spustit instanci uzlu
   //    [x] prerun
   //    [x] run
   //    [x] oncomplete
   //    [x] onfailling
-  //    [ ] osetreni vsech vyjimek zpusobenych implementaci
+  //    [x] osetreni vsech vyjimek zpusobenych implementaci
   // [x] Ulozit vystupni data
   //    [x] Ziskej instance datovych objekt; pokud existuji
   //    [x] Neexistuje instance datoveho objektu, tak ji vytvo5
@@ -491,8 +488,6 @@ export class BpmnRunner {
       nodeInstances,
     } = options
 
-    let otherArgs: JsonMap = {}
-
     //#region Predpripravy pro vykonani uzlu.
 
     // Nalezeni implementace pro dany uzel.
@@ -523,40 +518,83 @@ export class BpmnRunner {
       provideNodeTemplates,
     })
 
-
-    // Sestaveni dodatku/argumentu pro dany uzel.
-    let allArgs = this.createAdditionsArgs({
-      nodeTemplate,
-      nodeInstance,
-      otherArgs,
-    })
-
     //#endregion
+
+    let returnValues: {
+      // Seznam obsahujici id sequenceFlow, ktere maji byt provedeny.
+      initNext: number[],
+      // Informace o ukoceni procesu.
+      finishProcess: { finished: boolean, forced: boolean },
+      registerGlobal: JsonMap,
+      registerLocal: JsonMap,
+      outputs?: JsonMap,
+    } = {
+      initNext: [],
+      finishProcess: { finished: false, forced: false },
+      registerGlobal: {},
+      registerLocal: {},
+    }
+
+    let services = [
+      ...this.pluginsWithServices,
+      new IDsCollector({
+        name: 'initNext',
+        done: (...ids) => {
+          returnValues.initNext.push(...ids)
+        },
+      }),
+      new FinishProcess({
+        name: 'finishProcess',
+        done: (data) => {
+          // returnValues.finishProcess = data
+          if (data.finished) {
+            returnValues.finishProcess.finished = data.finished
+            if (data.forced) {
+              returnValues.finishProcess.forced = data.forced
+            }
+          }
+        },
+      }),
+      new DataRegister({
+        name: 'registerGlobal',
+        done: (allData, name, newData) => {
+          returnValues.registerGlobal = allData
+        },
+      }),
+      new DataRegister({
+        name: 'registerLocal',
+        done: (allData, name, newData) => {
+          returnValues.registerLocal = allData
+        },
+      }),
+    ]
 
     // Vykonani uzlu nad pripravenymi daty a implementaci.
     let results = executeNode({
       nodeInstance,
-      args: allArgs,
       context,
       nodeImplementation: implementation,
+      services,
     })
 
     //#region Zpracovani vysledku po vykonani uzlu.
 
     // Uloz data z results.outputs do DataObject Instance
     outputsDataInstances = this.storeDataToDataObject({
-      dataObject: results.outputs,
+      dataObject: results,
       outputsDataTemplates,
       outputsDataInstances,
       processInstance,
     })
 
     // results.registerData
-    processInstance.data = { ...processInstance.data, ...results.registerData }
+    processInstance.data = { ...processInstance.data, ...returnValues.registerGlobal }
+    nodeInstance.data = { ...nodeInstance.data, ...returnValues.registerLocal }
+
 
     // Najit sablony uzlu, ktere maji byt spusteny dale.
     let targetNodeTemplates = nodeTemplates.filter(
-      node => results.initNext.includes(node.id as number),
+      node => returnValues.initNext.includes(node.id as number),
     )
     // Najit nedokoncene instance uzlu pro dany proces.
     let unfinishedNodeInstances = nodeInstances.filter(
@@ -584,8 +622,8 @@ export class BpmnRunner {
     // Test zda vsechny vytvarene uzly maji spravny stav.
     targetNodeInstances.find(node => {
       if (node.status === ActivityStatus.Failled) {
-        results.finishProcess.finished = true
-        results.finishProcess.forced = true
+        returnValues.finishProcess.finished = true
+        returnValues.finishProcess.forced = true
         return true
       }
       return false
@@ -593,8 +631,8 @@ export class BpmnRunner {
 
     // Ukoncit proces? TODO
     // TODO Zamyslet se nad ukoncovanim procesu
-    if (results.finishProcess.finished) {
-      if (results.finishProcess.forced) {
+    if (returnValues.finishProcess.finished) {
+      if (returnValues.finishProcess.forced) {
         // Ukoncit proces a vsechny cekajici a pripravene uzly
         processInstance.status = ProcessStatus.Terminated
         // Ukoncit pripravene/cekajici uzly
@@ -639,25 +677,7 @@ export class BpmnRunner {
     }
     return implementation
   }
-  createAdditionsArgs(options: {
-    nodeTemplate?: NodeElementTemplate,
-    nodeInstance?: NodeElementInstance,
-    otherArgs?: JsonMap,
-  }): JsonMap {
-    const { nodeInstance, nodeTemplate, otherArgs } = options
-    let instanceArgs: JsonMap = {}, templateArgs: JsonMap = {}, someArgs: JsonMap = {}
-    if (typeof nodeTemplate === 'object' && typeof nodeTemplate.data === 'object') {
-      templateArgs = nodeTemplate.data
-    }
-    if (typeof nodeInstance === 'object' && typeof nodeInstance.data === 'object') {
-      instanceArgs = nodeInstance.data
-    }
-    if (typeof otherArgs === 'object') {
-      someArgs = otherArgs
-    }
 
-    return { ...templateArgs, ...instanceArgs,  ...someArgs }
-  }
   storeDataToDataObject(options: {
     dataObject?: JsonMap,
     outputsDataTemplates: DataObjectTemplate[],

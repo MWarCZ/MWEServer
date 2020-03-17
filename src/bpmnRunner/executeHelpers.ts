@@ -1,8 +1,6 @@
 import { ActivityStatus, NodeElementInstance } from '../entity/bpmn'
-import { Json, JsonMap } from '../types/json'
-import { NodeImplementation } from './pluginNodeImplementation'
+import { NodeImplementation, NodeImplementationFnRegister, ServiceImplementation } from './pluginsImplementation'
 import { RunContext } from './runContext'
-
 
 /**
  *
@@ -13,10 +11,7 @@ export function safeExecuteNodeFunction(options: {
   executeFunction?: (args: any) => any,
   executeFunctionArgs: {
     context: RunContext,
-    args: JsonMap,
-    initNext: (x: any) => void,
-    finishProcess: (x: any) => void,
-    registerData: (x: string, y: any) => void,
+    fn: NodeImplementationFnRegister,
   },
   status: {
     onSuccess: ActivityStatus,
@@ -51,10 +46,7 @@ export function executeNodePrerun(options: {
   nodeImplementation: NodeImplementation,
   executeArgs: {
     context: RunContext,
-    args: JsonMap,
-    initNext: (x: any) => void,
-    finishProcess: (x: any) => void,
-    registerData: (x: string, y: any) => void,
+    fn: NodeImplementationFnRegister,
   },
 }) {
   return safeExecuteNodeFunction({
@@ -72,10 +64,7 @@ export function executeNodeRun(options: {
   nodeImplementation: NodeImplementation,
   executeArgs: {
     context: RunContext,
-    args: JsonMap,
-    initNext: (x: any) => void,
-    finishProcess: (x: any) => void,
-    registerData: (x: string, y: any) => void,
+    fn: NodeImplementationFnRegister,
   },
 }) {
   return safeExecuteNodeFunction({
@@ -93,10 +82,7 @@ export function executeNodeOnCompleting(options: {
   nodeImplementation: NodeImplementation,
   executeArgs: {
     context: RunContext,
-    args: JsonMap,
-    initNext: (x: any) => void,
-    finishProcess: (x: any) => void,
-    registerData: (x: string, y: any) => void,
+    fn: NodeImplementationFnRegister,
   },
 }) {
   return safeExecuteNodeFunction({
@@ -114,10 +100,7 @@ export function executeNodeOnFailing(options: {
   nodeImplementation: NodeImplementation,
   executeArgs: {
     context: RunContext,
-    args: JsonMap,
-    initNext: (x: any) => void,
-    finishProcess: (x: any) => void,
-    registerData: (x: string, y: any) => void,
+    fn: NodeImplementationFnRegister,
   },
 }) {
   return safeExecuteNodeFunction({
@@ -140,40 +123,17 @@ export function executeNode(options: {
   nodeInstance: NodeElementInstance,
   nodeImplementation: NodeImplementation,
   context: RunContext,
-  args: JsonMap,
+  services: ServiceImplementation[],
 }) {
-  const { nodeInstance, args, nodeImplementation, context } = options
-  let returnValues: {
-    // Seznam obsahujici id sequenceFlow, ktere maji byt provedeny.
-    initNext: number[],
-    // Informace o ukoceni procesu.
-    finishProcess: { finished: boolean, forced: boolean },
-    registerData: JsonMap,
-    outputs?: JsonMap,
-  } = {
-    initNext: [],
-    finishProcess: { finished: false, forced: false },
-    registerData: {},
-  }
+  const { nodeInstance, nodeImplementation, context, services } = options
 
-  // Pomocna funkce (callback), ktera pridava id sequenceFlow do seznamu pro provedeni.
-  const initNext = (sequenceIds: (number | { id: number })[]) => {
-    let ids = sequenceIds.map(seq => typeof seq === 'number' ? seq : seq.id)
-    returnValues.initNext.push(...ids)
-  }
-  // Pomocna funkce (callback), pro nastaveni priznaku pro pripadny konec procesu.
-  const finishProcess = (options?: { forced: boolean }) => {
-    returnValues.finishProcess.finished = true
-    if (options) {
-      returnValues.finishProcess.forced = !!options.forced
-    }
-  }
-  // Pomocna funkce, pro nastaveni/registraci novych dat do instance procesu.
-  const registerData = (name: string, data: Json) => {
-    if (data) {
-      returnValues.registerData[name] = data
-    } else {
-      delete returnValues.registerData[name]
+  let queues: { [key: string]: any[] } = {}
+  const fn: NodeImplementationFnRegister = {}
+  // Mapovani nahradni funkce a zasobnik argumentu.
+  for (let service of services) {
+    queues[service.name] = []
+    fn[service.name] = (...args) => {
+      queues[service.name].push(args)
     }
   }
 
@@ -187,11 +147,8 @@ export function executeNode(options: {
     nodeInstance,
     nodeImplementation,
     executeArgs: {
-      args,
       context,
-      initNext,
-      finishProcess,
-      registerData,
+      fn,
     },
   })
   // status = Active x Waiting
@@ -201,11 +158,8 @@ export function executeNode(options: {
       nodeInstance,
       nodeImplementation,
       executeArgs: {
-        args,
         context,
-        initNext,
-        finishProcess,
-        registerData,
+        fn,
       },
     })
     // status = Completing x Failing
@@ -215,11 +169,8 @@ export function executeNode(options: {
         nodeInstance,
         nodeImplementation,
         executeArgs: {
-          args,
           context,
-          initNext,
-          finishProcess,
-          registerData,
+          fn,
         },
       })
       // status = Completed x Failing
@@ -230,18 +181,65 @@ export function executeNode(options: {
         nodeInstance,
         nodeImplementation,
         executeArgs: {
-          args,
           context,
-          initNext,
-          finishProcess,
-          registerData,
+          fn,
         },
       })
       // status = Failed
     }
     nodeInstance.endDateTime = new Date()
   }
-  returnValues.outputs = nodeInstance.returnValue
 
-  return returnValues
+  // Volani callbacku z services
+  for (let service of services) {
+    for (let args of queues[service.name]) {
+      service.fn(...args)
+    }
+  }
+
+  return nodeInstance.returnValue
+}
+
+
+/**
+ * Ukazka implementace sluzky se zpetnym volanim.
+ * fn: pole obsahujici polozky id nebo objekt s id
+ * done: pole obsahujici polozky id
+ */
+class InitNext implements ServiceImplementation {
+  done?: (...ids: number[]) => void
+  name = 'initNext'
+  fn(...targetIds: (number | { id: number })[]) {
+    let ids = targetIds.map(t => typeof t === 'number' ? t : t.id)
+    this.done && this.done(...ids)
+  }
+  constructor(options?: {
+    name?: string,
+    done?: (...ids: number[]) => void,
+  }) {
+    let {name, done} = options || {}
+    name && (this.name = name)
+    done && (this.done = done)
+  }
+}
+
+
+function aaa(services: ServiceImplementation[]) {
+  let queues: {[key: string]: any[] } = {}
+  let fn: Partial<NodeImplementationFnRegister> = {}
+  // Mapovani nahradni funkce a zasobnik argumentu.
+  for (let service of services) {
+    queues[service.name] = []
+    fn[service.name] = (...args) => {
+      queues[service.name].push(args)
+    }
+  }
+  // run()
+  // Volani callbacku z service
+  for (let service of services) {
+    for (let args of queues[service.name]) {
+      service.fn(...args)
+    }
+  }
+
 }

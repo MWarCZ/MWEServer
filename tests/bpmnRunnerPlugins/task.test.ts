@@ -28,9 +28,13 @@ describe(`Test zakladni implamantace ulohy 'taskImplementation'`, () => {
     let context = createEmptyContext()
     let result = Task.run({
       context,
-      initNext: (args: any) => { called.initNext++ },
-      finishProcess: (args: any) => { called.finishProcess++ },
-      registerData: (args: any) => { called.registerData++ },
+      fn: {
+        initNext: (args: any) => { called.initNext++ },
+        finishProcess: (args: any) => { called.finishProcess++ },
+        registerData: (args: any) => { called.registerData++ },
+        registerGlobal: () => { },
+        registerLocal: () => { },
+      },
     })
     expect(result).toBeTrue()
     expect(called.initNext).toBe(0)
@@ -159,9 +163,13 @@ describe(`Test zakladni implamantace ulohy 'taskImplementation'`, () => {
 
       let result = Task.onCompleting && Task.onCompleting({
         context,
-        initNext: (outs: any[]) => { called.initNext.push(...outs) },
-        finishProcess: (opts: any) => { called.finishProcess.push(opts) },
-        registerData: (name: string, data: any) => { called.registerData.push([name, data]) },
+        fn: {
+          initNext: (outs: any[]) => { called.initNext.push(...outs) },
+          finishProcess: (opts: any) => { called.finishProcess.push(opts) },
+          registerData: (name: string, data: any) => { called.registerData.push([name, data]) },
+          registerGlobal: () => {},
+          registerLocal: () => {},
+        },
       })
       expect(called.finishProcess).toBeArrayOfSize(expSize.finishProcess)
       expect(called.registerData).toBeArrayOfSize(expSize.registerData)
