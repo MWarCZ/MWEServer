@@ -30,30 +30,6 @@ import { LibrariesWithNodeImplementations, NodeImplementation } from './pluginNo
 import { convertToProvideNodes, createContextForNode, createEmptyContext, RunContextProvideNodes } from './runContext'
 import { SupportedNode } from './supportedNode'
 
-// import * as bpmn from '../entity/bpmn'
-/*
-  [x] Vytvorit instanci procesu. PT => PI
-    [x] Vytvorit instanci procesu.
-    [x] Vytvorit instanci udalosti, ktera spistila proces.
-  [ ] Vytvorit instanci ulohy. TT => TI
-    [x] Task
-    [x] ScriptTask
-    [ ] ...
-  [x] Vytvorit instanci udalosti. ET => EI
-    [x] StartEvent
-    [x] EndEvent
-  [x] Vytvorit instanci brany. GT => GI
-  [x] Vytvorit instanci dat.
-    [x] DataObject
-
-  [ ] Zpracovat instanci ulohy. TI
-  [ ] Zpracovat instanci udalosti. EI
-  [ ] Zpracovat instanci brany. GI
-
-  [ ] Vytvorit nasledujici instance (HARD AS FUCK)
-  [ ] Poskladat datovy kontext (pr. pro data ulohy, pro data k vyhodnoceni vyrazu, ...)
-
-*/
 
 export const DefaultPluginsWithNodeImplementations: LibrariesWithNodeImplementations = {
   [SupportedNode.Task]: Task,

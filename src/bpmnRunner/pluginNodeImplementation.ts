@@ -1,6 +1,7 @@
 import { Json } from '../types/json'
 import { RunContext, RunContextProvideNodes } from './runContext'
 
+//#region NodeImplementation
 /**
  * Rozhrani definujici podobu pluginu
  */
@@ -44,12 +45,7 @@ export interface NodeImplementationFnRegister {
 
 export interface NodeImplementationFunctionOptions {
   context: RunContext,
-  // args?: any,
   fn: NodeImplementationFnRegister,
-  // // Funkce ktera vytvori dalsi instance elementu dle vybranych id sablon elementu
-  // initNext: (sequenceFlowIds: number[]|{id: number}[]) => void,
-  // finishProcess: (options?: { forced: boolean }) => void,
-  // registerData: (name: string, data: Json) => void,
 }
 
 export interface NodeImplementationFunction {
@@ -60,6 +56,62 @@ export type LibrariesWithNodeImplementations = {
   [implementationRef: string]: NodeImplementation | undefined,
 }
 
+//#endregion
+
+//#region ServiceImplementation
+
+export interface ServiceImplementation {
+  name: string,
+  generateFn: ServiceImplementationGenerateFn,
+}
+
+export interface ServiceImplementationGenerateFn {
+  (done?: ServiceImplementationCallback): ServiceImplementationCallback,
+}
+export interface ServiceImplementationCallback {
+  (...args: any[]): void,
+}
+
+export type LibrariesWithServiceImplementations = ServiceImplementation[]
+
+//#endregion
+
+//#region Abrakadabra ServiceImplementation
+
+let serviceObjImp: ServiceImplementation = {
+  name: 'doNothing1',
+  generateFn(done) {
+    return (...allArgs) => {
+      done && done(...allArgs)
+    }
+  },
+}
+class ServiceClassImp implements ServiceImplementation {
+  name = 'doNothing2';
+  generateFn(done?: ServiceImplementationCallback): ServiceImplementationCallback{
+    return (...allArgs)=>{
+      done && done(...allArgs)
+    }
+  }
+}
+let serviceClassImp = new ServiceClassImp()
+
+let l: LibrariesWithServiceImplementations = [serviceObjImp, serviceClassImp]
+
+// let x = {
+//   [serviceClassImp.name]: serviceClassImp.generateFn((...a) => console.log('C', a)),
+//   [serviceObjImp.name]: serviceObjImp.generateFn((...a) => console.log('O', a)),
+// }
+// console.log(x)
+// for(let key in x) {
+//   let fn = x[key]
+//   fn('volam',{key})
+// }
+
+//#endregion
+
+//#region Abrakadabra NodeImplementation
+
 let taskImplementation: NodeImplementation = {
   prerun(context) {
     return true
@@ -68,7 +120,8 @@ let taskImplementation: NodeImplementation = {
     return true
   },
 }
-
 let pluginsTaskImplementations: LibrariesWithNodeImplementations = {
   'task': taskImplementation,
 }
+
+//#endregion

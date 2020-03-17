@@ -1,6 +1,6 @@
 import { ActivityStatus, NodeElementInstance } from '../entity/bpmn'
 import { Json, JsonMap } from '../types/json'
-import { NodeImplementation, NodeImplementationFnRegister } from './pluginNodeImplementation'
+import { NodeImplementation, NodeImplementationFnRegister, ServiceImplementation } from './pluginNodeImplementation'
 import { RunContext } from './runContext'
 
 
@@ -228,4 +228,15 @@ export function executeNode(options: {
   returnValues.outputs = nodeInstance.returnValue
 
   return returnValues
+}
+
+
+function xxx(defaultFn: NodeImplementationFnRegister, services: ServiceImplementation[]) {
+  let fn: NodeImplementationFnRegister = {
+    ...defaultFn,
+  }
+  for(let service of services) {
+    fn[service.name] = service.generateFn()
+  }
+
 }
