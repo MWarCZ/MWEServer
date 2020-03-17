@@ -1,8 +1,9 @@
+import * as cron from 'node-cron'
 import { Connection } from 'typeorm'
 
 import { BpmnRunner } from '../bpmnRunner'
+import { EmptyServicePlugin } from '../bpmnRunner/plugins'
 import { ActivityStatus, NodeElementInstance, ProcessInstance } from '../entity/bpmn'
-
 
 export enum RunnerServerCallbackName {
   changedNodes = 'changedNodes',
@@ -13,6 +14,19 @@ export interface RunnerServerCallbacks {
   [RunnerServerCallbackName.changedNodes] ?: (nodes: NodeElementInstance[]) => any,
   [RunnerServerCallbackName.changedProcess] ?: (process: ProcessInstance) => any,
 }
+
+//#region Timer
+
+export interface TimerItem {
+  tasks: cron.ScheduledTask[],
+  node: number,
+}
+
+export interface ExtendedNodeImpFnRegister {
+  setWakeup: (cronExpression: string) => void
+}
+
+//#endregion
 
 export class RunnerServer {
   msWaitTime: number
@@ -28,6 +42,7 @@ export class RunnerServer {
 
   queues: {
     nodes: NodeElementInstance[],
+    timer: TimerItem[],
   }
 
   constructor(options: {
@@ -35,13 +50,68 @@ export class RunnerServer {
     callbacks?: RunnerServerCallbacks,
     msWaitTime?: number,
     queueNodes?: NodeElementInstance[],
+    queueTimer?: TimerItem[],
   }) {
     this.connection = options.connection
-    this.runner = new BpmnRunner(this.connection)
+    let serviceTimer = new EmptyServicePlugin({
+      name: 'wakeAt',
+      done: (...args) => { },
+    })
+    this.runner = new BpmnRunner(this.connection, undefined, [serviceTimer])
     this.callbacks = {...options.callbacks }
     this.msWaitTime = options.msWaitTime || 1000 * 60
     this.queues = {
       nodes: options.queueNodes || [],
+      timer: options.queueTimer || [],
+    }
+  }
+
+  loadTimer(nodeId: number) {
+    let cronExpression: string = ''
+    // Validace vyrazu cron
+    let valid = cron.validate(cronExpression)
+    if(valid) {
+      let task = cron.schedule(cronExpression, async () => {
+        let waitingNode = await this.connection.manager.findOne(NodeElementInstance, {
+          where: {
+            id: nodeId,
+            status: ActivityStatus.Waiting,
+          }
+        })
+        if (waitingNode) {
+          waitingNode.status = ActivityStatus.Ready,
+          await this.connection.manager.save(waitingNode)
+        }
+        // Najdi ulohu task ve fronte uloh a odstran ji.
+        // TODO
+      }, { scheduled: false })
+    }
+
+    const done = (tasks: TimerItem[]) => {
+      this.queues.timer.push(...tasks)
+    }
+    let fn: ExtendedNodeImpFnRegister = {
+      setWakeup: (cronExpression: string) => {
+        let valid = cron.validate(cronExpression)
+        if (valid) {
+          let task = cron.schedule(cronExpression, () => {
+
+          }, {scheduled: false})
+          let timerItem: TimerItem = {
+            node: -1,
+            tasks: [task],
+          }
+          done([timerItem])
+        }
+      },
+    }
+    interface xxx {
+      aaa: (...args:any[]) => void
+      [key: string]: any
+      [key: number]: any
+    }
+    let a: xxx = {
+      aaa: (name, xxx) => { },
     }
   }
 
@@ -113,7 +183,7 @@ export class RunnerServer {
       this.changedNodes(result.targetNodeInstances)
 
       // Stepper => pro ladeni, vykona vzdy jen jeden krok.
-      if(this.stepper) {
+      if (this.stepper) {
         this.stop()
       }
 
