@@ -279,12 +279,12 @@ export class BpmnRunner {
   //    [x] Nacist data ze sablony uzlu
   //    [x] Nacist data z instance uzlu
   //    [x] Spojit data ze sablony, instance a jine.
-  // [ ] Spustit instanci uzlu
+  // [x] Spustit instanci uzlu
   //    [x] prerun
   //    [x] run
   //    [x] oncomplete
   //    [x] onfailling
-  //    [ ] osetreni vsech vyjimek zpusobenych implementaci
+  //    [x] osetreni vsech vyjimek zpusobenych implementaci
   // [x] Ulozit vystupni data
   //    [x] Ziskej instance datovych objekt; pokud existuji
   //    [x] Neexistuje instance datoveho objektu, tak ji vytvo5
