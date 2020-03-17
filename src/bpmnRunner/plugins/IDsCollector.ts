@@ -26,7 +26,7 @@ export class IDsCollector implements ServiceImplementation {
         return t.id
       }
     }).reduce((acc: number[], value) => {
-      if(Array.isArray(value)) {
+      if (Array.isArray(value)) {
         acc.push(...value)
       } else {
         acc.push(value)

@@ -22,7 +22,7 @@ export const LinkIntermediateThrowEvent: NodeImplementation = {
 export const LinkIntermediateCatchEvent: NodeImplementation = {
   run() { return true },
   onCompleting({ fn, context }) {
-    if(!fn.initNext) return
+    if (!fn.initNext) return
     fn.initNext(context.$OUTGOING)
   },
 }

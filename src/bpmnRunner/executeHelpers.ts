@@ -207,7 +207,7 @@ export function executeNode(options: {
  * done: pole obsahujici polozky id
  */
 class InitNext implements ServiceImplementation {
-  done?: (...ids: number[])=>void
+  done?: (...ids: number[]) => void
   name = 'initNext'
   fn(...targetIds: (number | { id: number })[]) {
     let ids = targetIds.map(t => typeof t === 'number' ? t : t.id)
@@ -215,7 +215,7 @@ class InitNext implements ServiceImplementation {
   }
   constructor(options?: {
     name?: string,
-    done?: (...ids: number[])=>void,
+    done?: (...ids: number[]) => void,
   }) {
     let {name, done} = options || {}
     name && (this.name = name)
@@ -228,7 +228,7 @@ function aaa(services: ServiceImplementation[]) {
   let queues: {[key: string]: any[] } = {}
   let fn: Partial<NodeImplementationFnRegister> = {}
   // Mapovani nahradni funkce a zasobnik argumentu.
-  for(let service of services) {
+  for (let service of services) {
     queues[service.name] = []
     fn[service.name] = (...args) => {
       queues[service.name].push(args)

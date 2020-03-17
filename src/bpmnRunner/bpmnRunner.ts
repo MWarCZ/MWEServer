@@ -53,8 +53,8 @@ export const DefaultPluginsWithNodeImplementations: LibrariesWithNodeImplementat
 
 export const DefaultPluginsWithServiceImplementations: LibrariesWithServiceImplementations = [
   new IDsCollector({
-    name: 'initNext'
-  })
+    name: 'initNext',
+  }),
 ]
 
 export class BpmnRunner {
@@ -547,9 +547,9 @@ export class BpmnRunner {
         name: 'finishProcess',
         done: (data) => {
           // returnValues.finishProcess = data
-          if(data.finished) {
+          if (data.finished) {
             returnValues.finishProcess.finished = data.finished
-            if(data.forced) {
+            if (data.forced) {
               returnValues.finishProcess.forced = data.forced
             }
           }
@@ -559,13 +559,13 @@ export class BpmnRunner {
         name: 'registerGlobal',
         done: (allData, name, newData) => {
           returnValues.registerGlobal = allData
-        }
+        },
       }),
       new DataRegister({
         name: 'registerLocal',
         done: (allData, name, newData) => {
           returnValues.registerLocal = allData
-        }
+        },
       }),
     ]
 

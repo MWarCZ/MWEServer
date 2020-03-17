@@ -27,7 +27,7 @@ export const ParallelGateway: NodeImplementation = {
 
     // Vsechny incoming musi biti prichozi
     selectedOutgoing = $OUTGOING.map(v => v.id)
-    if(!fn.initNext) return
+    if (!fn.initNext) return
     fn.initNext(selectedOutgoing)
 
     return true
@@ -60,7 +60,7 @@ export const InclusiveGateway: NodeImplementation = {
       selectedOutgoing = (tmp) ? [tmp.id] : []
     }
     console.warn('OR>', $OUTGOING)
-    if(!fn.initNext) return
+    if (!fn.initNext) return
     fn.initNext(selectedOutgoing)
 
     return true
@@ -91,7 +91,7 @@ export const ExclusiveGateway: NodeImplementation = {
     }).map(v => v.id)
 
     console.warn('XOR>', $OUTGOING)
-    if(!fn.initNext) return
+    if (!fn.initNext) return
     fn.initNext(selectedOutgoing)
 
     return true

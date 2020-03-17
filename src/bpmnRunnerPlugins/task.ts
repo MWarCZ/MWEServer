@@ -10,7 +10,7 @@ export const Task: NodeImplementation = {
     return true
   },
   onCompleting({ fn, context }) {
-    if(!fn.initNext) return
+    if (!fn.initNext) return
 
     let outgoings = context.$OUTGOING.reduce((acc, value) => {
       if (value.flag === 'default') {

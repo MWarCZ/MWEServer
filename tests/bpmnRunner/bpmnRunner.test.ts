@@ -411,19 +411,19 @@ describe('Testy s bpmnRunner', () => {
 
         if (exp.nodeInstances)
           expect(nodeInstances).toBeArrayOfSize(exp.nodeInstances)
-        if (exp.completedNodes){
+        if (exp.completedNodes) {
           expect(completedNodes).toBeArrayOfSize(exp.completedNodes)
-          for(let node of completedNodes) {
+          for (let node of completedNodes) {
             expect(node.endDateTime).toBeDate()
           }
         }
-        if (exp.readyNodes){
+        if (exp.readyNodes) {
           expect(readyNodes).toBeArrayOfSize(exp.readyNodes)
           for (let node of readyNodes) {
             expect(node.endDateTime).toBeNull()
           }
         }
-        if (exp.processStatus){
+        if (exp.processStatus) {
           expect(processI.status).toBe(exp.processStatus)
           if ([
             ProcessStatus.Completed,

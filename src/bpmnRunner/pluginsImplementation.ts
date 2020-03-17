@@ -88,8 +88,8 @@ let serviceObjImp: ServiceImplementation = {
   },
 }
 class ServiceClassImp implements ServiceImplementation {
-  done?: (...args: any[])=>void
-  name = 'doNothing2';
+  done?: (...args: any[]) => void
+  name = 'doNothing2'
   fn(...args: any[]) {
     // do some
     this.done && this.done(...args)

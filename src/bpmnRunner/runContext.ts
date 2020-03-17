@@ -102,7 +102,7 @@ export function createContextInputs(
       // Data z instance maji prednost pred daty z sablony
       [name]: (inputInstance) ? inputInstance.data : json,
       [name]: (inputInstance) ? JSON.parse(JSON.stringify(inputInstance.data))
-        : JSON.parse(JSON.stringify(json))
+        : JSON.parse(JSON.stringify(json)),
     }
   }).reduce((acc: any, value) => {
     return {
