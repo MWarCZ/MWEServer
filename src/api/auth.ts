@@ -155,6 +155,8 @@ export function genJwt(options:{
   if (expiresIn) paramToken = {...paramToken, expiresIn}
   let token = jwt.sign(payload, secret, paramToken)
 
+  console.log('TOKEN: ', token)
+  console.log(expiresIn)
   return token
 }
 

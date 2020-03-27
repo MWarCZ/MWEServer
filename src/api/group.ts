@@ -158,8 +158,9 @@ export async function getMembers(options: {
   let memberConditions: FindConditions<Member> = {}
   let groupConditions: FindConditions<Group> = {}
 
-  memberConditions.groupId = filter.groupId
-
+  // memberConditions.groupId = filter.groupId
+  groupConditions.id = filter.groupId
+  memberConditions.group = groupConditions
   //#endregion
 
   //#region Rozliseni dle AUTORIZACE
@@ -181,7 +182,7 @@ export async function getMembers(options: {
   }
 
   //#endregion
-
+  console.warn('>>>', memberConditions)
   let memberships = await connection.manager.find(Member, {
     relations: ['group'],
     where: memberConditions,
@@ -220,8 +221,10 @@ export async function createNewGroup(options: {
   })()
 
   //#endregion
+  let name = data.name || ''
+  let describe = data.describe || ''
 
-  let group = new Group({ ...data })
+  let group = new Group({ name, describe })
   group = await connection.manager.save(group)
   return group
 

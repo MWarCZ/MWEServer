@@ -113,7 +113,7 @@ export class RunnerServer {
       this.changedNodes(result.targetNodeInstances)
 
       // Stepper => pro ladeni, vykona vzdy jen jeden krok.
-      if(this.stepper) {
+      if (this.stepper) {
         this.stop()
       }
 

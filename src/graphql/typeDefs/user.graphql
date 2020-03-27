@@ -4,7 +4,7 @@ type Query {
   # SuperUserAdmin => Zcela vsechny
   # User => Jen sebe
   # Other => Nic
-  user(filter: UserFilter!): User
+  user(filter: UserFilter): User
   # UserAdmin => Vsechny mimo skryte (removed)
   # SuperUserAdmin => Zcela vsechny
   # User => Jen sebe

@@ -34,7 +34,7 @@ async function run() {
         let connection = await createConn()
         let absPath = pathJoin(__dirname, path)
         await loadDataToDb(connection, selected, absPath)
-        console.log(`(OK) ${name}: ${path}`)
+        console.log(`(OK) ${name}: ${path}:${absPath}`)
       } else {
         console.log(`(??) ${argv}`)
       }

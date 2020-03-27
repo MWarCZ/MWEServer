@@ -3,6 +3,8 @@ import { GQLTypes } from '../generated/types'
 
 export const Mutation: GQLTypes.MutationResolvers = {
   login: async(_, args, context) => {
+    console.log(args)
+    let expires = (args.input.expires) ? args.input.expires : '30m'
     let user = await ApiAuth.authenticateLocal({
       request: context.request,
       response: context.response,
@@ -13,9 +15,13 @@ export const Mutation: GQLTypes.MutationResolvers = {
     })
     if (user) {
       let token = ApiAuth.genJwt({
-        user, expiresIn: '30m',
+        user, expiresIn: expires,
       })
-      return token
+      // @ts-ignore
+      return {
+        token,
+        user,
+      } as GQLTypes.LoginPayload
     }
     return null
   },

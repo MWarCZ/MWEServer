@@ -1,10 +1,19 @@
 
+type Query {
+  me: User
+}
+
 type Mutation {
-  login(input: LoginLocalInput!): String
+  login(input: LoginLocalInput!): LoginPayload
 }
 
 input LoginLocalInput {
   password: String!
   login: String!
+  expires: String
 }
 
+type LoginPayload {
+  token: String!
+  user: User!
+}

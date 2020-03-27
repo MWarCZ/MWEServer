@@ -65,7 +65,7 @@ function randomString(length: number): string {
 export async function getUser(options: {
   connection: Connection,
   client?: ContextUser,
-  filter: FilterUserBy,
+  filter?: FilterUserBy,
 }): Promise<User|undefined> {
   let { client, connection, filter } = options
 
@@ -76,6 +76,10 @@ export async function getUser(options: {
 
   if (!client) { throw new UnloggedUserError() }
   let groupNames = client.membership.map(g => g.group.name) as string[]
+  // Pokud neni filtr, tak vrati uzivatele
+  if (!filter) {
+    filter = { id: client.id as number }
+  }
 
   findConditions = getUserFindConditions({filter, findConditions})
 
@@ -88,7 +92,7 @@ export async function getUser(options: {
     isUserAdmin: () => {findConditions.removed = false},
     isOther: () => {
       // Pokud se nepta sam na sebe, tak hod chybu.
-      if (!checkRequestHimself({client, filter})) {
+      if (filter && !checkRequestHimself({client, filter})) {
         throw new PermissionError()
       }
     },
@@ -157,8 +161,9 @@ export async function getMemberships(options: {
   if (!client) { throw new UnloggedUserError() }
   let groupNames = client.membership.map(g => g.group.name)
 
-  memberConditions.userId = filter.userId
-
+  // memberConditions.userId = filter.userId
+  userConditions.id = filter.userId
+  memberConditions.user = userConditions
   //#endregion
 
   //#region Rozliseni dle AUTORIZACE

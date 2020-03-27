@@ -1,23 +1,27 @@
 [
   {
+    "describe": "Popis abcd a neco dalsiho. Je to sila.",
     "name": "UserAdmin",
     "protected": true,
     "removed": false,
     "id": 1
   },
   {
+    "describe": "Popis abcd a neco dalsiho. Je to sila.",
     "name": "SuperUserAdmin",
     "protected": true,
     "removed": false,
     "id": 2
   },
   {
+    "describe": "Popis abcd a neco dalsiho. Je to sila.",
     "name": "GroupAdmin",
     "protected": true,
     "removed": false,
     "id": 3
   },
   {
+    "describe": "Popis abcd a neco dalsiho. Je to sila.",
     "name": "SuperGroupAdmin",
     "protected": true,
     "removed": false,

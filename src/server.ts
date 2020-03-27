@@ -48,8 +48,11 @@ export async function createGQLServer() {
 
 export async function startGQLServer() {
   const server = await createGQLServer()
-  await server.start({ port: 3000 })
-  console.log('Server GQL running at port 3000 ...')
+  await server.start({
+    port: 4000,
+    endpoint: '/graphql',
+  })
+  console.log('Server GQL running at port 4000 ...')
   return server
 }
 
