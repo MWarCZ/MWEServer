@@ -43,7 +43,9 @@ describe('GQL: Auth', () => {
       password: ProtectedUsers.UserAdmin,
     }
     let query = `mutation {
-      login(input: { login: "${args.login}", password: "${args.password}" })
+      login(input: { login: "${args.login}", password: "${args.password}" }) {
+        token
+      }
     }`
 
     let res = await graphql(server.executableSchema, query, null, context)
@@ -51,9 +53,12 @@ describe('GQL: Auth', () => {
     expect(res.errors).toBeUndefined()
     expect(res.data).toBeObject()
     if (res.data) {
-      expect(res.data.login).toBeString()
-      let partOfKey = (res.data.login as string).split('.')
-      expect(partOfKey.length).toBe(3)
+      expect(res.data.login).toBeObject()
+      if (res.data.login) {
+        expect(res.data.login.token).toBeString()
+        let partOfKey = (res.data.login.token as string).split('.')
+        expect(partOfKey.length).toBe(3)
+      }
     }
   })
   it('Neuspesne prihlaseni: Chybne heslo', async() => {
@@ -62,7 +67,9 @@ describe('GQL: Auth', () => {
       password: 'aaa',
     }
     let query = `mutation {
-      login(input: { login: "${args.login}", password: "${args.password}" })
+      login(input: { login: "${args.login}", password: "${args.password}" }) {
+        token
+      }
     }`
 
     let res = await graphql(server.executableSchema, query, null, context)
@@ -79,7 +86,9 @@ describe('GQL: Auth', () => {
       password: 'aaa',
     }
     let query = `mutation {
-      login(input: { login: "${args.login}", password: "${args.password}" })
+      login(input: { login: "${args.login}", password: "${args.password}" }){
+        token
+      }
     }`
 
     let res = await graphql(server.executableSchema, query, null, context)
