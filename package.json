@@ -85,5 +85,14 @@
     "typeorm": "^0.2.22",
     "uuid": "^3.4.0",
     "vm2": "^3.8.4"
+  },
+	"gitHooks": {
+  	"pre-commit": "lint-staged"
+  },
+  "lint-staged": {
+    "src/**/*.{js,ts}": [
+      "$npm_execpath run lint --fix",
+      "#git add"
+    ]
   }
 }
