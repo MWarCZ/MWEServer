@@ -127,13 +127,14 @@ export async function getUsers(options: {
     groupNames,
     isUserAdmin: () => { findConditions.removed = false },
     isOther: () => {
-      // Ziska sam sebe
-      const { id, login } = client || {}
-      if (id) {
-        findConditions = getUserFindConditions({ findConditions, filter: { id } })
-      } else if (login) {
-        findConditions = getUserFindConditions({ findConditions, filter: { login } })
-      }
+      // // Ziska sam sebe
+      // const { id, login } = client || {}
+      // if (id) {
+      //   findConditions = getUserFindConditions({ findConditions, filter: { id } })
+      // } else if (login) {
+      //   findConditions = getUserFindConditions({ findConditions, filter: { login } })
+      // }
+      findConditions.removed = false
     },
   })()
 
@@ -177,7 +178,8 @@ export async function getMemberships(options: {
   } else if (client.id === filter.userId) {
     // sam sebe => OK
   } else {
-    throw new PermissionError()
+    return []
+    //throw new PermissionError()
   }
 
   //#endregion

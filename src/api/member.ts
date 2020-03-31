@@ -39,7 +39,7 @@ export async function addMember(options: {
 
   //#region Rozliseni dle AUTORIZACE
   let user = await connection.manager.findOne(User, findConditions.user)
-  let group = await connection.manager.findOne(Group, findConditions.user)
+  let group = await connection.manager.findOne(Group, findConditions.group)
   if (!user || !group) {
     throw new Error('Skupina nebo uzivatel neexistuje.')
   }
@@ -83,10 +83,13 @@ export async function removeMember(options: {
   //#endregion
 
   //#region Rozliseni dle AUTORIZACE
-  let group = await connection.manager.findOne(Group, findConditions.user)
-  if (!group) {
-    throw new Error('Skupina nebo uzivatel neexistuje.')
+  let user = await connection.manager.findOne(User, findConditions.user)
+  let group = await connection.manager.findOne(Group, findConditions.group)
+  if(!user || !group) {
+    throw new Error('Uzivatel ci skupina neexistuje.')
   }
+  findConditions.user = { id: user.id as number }
+  findConditions.group = { id: group.id as number }
 
   await GroupOneOf({
     groupNames,
@@ -136,6 +139,14 @@ export async function setMemberPermisions(options: {
 
   //#endregion
 
+  let user = await connection.manager.findOne(User, findConditions.user)
+  let group = await connection.manager.findOne(Group, findConditions.group)
+  if(!user || !group) {
+    throw new Error('Uzivatel ci skupina neexistuje.')
+  }
+  findConditions.user = { id: user.id as number }
+  findConditions.group = { id: group.id as number }
+
   //#region Rozliseni dle AUTORIZACE
   GroupOneOf({
     groupNames,
@@ -144,14 +155,24 @@ export async function setMemberPermisions(options: {
 
   //#endregion
 
-  let member = await connection.manager.findOne(Member, findConditions)
+  let member = await connection.manager.findOneOrFail(Member, {
+    relations: ['user', 'group'],
+    where: findConditions,
+  })
   if (!member) {
     throw new Error(`Clenstvi nenalezeno.`)
   }
-  data.addMember && (member.addMember = data.addMember)
-  data.removeMember && (member.removeMember = data.removeMember)
-  data.showMembers && (member.showMembers = data.showMembers)
+  if(typeof data.addMember === 'boolean') {
+    member.addMember = data.addMember
+  }
+  if(typeof data.removeMember === 'boolean') {
+    member.removeMember = data.removeMember
+  }
+  if(typeof data.showMembers==='boolean') {
+    member.showMembers = data.showMembers
+  }
   member = await connection.manager.save(member)
+
   return member
 }
 

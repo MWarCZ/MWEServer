@@ -166,15 +166,17 @@ export async function getMembers(options: {
   //#region Rozliseni dle AUTORIZACE
 
   if (groupNames.includes(ProtectedGroups.SuperGroupAdmin)) {
-    // vsechny skupiny
+    // vsechny cleny
   } else if (groupNames.includes(ProtectedGroups.GroupAdmin)) {
-    // Vsechny skupiny mimo smazane
+    // Vsechny cleny mimo smazane
     groupConditions.removed = false
     memberConditions.group = groupConditions
   } else if (groupIds.includes(filter.groupId)) {
-    // skupiny do kterych patri kleint mimo smazane
-    if (groupIds.length > 0) {
-      groupConditions.id = In(groupIds)
+    // cleny ve skupinach kde ma pravo videt
+    let member = client.membership.find(m=>m.groupId===filter.groupId)
+    if(!member || !member.showMembers){
+      // test na pravo videt
+      groupConditions.id = -1
     }
     groupConditions.removed = false
   } else {
@@ -344,11 +346,21 @@ export async function deleteGroup(options: {
 
   //#endregion
 
-  let result = await connection.manager.delete(Group, {
+  console.log('WWWWWWWWWWWWWWW')
+  console.log(findConditions)
+  //let result = await connection.manager.delete(Group, findConditions)
+
+  let group = await connection.manager.findOne(Group, {
     where: findConditions,
   })
+  if (!group) { throw new Error('Skupina nenalezen') }
+  if (group.protected) {
+    throw new PermissionError()
+  }
+  await connection.manager.remove(group)
 
   return true
+
 }
 export async function recoverGroup(options: {
   connection: Connection,
