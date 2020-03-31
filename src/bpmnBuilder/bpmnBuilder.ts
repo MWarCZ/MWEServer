@@ -31,36 +31,40 @@ export class BpmnBuilder {
     const level2 = level1.Process.map(process => this.parser.parseLevel2(process))
 
     let process = new Set(level1.Process.map(e => e.entity))
-    await this.connection.manager.save([...process])
+    await this.connection.transaction(async manager => {
 
-    await Promise.all(
-      level2.map(async(level) => {
-        // NUTNE zachovat porad!
-        let dataObjects = new Set(level.DataObject.map(e => e.entity).filter(e => !!e))
-        await this.connection.manager.save([...dataObjects])
+      await manager.save([...process])
 
-        let nodeElements = [
-          ...level.Task,
-          ...level.StartEvent,
-          ...level.EndEvent,
-          ...level.Gateway,
-          ...level.ScriptTask,
-          ...level.ServiceTask,
-          ...level.SendTask,
-          ...level.ReceiveTask,
-          ...level.UserTask,
-          ...level.ManualTask,
-          ...level.CallActivity,
-          ...level.BusinessRuleTask,
-          ...level.IntermediateThrowEvent,
-          ...level.IntermediateCatchEvent,
-        ].map(e => e.entity).filter(e => !!e)
-        await this.connection.manager.save([...new Set(nodeElements)])
+      await Promise.all(
+        level2.map(async(level) => {
+          // NUTNE zachovat porad!
+          let dataObjects = new Set(level.DataObject.map(e => e.entity).filter(e => !!e))
+          await manager.save([...dataObjects])
 
-        let sequenceFlows = new Set(level.SequenceFlow.map(e => e.entity).filter(e => !!e))
-        await this.connection.manager.save([...sequenceFlows])
-      }),
-    )
+          let nodeElements = [
+            ...level.Task,
+            ...level.StartEvent,
+            ...level.EndEvent,
+            ...level.Gateway,
+            ...level.ScriptTask,
+            ...level.ServiceTask,
+            ...level.SendTask,
+            ...level.ReceiveTask,
+            ...level.UserTask,
+            ...level.ManualTask,
+            ...level.CallActivity,
+            ...level.BusinessRuleTask,
+            ...level.IntermediateThrowEvent,
+            ...level.IntermediateCatchEvent,
+          ].map(e => e.entity).filter(e => !!e)
+          await manager.save([...new Set(nodeElements)])
+
+          let sequenceFlows = new Set(level.SequenceFlow.map(e => e.entity).filter(e => !!e))
+          await manager.save([...sequenceFlows])
+        }),
+      )
+    })
+
     return [...process]
   }
 
