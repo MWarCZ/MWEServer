@@ -429,7 +429,7 @@ export class BpmnRunner {
   }
 
   async saveData(result: SaveData) {
-    await this.connection.transaction(async (manager) => {
+    await this.connection.transaction(async(manager) => {
       await manager.save(result.nodeInstance) // aktualni instance
       await manager.save(result.outputsDataInstances) // Nova data
       await manager.save(result.targetNodeInstances) // Nove pripravene instance uzlu
@@ -663,7 +663,7 @@ export class BpmnRunner {
     let data = await this.loadDataForRun(options)
 
     let result = this.runNode({
-      ...data
+      ...data,
     })
     await this.saveData(result)
 
@@ -853,7 +853,7 @@ export class BpmnRunner {
 
     let context = this.prepareContext(data)
 
-    if(implementation.additionsFormat) {
+    if (implementation.additionsFormat) {
       let result = implementation.additionsFormat({context})
       return result
     }

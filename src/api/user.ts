@@ -179,7 +179,7 @@ export async function getMemberships(options: {
     // sam sebe => OK
   } else {
     return []
-    //throw new PermissionError()
+    // throw new PermissionError()
   }
 
   //#endregion

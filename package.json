@@ -90,9 +90,9 @@
   	"pre-commit": "lint-staged"
   },
   "lint-staged": {
-    "src/**/*.{js,ts}": [
+    "*.{js,ts}": [
       "$npm_execpath run lint --fix",
-      "#git add"
+      "git add"
     ]
   }
 }

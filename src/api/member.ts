@@ -85,7 +85,7 @@ export async function removeMember(options: {
   //#region Rozliseni dle AUTORIZACE
   let user = await connection.manager.findOne(User, findConditions.user)
   let group = await connection.manager.findOne(Group, findConditions.group)
-  if(!user || !group) {
+  if (!user || !group) {
     throw new Error('Uzivatel ci skupina neexistuje.')
   }
   findConditions.user = { id: user.id as number }
@@ -141,7 +141,7 @@ export async function setMemberPermisions(options: {
 
   let user = await connection.manager.findOne(User, findConditions.user)
   let group = await connection.manager.findOne(Group, findConditions.group)
-  if(!user || !group) {
+  if (!user || !group) {
     throw new Error('Uzivatel ci skupina neexistuje.')
   }
   findConditions.user = { id: user.id as number }
@@ -162,13 +162,13 @@ export async function setMemberPermisions(options: {
   if (!member) {
     throw new Error(`Clenstvi nenalezeno.`)
   }
-  if(typeof data.addMember === 'boolean') {
+  if (typeof data.addMember === 'boolean') {
     member.addMember = data.addMember
   }
-  if(typeof data.removeMember === 'boolean') {
+  if (typeof data.removeMember === 'boolean') {
     member.removeMember = data.removeMember
   }
-  if(typeof data.showMembers==='boolean') {
+  if (typeof data.showMembers === 'boolean') {
     member.showMembers = data.showMembers
   }
   member = await connection.manager.save(member)

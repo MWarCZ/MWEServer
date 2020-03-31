@@ -173,8 +173,8 @@ export async function getMembers(options: {
     memberConditions.group = groupConditions
   } else if (groupIds.includes(filter.groupId)) {
     // cleny ve skupinach kde ma pravo videt
-    let member = client.membership.find(m=>m.groupId===filter.groupId)
-    if(!member || !member.showMembers){
+    let member = client.membership.find(m => m.groupId === filter.groupId)
+    if (!member || !member.showMembers) {
       // test na pravo videt
       groupConditions.id = -1
     }
@@ -348,7 +348,7 @@ export async function deleteGroup(options: {
 
   console.log('WWWWWWWWWWWWWWW')
   console.log(findConditions)
-  //let result = await connection.manager.delete(Group, findConditions)
+  // let result = await connection.manager.delete(Group, findConditions)
 
   let group = await connection.manager.findOne(Group, {
     where: findConditions,
