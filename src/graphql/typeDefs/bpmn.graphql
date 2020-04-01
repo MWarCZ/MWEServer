@@ -5,23 +5,28 @@ type Query {
   processInstance(filter: ProcessInstanceFilter!): ProcessInstance
   processInstances: [ProcessInstance!]!
 
-  NodeInstance(filter: NodeInstanceFilter!): NodeElementInstance
-  NodeInstances: [NodeElementInstance!]!
+  nodeInstance(filter: NodeInstanceFilter!): NodeElementInstance
+  nodeInstances: [NodeElementInstance!]!
 
   # Zadost. Co vse je potreba pro provedeni uzlu
-  NodeAdditions(idNI: Int!): NodeAdditions
+  nodeAdditionsFormat(idNI: Int!): [NodeAdditions!]!
 }
 type Mutation {
   uploadProcess(xml: String): [ProcessTemplate]
   initProcess(input: InitProcessInput!): ProcessInstance
+
+  nodeAdditions(idNI: Int!, json: String!): NodeElementInstance
+  withdrawnProcess(idPI: Int!): ProcessInstance
 
   claimNodeInstance(idNI: Int!): NodeElementInstance
   releaseNodeInstance(idNI: Int!): NodeElementInstance
 }
 
 type NodeAdditions {
-  format: Json
-  describe: String
+  type: String
+  default: Json
+  possibilities: [Json]
+  hints: String
 }
 
 input ProcessTemplateFilter {

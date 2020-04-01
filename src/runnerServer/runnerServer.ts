@@ -39,7 +39,7 @@ export class RunnerServer {
     this.connection = options.connection
     this.runner = new BpmnRunner(this.connection)
     this.callbacks = {...options.callbacks }
-    this.msWaitTime = options.msWaitTime || 1000 * 60
+    this.msWaitTime = options.msWaitTime || (1000 * 60 * 60)
     this.queues = {
       nodes: options.queueNodes || [],
     }

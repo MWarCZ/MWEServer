@@ -702,9 +702,15 @@ export class BpmnRunner {
 
   async runNodeAdditions(options: {
     instance: NodeElementInstance | { id: number },
+    additions: JsonMap,
   }) {
-
     let data = await this.loadDataForRun(options)
+
+    // Pridani dodatku do uzlu
+    data.nodeInstance.data = {
+      ...data.nodeInstance.data,
+      ...options.additions,
+    }
 
     let result = this.additionsNode({
       ...data,
@@ -918,6 +924,7 @@ export class BpmnRunner {
     })
     if (processInstance) {
       let nodeInstances = (processInstance.nodeElements) ? processInstance.nodeElements : []
+      delete processInstance.nodeElements
       let result = options.fn({
         processInstance,
         nodeInstances,

@@ -175,7 +175,7 @@ describe('Testy behove pipeline-y.', () => {
 
     })
 
-    describe('Implementace: additions', ()=>{
+    describe('Implementace: additions', () => {
 
       it('Vsechno OK executeAdditions', () => {
         const queues = {

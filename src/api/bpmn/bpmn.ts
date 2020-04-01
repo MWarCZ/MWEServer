@@ -1,8 +1,9 @@
 import { Connection, FindConditions } from 'typeorm'
+import { JsonMap } from 'types/json'
 
 import { BpmnBuilder } from '../../bpmnBuilder'
-import { BpmnRunner } from '../../bpmnRunner'
-import { ProcessInstance, ProcessTemplate } from '../../entity/bpmn'
+import { BpmnRunner, NodeImplementationFlatItemsMap } from '../../bpmnRunner'
+import { ProcessInstance, ProcessStatus, ProcessTemplate } from '../../entity/bpmn'
 import { ContextUser } from '../../graphql/context'
 import { PossibleFilter } from '../helpers'
 
@@ -95,7 +96,19 @@ export async function getProcessInstances(options: {
   return process
 }
 
-
+export async function getNodeAdditionsFormat(options: {
+  connection: Connection,
+  client?: ContextUser,
+  node: { id: number },
+  runner: BpmnRunner,
+}): Promise<NodeImplementationFlatItemsMap> {
+  const {runner, node} = options
+  let result = await runner.runNodeAdditionsFormat({
+    instance: node,
+  })
+  return result
+}
+// nodeAdditions(idNI: Int!, json: String!)
 
 export async function uploadProcess(options: {
   connection: Connection,
@@ -122,6 +135,38 @@ export async function initProcess(options: {
   let process = await runner.initAndSaveProcess({ id: data.processId }, { id: data.firstNodeId })
   return process
 }
+
+export async function setNodeAdditions(options: {
+  connection: Connection,
+  client?: ContextUser,
+  node: { id: number },
+  runner: BpmnRunner,
+  additions: JsonMap,
+}) {
+  const { runner, node, additions } = options
+  let result = await runner.runNodeAdditions({
+    instance: node,
+    additions,
+  })
+  return result
+}
+
+export async function withdrawnProcess(options: {
+  connection: Connection,
+  client?: ContextUser,
+  runner: BpmnRunner,
+}) {
+  const { runner } = options
+  let result = await runner.runProcessWidhrawn({
+    processInstance: { id:1 },
+    status: {
+      process: ProcessStatus.Withdrawn,
+    },
+    fn: runner.processWithdrawn,
+  })
+  return result
+}
+
 
 // NodeInstance
 // NodeInstances

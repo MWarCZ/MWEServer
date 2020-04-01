@@ -1,6 +1,7 @@
 import * as ApiBpmn from '../../api/bpmn'
 import * as ApiProcessT from '../../api/bpmn/process'
 import * as Bpmn from '../../entity/bpmn'
+import { JsonMap } from '../../types/json'
 import { GQLTypes } from '../generated/types'
 
 
@@ -39,6 +40,19 @@ export const Query: GQLTypes.QueryResolvers = {
     // @ts-ignore
     return process as GQLTypes.ProcessInstance[]
   },
+  nodeAdditionsFormat: async(_, args, { client, db: connection, runner, worker }) => {
+    if (runner) {
+      const result = await ApiBpmn.getNodeAdditionsFormat({
+        connection,
+        runner,
+        client,
+        node: {id: args.idNI },
+      })
+      // @ts-ignore
+      return result as GQLTypes.NodeAdditions[]
+    }
+    return [] as GQLTypes.NodeAdditions[]
+  },
 }
 
 export const Mutation: GQLTypes.MutationResolvers = {
@@ -66,6 +80,46 @@ export const Mutation: GQLTypes.MutationResolvers = {
     }
     // @ts-ignore
     return result.process as GQLTypes.ProcessInstance
+  },
+  nodeAdditions: async(_, args, { client, db: connection, runner, worker }) => {
+    if (runner) {
+      // TODO Osetrit parsovani a mapu.
+      const additions: JsonMap = JSON.parse(args.json)
+      const result = await ApiBpmn.setNodeAdditions({
+        connection,
+        runner,
+        client,
+        node: {id: args.idNI},
+        additions,
+      })
+      if (worker) {
+        worker.postChangedNodes([
+          result.nodeInstance,
+          ...result.targetNodeInstances,
+        ])
+      }
+      // @ts-ignore
+      return result.nodeInstance as GQLTypes.NodeElementInstance
+    }
+    return null
+  },
+  withdrawnProcess: async(_, args, { client, db: connection, runner, worker }) => {
+    if (runner) {
+      const result = await ApiBpmn.withdrawnProcess({
+        connection,
+        client,
+        runner,
+      })
+      if (result) {
+        if (worker) {
+          worker.postChangedProcess(result.processInstance)
+          worker.postChangedNodes([...result.targetNodeInstances])
+        }
+        // @ts-ignore
+        return result.processInstance as GQLTypes.ProcessInstance
+      }
+    }
+    return null
   },
 }
 
