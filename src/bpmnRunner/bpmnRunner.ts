@@ -3,6 +3,7 @@ import { Connection, Equal, In } from 'typeorm'
 import { EndEvent } from '../bpmnRunnerPlugins/endEvent'
 import { ExclusiveGateway, InclusiveGateway, ParallelGateway } from '../bpmnRunnerPlugins/gateway'
 import { LinkIntermediateCatchEvent, LinkIntermediateThrowEvent } from '../bpmnRunnerPlugins/linkIntermediateEvent'
+import { ManualTask } from '../bpmnRunnerPlugins/manualTask'
 import { ScriptTask } from '../bpmnRunnerPlugins/scriptTask'
 import { StartEvent } from '../bpmnRunnerPlugins/startEvent'
 import { Task } from '../bpmnRunnerPlugins/task'
@@ -24,7 +25,7 @@ import { Constructor } from '../types/constructor'
 import { JsonMap } from '../types/json'
 import { convertTemplate2Instance } from '../utils/entityHelpers'
 import { getInstance, getTemplate } from './anotherHelpers'
-import { executeNode } from './executeHelpers'
+import { executeAdditons, executeNode, TopLevelExecuteFunctionArgs } from './executeHelpers'
 import * as InitHelpers from './initHelpers'
 import { DataRegister, FinishProcess, IDsCollector } from './plugins'
 import {
@@ -39,6 +40,7 @@ import { SupportedNode } from './supportedNode'
 export const DefaultPluginsWithNodeImplementations: LibrariesWithNodeImplementations = {
   [SupportedNode.Task]: Task,
   [SupportedNode.ScriptTask]: ScriptTask,
+  [SupportedNode.ManualTask]: ManualTask,
 
   [SupportedNode.ExclusiveGateway]: ExclusiveGateway,
   [SupportedNode.InclusiveGateway]: InclusiveGateway,
@@ -57,7 +59,7 @@ export const DefaultPluginsWithServiceImplementations: LibrariesWithServiceImple
   }),
 ]
 
-interface LoadedData {
+export interface LoadedData {
   nodeInstance: NodeElementInstance,
   nodeTemplate: NodeElementTemplate,
   incomingSequenceTemplates: SequenceFlowTemplate[],
@@ -74,12 +76,17 @@ interface LoadedData {
   nodeInstances: NodeElementInstance[],
 }
 
-interface SaveData {
+export interface SaveData {
   nodeInstance: NodeElementInstance,
   outputsDataInstances: DataObjectInstance[],
   targetNodeInstances: NodeElementInstance[],
   targetSequenceInstances: SequenceFlowInstance[],
   processInstance: ProcessInstance,
+}
+
+export interface SaveDataAfterWithdrawn {
+  processInstance: ProcessInstance,
+  targetNodeInstances: NodeElementInstance[],
 }
 
 export class BpmnRunner {
@@ -671,6 +678,54 @@ export class BpmnRunner {
   }
 
   runNode(options: LoadedData): SaveData {
+    return this.runNodeWithFn({
+      data: options,
+      executeFn: executeNode,
+    })
+  }
+
+  async runNodeAdditionsFormat(options: {
+    instance: NodeElementInstance | { id: number },
+  }) {
+    let data = await this.loadDataForRun(options)
+
+    let implementation = this.getImplementation(data.nodeTemplate.implementation as string)
+
+    let context = this.prepareContext(data)
+
+    if (implementation.additionsFormat) {
+      let result = implementation.additionsFormat({context})
+      return result
+    }
+    return {}
+  }
+
+  async runNodeAdditions(options: {
+    instance: NodeElementInstance | { id: number },
+  }) {
+
+    let data = await this.loadDataForRun(options)
+
+    let result = this.additionsNode({
+      ...data,
+    })
+    await this.saveData(result)
+
+    return result
+  }
+
+  additionsNode(options: LoadedData): SaveData {
+    return this.runNodeWithFn({
+      data: options,
+      executeFn: executeAdditons,
+    })
+  }
+
+  // Funkce obaluje spousteni funkci nad uzly pro zvolene funkce/scenare.
+  runNodeWithFn(options: {
+    data: LoadedData,
+    executeFn: (options: TopLevelExecuteFunctionArgs)=>any,
+  }): SaveData {
     let {
       incomingSequenceInstances,
       inputsDataInstances,
@@ -686,11 +741,11 @@ export class BpmnRunner {
       processTemplate,
       nodeTemplates,
       nodeInstances,
-    } = options
+    } = options.data
 
     let implementation = this.getImplementation(nodeTemplate.implementation as string)
 
-    let context = this.prepareContext(options)
+    let context = this.prepareContext(options.data)
 
     let returnValues: {
       // Seznam obsahujici id sequenceFlow, ktere maji byt provedeny.
@@ -743,7 +798,7 @@ export class BpmnRunner {
     ]
 
     // Vykonani uzlu nad pripravenymi daty a implementaci.
-    let results = executeNode({
+    let results = options.executeFn({
       nodeInstance,
       context,
       nodeImplementation: implementation,
@@ -844,20 +899,117 @@ export class BpmnRunner {
     return result
   }
 
-  async executeNodeAdditionsFormat(options: {
-    instance: NodeElementInstance | { id: number },
+  //#endregion
+
+  //#region Funkce pro meneni sta
+
+  async runProcessWidhrawn(options: {
+    processInstance: ProcessInstance | { id: number },
+    fn: (x: any) => SaveDataAfterWithdrawn,
+    status: {
+      process?: ProcessStatus,
+    }
   }) {
-    let data = await this.loadDataForRun(options)
-
-    let implementation = this.getImplementation(data.nodeTemplate.implementation as string)
-
-    let context = this.prepareContext(data)
-
-    if (implementation.additionsFormat) {
-      let result = implementation.additionsFormat({context})
+    let processInstance = await this.connection.manager.findOne(ProcessInstance, {
+      relations: ['nodeElements'],
+      where: {
+        id: options.processInstance.id
+      }
+    })
+    if (processInstance) {
+      let nodeInstances = (processInstance.nodeElements) ? processInstance.nodeElements : []
+      let result = options.fn({
+        processInstance,
+        nodeInstances,
+        status: options.status
+      })
+      await this.connection.transaction(async manager => {
+        await manager.save(result.processInstance)
+        await manager.save(result.targetNodeInstances)
+      })
       return result
     }
     return null
+  }
+
+  processUniversalWithdrawn(options: {
+    processInstance: ProcessInstance,
+    nodeInstance?: NodeElementInstance,
+    nodeInstances: NodeElementInstance[],
+    status: {
+      process?: ProcessStatus,
+      node?: ActivityStatus,
+      nodes?: ActivityStatus[],
+    },
+
+  }): SaveDataAfterWithdrawn {
+    const { status, processInstance, nodeInstances, nodeInstance } = options
+
+    if (status.process) {
+      processInstance.status = status.process
+    }
+    if (status.node) {
+      const potencialNodes = status.nodes || []
+      // Najit nedokoncene instance uzlu pro dany proces.
+      let selectedNodeInstances = nodeInstances.filter(
+        node => potencialNodes.includes(node.status as ActivityStatus),
+      )
+      if (nodeInstance) {
+        // Odstraneni prave zpracovavane instance uzlu ze seznamu nedokoncenych instanci uzlu.
+        selectedNodeInstances = selectedNodeInstances
+          .filter(node => node.id !== nodeInstance.id)
+      }
+
+      // Ukoncit pripravene/cekajici uzly
+      let targetNodeInstances = selectedNodeInstances.map(node => {
+        node.status = status.node
+        return node
+      })
+
+      return {
+        processInstance,
+        targetNodeInstances,
+      }
+    }
+    return {
+      processInstance,
+      targetNodeInstances: [],
+    }
+  }
+
+  processWithdrawn(options:{
+    processInstance: ProcessInstance,
+    nodeInstance?: NodeElementInstance,
+    nodeInstances: NodeElementInstance[],
+    status: {
+      process?: ProcessStatus,
+    }
+  }) {
+    return this.processUniversalWithdrawn({
+      ...options,
+      status: {
+        process: options.status.process,
+        node: ActivityStatus.Withdrawn,
+        nodes: [ActivityStatus.Ready, ActivityStatus.Waiting],
+      }
+    })
+  }
+  processUnWithdrawn(options: {
+    processInstance: ProcessInstance,
+    nodeInstance?: NodeElementInstance,
+    nodeInstances: NodeElementInstance[],
+    status: {
+      process?: ProcessStatus,
+    }
+  }) {
+    return this.processUniversalWithdrawn({
+      ...options,
+      status: {
+        process: options.status.process,
+        node: ActivityStatus.Ready,
+        nodes: [ActivityStatus.Withdrawn],
+      }
+    })
   }
 
   //#endregion
@@ -865,9 +1017,10 @@ export class BpmnRunner {
   //#region xxx
 
   // initAndSaveProcess - Vytvorit instanci procesu a prvniho uzelu
-  // widrawProcess - ukonci proces a vsechni v nem obsazene instance
+  // runProcessWidhrawn - ukonci proces a vsechni v nem obsazene instance
   // runIt / runNode - provede instanci uzlu
-  // executeNodeAdditionsFromat - provede additionsFormat pro instanci uzlu
+  // runNodeAdditionsFormat - provede/ziskej additionsFormat pro instanci uzlu
+  // runNodeAdditions - Provede instanci uzlu - dodatky
 
   //#endregion
 }

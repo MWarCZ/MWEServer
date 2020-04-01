@@ -188,7 +188,7 @@ describe('Testy s bpmnRunner', () => {
         })
       })
 
-      it('Cyklus nekolika runNodeElement', async() => {
+      it('Cyklus nekolika runIt', async() => {
 
         for (let i = 0; i < 3; i++) {
           // console.log('==========', i, '=========')

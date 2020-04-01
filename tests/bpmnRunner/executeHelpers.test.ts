@@ -1,6 +1,6 @@
 import 'jest-extended'
 
-import { executeNode } from '../../src/bpmnRunner/executeHelpers'
+import { executeAdditons, executeNode } from '../../src/bpmnRunner/executeHelpers'
 import { IDsCollector } from '../../src/bpmnRunner/plugins'
 import { NodeImplementation, ServiceImplementation } from '../../src/bpmnRunner/pluginsImplementation'
 import { createEmptyContext, RunContext } from '../../src/bpmnRunner/runContext'
@@ -171,6 +171,34 @@ describe('Testy behove pipeline-y.', () => {
         expect(nodeInstance.status).toBe(ActivityStatus.Failled)
         expect(serviceInitNext.data).toBeArrayOfSize(3)
         expect(serviceInitNext.data).toMatchObject([1, 2, 4])
+      })
+
+    })
+
+    describe('Implementace: additions', ()=>{
+
+      it('Vsechno OK executeAdditions', () => {
+        const queues = {
+          additions: 0,
+          additionsFormat: 0,
+        }
+        nodeImplementation = {
+          additionsFormat() {
+            queues.additionsFormat++
+            return {}
+          },
+          additions({ fn }) {
+            queues.additions++
+            fn.initNext && fn.initNext([1])
+          },
+          run({fn}) { fn.initNext && fn.initNext([2]) },
+        }
+        let result = executeAdditons({ context, nodeImplementation, nodeInstance, services })
+        expect(queues.additionsFormat).toBe(0)
+        expect(queues.additions).toBe(1)
+        expect(nodeInstance.status).toBe(ActivityStatus.Ready)
+        expect(serviceInitNext.data).toBeArrayOfSize(1)
+        expect(serviceInitNext.data).toMatchObject([1])
       })
 
     })

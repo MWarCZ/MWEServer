@@ -18,7 +18,7 @@ export interface NodeImplementation {
   }
 
   // Akce doplnujici hodnoty (dodatky) pro predpokladany validni pruchod pres prerun.
-  // additions?: NodeImplementationFunction
+  additions?: NodeImplementationFunction
   // Vraci jake hodnoty (dotatky) jsou vyzadovany pro spusteni.
   additionsFormat?: NodeImplementationFlatFunction
   // Akce pred spustenim hlavniho behoveho bloku uzlu
@@ -59,7 +59,16 @@ export interface NodeImplementationFlatFunctionOptions {
 }
 
 export interface NodeImplementationFlatFunction {
-  (options: NodeImplementationFlatFunctionOptions): any
+  (options: NodeImplementationFlatFunctionOptions): NodeImplementationFlatItemsMap
+}
+export interface NodeImplementationFlatItemsMap {
+  [key: string]: NodeImplementationFlatItem
+}
+export interface NodeImplementationFlatItem {
+  type: 'text' | 'number' | 'select' | 'multiselect',
+  default?: string | number | boolean | null | (string | number | boolean | null)[],
+  possibilities?: (string | number | boolean | null)[],
+  hints: string,
 }
 //#endregion
 
