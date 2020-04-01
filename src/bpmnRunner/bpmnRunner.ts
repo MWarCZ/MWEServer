@@ -724,7 +724,7 @@ export class BpmnRunner {
   // Funkce obaluje spousteni funkci nad uzly pro zvolene funkce/scenare.
   runNodeWithFn(options: {
     data: LoadedData,
-    executeFn: (options: TopLevelExecuteFunctionArgs)=>any,
+    executeFn: (options: TopLevelExecuteFunctionArgs) => any,
   }): SaveData {
     let {
       incomingSequenceInstances,
@@ -908,20 +908,20 @@ export class BpmnRunner {
     fn: (x: any) => SaveDataAfterWithdrawn,
     status: {
       process?: ProcessStatus,
-    }
+    },
   }) {
     let processInstance = await this.connection.manager.findOne(ProcessInstance, {
       relations: ['nodeElements'],
       where: {
-        id: options.processInstance.id
-      }
+        id: options.processInstance.id,
+      },
     })
     if (processInstance) {
       let nodeInstances = (processInstance.nodeElements) ? processInstance.nodeElements : []
       let result = options.fn({
         processInstance,
         nodeInstances,
-        status: options.status
+        status: options.status,
       })
       await this.connection.transaction(async manager => {
         await manager.save(result.processInstance)
@@ -983,7 +983,7 @@ export class BpmnRunner {
     nodeInstances: NodeElementInstance[],
     status: {
       process?: ProcessStatus,
-    }
+    },
   }) {
     return this.processUniversalWithdrawn({
       ...options,
@@ -991,7 +991,7 @@ export class BpmnRunner {
         process: options.status.process,
         node: ActivityStatus.Withdrawn,
         nodes: [ActivityStatus.Ready, ActivityStatus.Waiting],
-      }
+      },
     })
   }
   processUnWithdrawn(options: {
@@ -1000,7 +1000,7 @@ export class BpmnRunner {
     nodeInstances: NodeElementInstance[],
     status: {
       process?: ProcessStatus,
-    }
+    },
   }) {
     return this.processUniversalWithdrawn({
       ...options,
@@ -1008,7 +1008,7 @@ export class BpmnRunner {
         process: options.status.process,
         node: ActivityStatus.Ready,
         nodes: [ActivityStatus.Withdrawn],
-      }
+      },
     })
   }
 

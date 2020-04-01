@@ -12,9 +12,9 @@ export const ManualTask: NodeImplementation = {
     return {
       state: {
         hints: '',
-        type: "select",
-        possibilities: ExtectedStateValues
-      }
+        type: 'select',
+        possibilities: ExtectedStateValues,
+      },
     }
   },
   // A) Zkontrolovat stav v datech udalosti
@@ -29,8 +29,8 @@ export const ManualTask: NodeImplementation = {
   },
   run({ context }) {
     const defaultOutputPropState = '_state'
-    for (let key in context.$OUTPUT){
-      if(context.$OUTPUT[key]) {
+    for (let key in context.$OUTPUT) {
+      if (context.$OUTPUT[key]) {
         try {
           let keys = Object.keys(context.$OUTPUT[key])
           if (keys.includes(defaultOutputPropState)) {
@@ -42,6 +42,6 @@ export const ManualTask: NodeImplementation = {
     }
   },
   onCompleting(options) {
-    Task.onCompleting && Task.onCompleting(options);
+    Task.onCompleting && Task.onCompleting(options)
   },
 }

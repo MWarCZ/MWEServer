@@ -135,7 +135,7 @@ export function executeNodeAdditions(options: {
 }
 
 // ==========================
-export function prepareServiceImplementation2Run (options: {
+export function prepareServiceImplementation2Run(options: {
   services: ServiceImplementation[],
 }) {
   let queues: { [key: string]: any[] } = {}
@@ -149,7 +149,7 @@ export function prepareServiceImplementation2Run (options: {
   }
   return { queues, fn }
 }
-export function callServiceImplementationFunctions (options: {
+export function callServiceImplementationFunctions(options: {
   services: ServiceImplementation[],
   queues: { [key: string]: any[] },
 }) {
