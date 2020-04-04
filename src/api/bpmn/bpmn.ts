@@ -3,10 +3,10 @@ import { JsonMap } from 'types/json'
 
 import { BpmnBuilder } from '../../bpmnBuilder'
 import { BpmnRunner, NodeImplementationFlatItemsMap } from '../../bpmnRunner'
-import { ProcessInstance, ProcessStatus, ProcessTemplate } from '../../entity/bpmn'
+import { NodeElementInstance, ProcessInstance, ProcessStatus, ProcessTemplate } from '../../entity/bpmn'
 import { ContextUser } from '../../graphql/context'
 import { PossibleFilter } from '../helpers'
-
+import { PermissionError, UnloggedUserError } from '../permissionError'
 
 export type FilterProcessTemplateById = { id: number }
 export type FilterProcessTemplateByVersion = { version: string, bpmnId: string }
@@ -155,10 +155,11 @@ export async function withdrawnProcess(options: {
   connection: Connection,
   client?: ContextUser,
   runner: BpmnRunner,
+  processInstance: { id: number },
 }) {
-  const { runner } = options
+  const { runner, processInstance } = options
   let result = await runner.runProcessWidhrawn({
-    processInstance: { id:1 },
+    processInstance,
     status: {
       process: ProcessStatus.Withdrawn,
     },
@@ -174,3 +175,69 @@ export async function withdrawnProcess(options: {
 
 // claimNodeInstance
 // releaseNodeInstance
+
+export async function claimNodeInstance(options: {
+  connection: Connection,
+  client?: ContextUser,
+  nodeInstance: { id: number }
+}) {
+  const { connection, client, nodeInstance } = options
+
+  if (!client) { throw new UnloggedUserError() }
+  const groupNames = client.membership.map(g => g.group.name) as string[]
+
+  // Ziskani uzlu pro zabrani
+  let node = await connection.manager.findOne(NodeElementInstance, {
+    relations: ['template'],
+    where: { id: nodeInstance.id },
+  })
+  if(!node) {
+    throw new Error(`Uzel s id '${nodeInstance.id}' nebyl nalezen.`)
+  }
+  // Kontrola zda uzivatel patri mezi kandid8ty na zabrani.
+  const candidate = (node.template)? node.template.candidateAssignee : ''
+  if(!groupNames.includes(candidate)) {
+    throw new PermissionError()
+  }
+  if(node.assignee) {
+    throw new Error('Uzel je jiz zabran jinym uzivatelem.')
+  }
+  // Prirazeni klienta k uzlu.
+  node.assignee = client
+  node = await connection.manager.save(node)
+
+  return node
+}
+
+export async function releaseNodeInstance(options: {
+  connection: Connection,
+  client?: ContextUser,
+  nodeInstance: { id: number }
+}) {
+  const { connection, client, nodeInstance } = options
+
+  if (!client) { throw new UnloggedUserError() }
+  const groupNames = client.membership.map(g => g.group.name) as string[]
+
+  // Ziskani uzlu pro zabrani
+  let node = await connection.manager.findOne(NodeElementInstance, {
+    relations: ['template'],
+    where: { id: nodeInstance.id },
+  })
+  if (!node) {
+    throw new Error(`Uzel s id '${nodeInstance.id}' nebyl nalezen.`)
+  }
+  if (!node.assignee){
+    throw new Error(`Neni mozne uvolnit, protoze uzel s id '${node.id}' neni obsazen.`)
+  }
+
+  // Kontrola zda client muze provezt uvolneni
+  if ((node.assignee.id !== client.id)) {
+    throw new PermissionError()
+  }
+
+  node.assignee = null
+  node = await connection.manager.save(node)
+
+  return node
+}

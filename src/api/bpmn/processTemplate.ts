@@ -1,5 +1,6 @@
 import { Connection, FindConditions } from 'typeorm'
 
+import { Group } from '../../entity'
 import { DataObjectTemplate, NodeElementTemplate, ProcessInstance } from '../../entity/bpmn'
 import { ContextUser } from '../../graphql/context'
 
@@ -53,4 +54,20 @@ export async function getNodeElements(options: {
     where: findConditions,
   })
   return node
+}
+
+export async function getCandidateGroup(options: {
+  connection: Connection,
+  client?: ContextUser,
+  filter: { groupName: string },
+}): Promise<Group | null> {
+  let { client, connection, filter } = options
+
+  let findConditions: FindConditions<Group> = {}
+  findConditions.name = filter.groupName
+
+  let group = await connection.manager.findOne(Group, {
+    where: findConditions,
+  })
+  return group || null
 }

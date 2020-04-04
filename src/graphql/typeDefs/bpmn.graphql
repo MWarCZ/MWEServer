@@ -63,6 +63,9 @@ type ProcessTemplate {
   version: String!
   versionType: String!
 
+  candidateManager: String
+  candidateGroup: Group
+
   instances: [ProcessInstance!]!
   dataObjects: [DataObjectTemplate!]!
   nodeElements: [NodeElementTemplate!]!
@@ -76,7 +79,6 @@ type ProcessInstance {
 
   template: ProcessTemplate!
 
-  assignee: User # TODO
   # data
   dataObjects: [DataObjectInstance!]!
   nodeElements: [NodeElementInstance!]!
@@ -88,7 +90,8 @@ type NodeElementTemplate {
   name: String!
 
   implementation: String!
-  candidateGroup: Group # TODO candidateAssignee
+  candidateAssignee: String # Jenom textova podoba
+  candidateGroup: Group # Text prirazeny ke konkretni skupine
 
   processTemplate: ProcessTemplate!
   instances: [NodeElementInstance!]!
