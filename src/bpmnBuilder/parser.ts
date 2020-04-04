@@ -151,13 +151,32 @@ export class Parser {
   parseLevel1(definitions: BpmnFxm.Definitions) {
     const queues: {
       Process: BpmnLevel.Process[],
+      Collaboration: BpmnLevel.Colaboration[]
     } = {
       Process: [],
+      Collaboration: []
     }
 
     let processes = definitions[`${this.ns.bpmn2}process` as 'process']
     if (!!processes) {
       queues.Process = processes.map(process => this.parseProcess(process))
+    }
+
+    let collaborations = definitions[`${this.ns.bpmn2}` as 'collaboration']
+    if (!!collaborations) {
+      collaborations.map(collaboration => {
+        let participants = collaboration[`${this.ns.bpmn2}participant` as 'participant']
+        if (!!participants){
+          return participants.map(participant => {
+            let attr = participant["#attr"]
+            let process = queues.Process.find(proc=>attr && (proc.entity.bpmnId === attr.processRef))
+            if(process){
+              process.entity.candidateManager = (attr)?attr.name : ''
+            }
+          })
+        }
+        return []
+      })
     }
     return queues
   }
