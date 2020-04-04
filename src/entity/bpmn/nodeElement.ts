@@ -138,7 +138,7 @@ export class NodeElementInstance implements FlowElementInstance {
   // assignee: string = ''
   @ManyToOne(
     type => User,
-    { nullable: true }
+    { nullable: true },
   )
   assignee: User | null = null
 

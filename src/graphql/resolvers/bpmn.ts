@@ -114,7 +114,7 @@ export const Mutation: GQLTypes.MutationResolvers = {
         connection,
         client,
         runner,
-        processInstance: {id: args.idPI}
+        processInstance: {id: args.idPI},
       })
       if (result) {
         if (worker) {
@@ -127,12 +127,12 @@ export const Mutation: GQLTypes.MutationResolvers = {
     }
     return null
   },
-  claimNodeInstance: async (_, args, { client, db: connection, runner, worker }) => {
+  claimNodeInstance: async(_, args, { client, db: connection, runner, worker }) => {
     if (runner) {
       const result = await ApiBpmn.claimNodeInstance({
         connection,
         client,
-        nodeInstance: { id: args.idNI }
+        nodeInstance: { id: args.idNI },
       })
       if (result) {
         if (worker) {
@@ -144,12 +144,12 @@ export const Mutation: GQLTypes.MutationResolvers = {
     }
     return null
   },
-  releaseNodeInstance: async (_, args, { client, db: connection, runner, worker }) => {
+  releaseNodeInstance: async(_, args, { client, db: connection, runner, worker }) => {
     if (runner) {
       const result = await ApiBpmn.releaseNodeInstance({
         connection,
         client,
-        nodeInstance: { id: args.idNI }
+        nodeInstance: { id: args.idNI },
       })
       if (result) {
         if (worker) {
@@ -177,7 +177,7 @@ export const ProcessTemplate: GQLTypes.ProcessTemplateResolvers = {
       res = await ApiProcessT.getInstances({
         connection,
         client,
-        filter: { processTemplateId: template.id as number }
+        filter: { processTemplateId: template.id as number },
       })
     }
     // @ts-ignore
@@ -205,7 +205,7 @@ export const ProcessTemplate: GQLTypes.ProcessTemplateResolvers = {
     // @ts-ignore
     return res as GQLTypes.NodeElementTemplate[]
   },
-  candidateGroup: async (parrent, args, { db: connection, client }) => {
+  candidateGroup: async(parrent, args, { db: connection, client }) => {
     // @ts-ignore
     let template = parrent as Bpmn.ProcessTemplate
     if (!template.candidateManager) {
@@ -214,7 +214,7 @@ export const ProcessTemplate: GQLTypes.ProcessTemplateResolvers = {
     let res = await ApiProcessT.getCandidateGroup({
       connection,
       client,
-      filter: { groupName: template.candidateManager }
+      filter: { groupName: template.candidateManager },
     })
 
     // @ts-ignore
@@ -223,7 +223,7 @@ export const ProcessTemplate: GQLTypes.ProcessTemplateResolvers = {
 }
 
 export const ProcessInstance: GQLTypes.ProcessInstanceResolvers = {
-  template: async (parrent, args, { db: connection, client }) => {
+  template: async(parrent, args, { db: connection, client }) => {
     // @ts-ignore
     let template = parrent as Bpmn.ProcessInstance
     let res: any
@@ -233,13 +233,13 @@ export const ProcessInstance: GQLTypes.ProcessInstanceResolvers = {
       res = await ApiProcessI.getTemplate({
         connection,
         client,
-        filter: { idProcessTemplate: template.processTemplateId as number }
+        filter: { idProcessTemplate: template.processTemplateId as number },
       })
     }
     // @ts-ignore
     return res as GQLTypes.ProcessTemplate
   },
-  dataObjects: async (parrent, args, { db: connection, client }) => {
+  dataObjects: async(parrent, args, { db: connection, client }) => {
     // @ts-ignore
     let template = parrent as Bpmn.ProcessInstance
     let res: any
@@ -249,13 +249,13 @@ export const ProcessInstance: GQLTypes.ProcessInstanceResolvers = {
       res = await ApiProcessI.getDataObjects({
         connection,
         client,
-        filter: { processInstanceId: template.id as number }
+        filter: { processInstanceId: template.id as number },
       })
     }
     // @ts-ignore
     return res as GQLTypes.DataObjectInstance[]
   },
-  nodeElements: async (parrent, args, { db: connection, client }) => {
+  nodeElements: async(parrent, args, { db: connection, client }) => {
     // @ts-ignore
     let template = parrent as Bpmn.ProcessInstance
     let res: any
@@ -265,7 +265,7 @@ export const ProcessInstance: GQLTypes.ProcessInstanceResolvers = {
       res = await ApiProcessI.getNodeElements({
         connection,
         client,
-        filter: { idProcessInstance: template.id as number }
+        filter: { idProcessInstance: template.id as number },
       })
     }
     // @ts-ignore
@@ -274,7 +274,7 @@ export const ProcessInstance: GQLTypes.ProcessInstanceResolvers = {
 }
 
 export const NodeElementTemplate: GQLTypes.NodeElementTemplateResolvers = {
-  instances: async (parrent, args, { db: connection, client }) => {
+  instances: async(parrent, args, { db: connection, client }) => {
     // @ts-ignore
     let template = parrent as Bpmn.NodeElementTemplate
     let res: any
@@ -284,13 +284,13 @@ export const NodeElementTemplate: GQLTypes.NodeElementTemplateResolvers = {
       res = await ApiNodeT.getInstances({
         connection,
         client,
-        filter: { nodeTemplateId: template.id as number }
+        filter: { nodeTemplateId: template.id as number },
       })
     }
     // @ts-ignore
     return res as GQLTypes.NodeElementInstance[]
   },
-  processTemplate: async (parrent, args, { db: connection, client }) => {
+  processTemplate: async(parrent, args, { db: connection, client }) => {
     // @ts-ignore
     let template = parrent as Bpmn.NodeElementTemplate
     let res: any
@@ -300,13 +300,13 @@ export const NodeElementTemplate: GQLTypes.NodeElementTemplateResolvers = {
       res = await ApiNodeT.getProcessTemplate({
         connection,
         client,
-        filter: { processTemplateId: template.processTemplateId as number }
+        filter: { processTemplateId: template.processTemplateId as number },
       })
     }
     // @ts-ignore
     return res as GQLTypes.ProcessTemplate
   },
-  candidateGroup: async (parrent, args, { db: connection, client }) => {
+  candidateGroup: async(parrent, args, { db: connection, client }) => {
     // @ts-ignore
     let template = parrent as Bpmn.NodeElementTemplate
     let res: any
@@ -314,7 +314,7 @@ export const NodeElementTemplate: GQLTypes.NodeElementTemplateResolvers = {
     res = await ApiNodeT.getCandidateGroup({
       connection,
       client,
-      filter: { groupName: template.candidateAssignee }
+      filter: { groupName: template.candidateAssignee },
     })
 
     // @ts-ignore
@@ -323,7 +323,7 @@ export const NodeElementTemplate: GQLTypes.NodeElementTemplateResolvers = {
 }
 
 export const NodeElementInstance: GQLTypes.NodeElementInstanceResolvers = {
-  template: async (parrent, args, { db: connection, client }) => {
+  template: async(parrent, args, { db: connection, client }) => {
     // @ts-ignore
     let template = parrent as Bpmn.NodeElementInstance
     let res: any
@@ -333,13 +333,13 @@ export const NodeElementInstance: GQLTypes.NodeElementInstanceResolvers = {
       res = await ApiNodeI.getTemplate({
         connection,
         client,
-        filter: { nodeTemplateId: template.templateId as number }
+        filter: { nodeTemplateId: template.templateId as number },
       })
     }
     // @ts-ignore
     return res as GQLTypes.NodeElementTemplate
   },
-  processInstance: async (parrent, args, { db: connection, client }) => {
+  processInstance: async(parrent, args, { db: connection, client }) => {
     // @ts-ignore
     let template = parrent as Bpmn.NodeElementInstance
     let res: any
@@ -349,20 +349,20 @@ export const NodeElementInstance: GQLTypes.NodeElementInstanceResolvers = {
       res = await ApiNodeI.getProcessInstance({
         connection,
         client,
-        filter: { processInstanceId: template.processInstanceId as number }
+        filter: { processInstanceId: template.processInstanceId as number },
       })
     }
     // @ts-ignore
     return res as GQLTypes.ProcessInstance
   },
-  assignee: async (parrent, args, { db: connection, client }) => {
+  assignee: async(parrent, args, { db: connection, client }) => {
     // @ts-ignore
     let template = parrent as Bpmn.NodeElementInstance
     let res: any
     res = await ApiNodeI.getAssignee({
       connection,
       client,
-      filter: { userId: template.assigneeId as number }
+      filter: { userId: template.assigneeId as number },
     })
     // @ts-ignore
     return res as GQLTypes.User
@@ -370,7 +370,7 @@ export const NodeElementInstance: GQLTypes.NodeElementInstanceResolvers = {
 }
 
 export const DataObjectTemplate: GQLTypes.DataObjectTemplateResolvers = {
-  instances: async (parrent, args, { db: connection, client }) => {
+  instances: async(parrent, args, { db: connection, client }) => {
     // @ts-ignore
     let template = parrent as Bpmn.DataObjectTemplate
     let res: any
@@ -380,7 +380,7 @@ export const DataObjectTemplate: GQLTypes.DataObjectTemplateResolvers = {
       res = await ApiDataT.getInstances({
         connection,
         client,
-        filter: { dataTemplateId: template.id as number }
+        filter: { dataTemplateId: template.id as number },
       })
     }
     // @ts-ignore
@@ -389,7 +389,7 @@ export const DataObjectTemplate: GQLTypes.DataObjectTemplateResolvers = {
 }
 
 export const DataObjectInstance: GQLTypes.DataObjectInstanceResolvers = {
-  template: async (parrent, args, { db: connection, client }) => {
+  template: async(parrent, args, { db: connection, client }) => {
     // @ts-ignore
     let template = parrent as Bpmn.DataObjectInstance
     let res: any
@@ -399,13 +399,13 @@ export const DataObjectInstance: GQLTypes.DataObjectInstanceResolvers = {
       res = await ApiDataI.getTemplate({
         connection,
         client,
-        filter: { dataTemplateId: template.templateId as number }
+        filter: { dataTemplateId: template.templateId as number },
       })
     }
     // @ts-ignore
     return res as GQLTypes.DataObjectTemplate
   },
-  processInstance: async (parrent, args, { db: connection, client }) => {
+  processInstance: async(parrent, args, { db: connection, client }) => {
     // @ts-ignore
     let template = parrent as Bpmn.DataObjectInstance
     let res: any
@@ -415,7 +415,7 @@ export const DataObjectInstance: GQLTypes.DataObjectInstanceResolvers = {
       res = await ApiDataI.getProcessInstance({
         connection,
         client,
-        filter: { processInstanceId: template.processInstanceId as number }
+        filter: { processInstanceId: template.processInstanceId as number },
       })
     }
     // @ts-ignore

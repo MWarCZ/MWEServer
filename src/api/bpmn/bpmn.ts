@@ -179,40 +179,7 @@ export async function withdrawnProcess(options: {
 export async function claimNodeInstance(options: {
   connection: Connection,
   client?: ContextUser,
-  nodeInstance: { id: number }
-}) {
-  const { connection, client, nodeInstance } = options
-
-  if (!client) { throw new UnloggedUserError() }
-  const groupNames = client.membership.map(g => g.group.name) as string[]
-
-  // Ziskani uzlu pro zabrani
-  let node = await connection.manager.findOne(NodeElementInstance, {
-    relations: ['template'],
-    where: { id: nodeInstance.id },
-  })
-  if(!node) {
-    throw new Error(`Uzel s id '${nodeInstance.id}' nebyl nalezen.`)
-  }
-  // Kontrola zda uzivatel patri mezi kandid8ty na zabrani.
-  const candidate = (node.template)? node.template.candidateAssignee : ''
-  if(!groupNames.includes(candidate)) {
-    throw new PermissionError()
-  }
-  if(node.assignee) {
-    throw new Error('Uzel je jiz zabran jinym uzivatelem.')
-  }
-  // Prirazeni klienta k uzlu.
-  node.assignee = client
-  node = await connection.manager.save(node)
-
-  return node
-}
-
-export async function releaseNodeInstance(options: {
-  connection: Connection,
-  client?: ContextUser,
-  nodeInstance: { id: number }
+  nodeInstance: { id: number },
 }) {
   const { connection, client, nodeInstance } = options
 
@@ -227,7 +194,40 @@ export async function releaseNodeInstance(options: {
   if (!node) {
     throw new Error(`Uzel s id '${nodeInstance.id}' nebyl nalezen.`)
   }
-  if (!node.assignee){
+  // Kontrola zda uzivatel patri mezi kandid8ty na zabrani.
+  const candidate = (node.template) ? node.template.candidateAssignee : ''
+  if (!groupNames.includes(candidate)) {
+    throw new PermissionError()
+  }
+  if (node.assignee) {
+    throw new Error('Uzel je jiz zabran jinym uzivatelem.')
+  }
+  // Prirazeni klienta k uzlu.
+  node.assignee = client
+  node = await connection.manager.save(node)
+
+  return node
+}
+
+export async function releaseNodeInstance(options: {
+  connection: Connection,
+  client?: ContextUser,
+  nodeInstance: { id: number },
+}) {
+  const { connection, client, nodeInstance } = options
+
+  if (!client) { throw new UnloggedUserError() }
+  const groupNames = client.membership.map(g => g.group.name) as string[]
+
+  // Ziskani uzlu pro zabrani
+  let node = await connection.manager.findOne(NodeElementInstance, {
+    relations: ['template'],
+    where: { id: nodeInstance.id },
+  })
+  if (!node) {
+    throw new Error(`Uzel s id '${nodeInstance.id}' nebyl nalezen.`)
+  }
+  if (!node.assignee) {
     throw new Error(`Neni mozne uvolnit, protoze uzel s id '${node.id}' neni obsazen.`)
   }
 

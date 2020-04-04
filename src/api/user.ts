@@ -407,13 +407,13 @@ export async function updateUserInfo(options: {
     where: findConditions,
   })
   if (!user) { throw new Error('Uzivatel nenalezen') }
-  if(typeof data.email === 'string'){
+  if (typeof data.email === 'string') {
     user.email = data.email
   }
-  if(typeof data.firstName === 'string'){
+  if (typeof data.firstName === 'string') {
     user.firstName = data.firstName
   }
-  if(typeof data.lastName === 'string'){
+  if (typeof data.lastName === 'string') {
     user.lastName = data.lastName
   }
   user = await connection.manager.save(user)

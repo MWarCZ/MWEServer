@@ -139,7 +139,7 @@ export class ProcessInstance implements BaseElementInstance {
 
   @ManyToOne(
     type => Group,
-    { nullable: true }
+    { nullable: true },
   )
   manager: Group | null = null
 
