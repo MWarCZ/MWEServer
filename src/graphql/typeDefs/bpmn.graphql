@@ -79,6 +79,7 @@ type ProcessInstance {
   status: String
 
   template: ProcessTemplate!
+  data: Json
 
   # data
   dataObjects: [DataObjectInstance!]!

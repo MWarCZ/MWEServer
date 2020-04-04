@@ -239,6 +239,13 @@ export class BpmnRunner {
 
     // Vytvoreni instance procesu
     let processInstance = InitHelpers.initNewProcess(processT)
+
+    InitHelpers.checkIsElementInsideProcess(
+      processT,
+      startEventT,
+      NodeElementTemplate,
+    )
+
     processInstance = await this.connection.manager.save(processInstance)
 
     // Vytvoreni instance prvniho startovaciho eventu
@@ -436,13 +443,23 @@ export class BpmnRunner {
   }
 
   async saveData(result: SaveData) {
+    // console.warn('1111111')
     await this.connection.transaction(async(manager) => {
+      // console.warn('2222222')
       await manager.save(result.nodeInstance) // aktualni instance
+      // console.warn('333333333333')
       await manager.save(result.outputsDataInstances) // Nova data
+      // console.warn('444444444')
       await manager.save(result.targetNodeInstances) // Nove pripravene instance uzlu
-      await manager.save(result.targetSequenceInstances) // Nove pripravene instance seqenci
+      // console.warn('5555555555')
+      try {
+        await manager.save(result.targetSequenceInstances) // Nove pripravene instance seqenci
+      } catch { console.log('Problem s ulozenim instance sekvenci.') }
+      // console.warn('666666666')
       await manager.save(result.processInstance) // Proces mohl skoncit
+      // console.warn('77777777')
     })
+    // console.warn('1111111')
   }
   //#endregion
 
@@ -666,13 +683,17 @@ export class BpmnRunner {
   async runIt(options: {
     instance: NodeElementInstance | { id: number },
   }) {
-
     let data = await this.loadDataForRun(options)
 
     let result = this.runNode({
       ...data,
     })
-    await this.saveData(result)
+    try {
+      await this.saveData(result)
+    } catch(e) {
+      console.error('runIt: Chyba pri ukladani dat.')
+      console.error(e)
+    }
 
     return result
   }
