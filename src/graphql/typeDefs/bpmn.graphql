@@ -23,6 +23,7 @@ type Mutation {
 }
 
 type NodeAdditions {
+  name: String
   type: String
   default: Json
   possibilities: [Json]

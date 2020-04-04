@@ -46,6 +46,7 @@ export const Query: GQLTypes.QueryResolvers = {
     return process as GQLTypes.ProcessInstance[]
   },
   nodeAdditionsFormat: async(_, args, { client, db: connection, runner, worker }) => {
+    console.log('=ssssssssssssssss')
     if (runner) {
       const result = await ApiBpmn.getNodeAdditionsFormat({
         connection,
@@ -53,8 +54,17 @@ export const Query: GQLTypes.QueryResolvers = {
         client,
         node: {id: args.idNI },
       })
+      console.log('====>', result)
+      let arr:any = []
+      for (let key in result) {
+        let item = result[key]
+        arr.push({
+          ...item,
+          name: key,
+        })
+      }
       // @ts-ignore
-      return result as GQLTypes.NodeAdditions[]
+      return arr as GQLTypes.NodeAdditions[]
     }
     return [] as GQLTypes.NodeAdditions[]
   },

@@ -171,7 +171,6 @@ export async function withdrawnProcess(options: {
 
 // NodeInstance
 // NodeInstances
-// NodeAdditions
 
 // claimNodeInstance
 // releaseNodeInstance
