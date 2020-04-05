@@ -5,7 +5,7 @@ import { BpmnBuilder } from '../../bpmnBuilder'
 import { BpmnRunner, NodeImplementationFlatItemsMap } from '../../bpmnRunner'
 import { NodeElementInstance, ProcessInstance, ProcessStatus, ProcessTemplate } from '../../entity/bpmn'
 import { ContextUser } from '../../graphql/context'
-import { PossibleFilter } from '../helpers'
+import { PossibleFilter, ProtectedGroups } from '../helpers'
 import { PermissionError, UnloggedUserError } from '../permissionError'
 
 export type FilterProcessTemplateById = { id: number }
@@ -57,6 +57,8 @@ export async function getProcessTemplate(options: {
   filter: FilterProcessTemplateBy,
 }) {
   const { connection, client, filter } = options
+  if (!client) { throw new UnloggedUserError() }
+
   let findConditions: FindConditions<ProcessTemplate> = {}
   findConditions = getProcessTemplateFindConditions({filter})
   let process = await connection.manager.findOne(ProcessTemplate, {
@@ -70,6 +72,8 @@ export async function getProcessTemplates(options: {
   client?: ContextUser,
 }) {
   const {connection, client} = options
+  if (!client) { throw new UnloggedUserError() }
+
   let findConditions: FindConditions<ProcessTemplate> = {}
   let process = await connection.manager.find(ProcessTemplate, findConditions)
   return process
@@ -81,6 +85,8 @@ export async function getProcessInstance(options: {
   filter: FilterProcessInstanceBy,
 }) {
   const { connection, client, filter } = options
+  if (!client) { throw new UnloggedUserError() }
+
   let findConditions: FindConditions<ProcessInstance> = {}
   findConditions = getProcessInstanceFindConditions({ filter })
   let process = await connection.manager.findOne(ProcessInstance, findConditions)
@@ -91,6 +97,8 @@ export async function getProcessInstances(options: {
   client?: ContextUser,
 }) {
   const { connection, client } = options
+  if (!client) { throw new UnloggedUserError() }
+
   let findConditions: FindConditions<ProcessInstance> = {}
   let process = await connection.manager.find(ProcessInstance, findConditions)
   return process
@@ -102,7 +110,9 @@ export async function getNodeAdditionsFormat(options: {
   node: { id: number },
   runner: BpmnRunner,
 }): Promise<NodeImplementationFlatItemsMap> {
-  const {runner, node} = options
+  const {runner, node, client} = options
+  if (!client) { throw new UnloggedUserError() }
+
   let result = await runner.runNodeAdditionsFormat({
     instance: node,
   })
@@ -116,6 +126,8 @@ export async function uploadProcess(options: {
   xml: string,
 }) {
   const { connection, client, xml } = options
+  if (!client) { throw new UnloggedUserError() }
+
   const builder = new BpmnBuilder(connection)
   let process = await builder.loadFromXml(xml)
   return process
@@ -130,6 +142,8 @@ export async function initProcess(options: {
   },
 }) {
   const { connection, client, data } = options
+  if (!client) { throw new UnloggedUserError() }
+
   const runner = new BpmnRunner(connection)
 
   let process = await runner.initAndSaveProcess({ id: data.processId }, { id: data.firstNodeId })
@@ -143,7 +157,9 @@ export async function setNodeAdditions(options: {
   runner: BpmnRunner,
   additions: JsonMap,
 }) {
-  const { runner, node, additions } = options
+  const { runner, node, additions, client } = options
+  if (!client) { throw new UnloggedUserError() }
+
   let result = await runner.runNodeAdditions({
     instance: node,
     additions,
@@ -157,7 +173,9 @@ export async function withdrawnProcess(options: {
   runner: BpmnRunner,
   processInstance: { id: number },
 }) {
-  const { runner, processInstance } = options
+  const { runner, processInstance, client } = options
+  if (!client) { throw new UnloggedUserError() }
+
   let result = await runner.runProcessWidhrawn({
     processInstance,
     status: {
@@ -239,4 +257,55 @@ export async function releaseNodeInstance(options: {
   node = await connection.manager.save(node)
 
   return node
+}
+
+export async function deleteProcessTemplate(options: {
+  connection: Connection,
+  client?: ContextUser,
+  processTemplate: { id: number },
+}) {
+  const { connection, client, processTemplate } = options
+
+  if (!client) { throw new UnloggedUserError() }
+  const groupNames = client.membership.map(g => g.group.name) as string[]
+
+  // nalezeni uzlu
+  let process = await connection.manager.findOne(ProcessTemplate, {
+    where: { id: processTemplate.id },
+  })
+  if (!process) {
+    throw new Error(`Process s id '${processTemplate.id}' nebyl nalezen.`)
+  }
+  // Overeni prav
+  if (!groupNames.includes(ProtectedGroups.TopManager)) {
+    throw new PermissionError()
+  }
+  await connection.manager.remove(process)
+
+  return true
+}
+export async function deleteProcessInstance(options: {
+  connection: Connection,
+  client?: ContextUser,
+  processInstance: { id: number },
+}) {
+  const { connection, client, processInstance } = options
+
+  if (!client) { throw new UnloggedUserError() }
+  const groupNames = client.membership.map(g => g.group.name) as string[]
+
+  // nalezeni uzlu
+  let process = await connection.manager.findOne(ProcessInstance, {
+    where: { id: processInstance.id },
+  })
+  if (!process) {
+    throw new Error(`Process s id '${processInstance.id}' nebyl nalezen.`)
+  }
+  // Overeni prav
+  if (!groupNames.includes(ProtectedGroups.TopManager)) {
+    throw new PermissionError()
+  }
+  await connection.manager.remove(process)
+
+  return true
 }

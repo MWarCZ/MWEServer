@@ -55,7 +55,7 @@ export class RunnerServer {
     console.log('S start')
     console.error(process.memoryUsage().heapUsed)
     this.execEnabled = true
-    this.exec().catch(e=>console.error('S start E', e))
+    this.exec().catch(e => console.error('S start E', e))
     return this
   }
 

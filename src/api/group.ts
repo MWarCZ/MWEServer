@@ -176,7 +176,9 @@ export async function getMembers(options: {
     let member = client.membership.find(m => m.groupId === filter.groupId)
     if (!member || !member.showMembers) {
       // test na pravo videt
-      groupConditions.id = -1
+      // groupConditions.id = -1
+      // Vyjimka pro sama sebe
+      memberConditions.userId = client.id
     }
     groupConditions.removed = false
   } else {
@@ -184,7 +186,7 @@ export async function getMembers(options: {
   }
 
   //#endregion
-  console.warn('>>>', memberConditions)
+  // console.warn('>>>', memberConditions)
   let memberships = await connection.manager.find(Member, {
     relations: ['group'],
     where: memberConditions,
@@ -346,8 +348,8 @@ export async function deleteGroup(options: {
 
   //#endregion
 
-  console.log('WWWWWWWWWWWWWWW')
-  console.log(findConditions)
+  // console.log('WWWWWWWWWWWWWWW')
+  // console.log(findConditions)
   // let result = await connection.manager.delete(Group, findConditions)
 
   let group = await connection.manager.findOne(Group, {

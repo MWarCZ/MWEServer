@@ -453,6 +453,7 @@ export class BpmnRunner {
       await manager.save(result.targetNodeInstances) // Nove pripravene instance uzlu
       // console.warn('5555555555')
       try {
+        console.log('saveData:', result.targetSequenceInstances)
         await manager.save(result.targetSequenceInstances) // Nove pripravene instance seqenci
       } catch { console.log('Problem s ulozenim instance sekvenci.') }
       // console.warn('666666666')
@@ -690,7 +691,7 @@ export class BpmnRunner {
     })
     try {
       await this.saveData(result)
-    } catch(e) {
+    } catch (e) {
       console.error('runIt: Chyba pri ukladani dat.')
       console.error(e)
     }

@@ -171,6 +171,22 @@ export const Mutation: GQLTypes.MutationResolvers = {
     }
     return null
   },
+  deleteProcessTemplate: async(_, args, { client, db: connection }) => {
+    let result = await ApiBpmn.deleteProcessTemplate({
+      connection,
+      client,
+      processTemplate: { id: args.idPT },
+    })
+    return result
+  },
+  deleteProcessInstance: async(_, args, { client, db: connection }) => {
+    let result = await ApiBpmn.deleteProcessInstance({
+      connection,
+      client,
+      processInstance: { id: args.idPI },
+    })
+    return result
+  },
 }
 
 export const ProcessTemplate: GQLTypes.ProcessTemplateResolvers = {

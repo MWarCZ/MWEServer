@@ -20,6 +20,9 @@ type Mutation {
 
   claimNodeInstance(idNI: Int!): NodeElementInstance
   releaseNodeInstance(idNI: Int!): NodeElementInstance
+
+  deleteProcessTemplate(idPT: Int!): Boolean
+  deleteProcessInstance(idPI: Int!): Boolean
 }
 
 type NodeAdditions {

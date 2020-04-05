@@ -79,13 +79,13 @@ export const Mutation: GQLTypes.MutationResolvers = {
 
 export const Group: GQLTypes.GroupResolvers = {
   members: async(parrent, args, {db: connection, client}, info) => {
-    console.log('members', parrent)
+    // console.log('members', parrent)
     let membersips = await ApiGroup.getMembers({
       connection,
       client,
       filter: { groupId: parrent.id },
     })
-    console.log(membersips)
+    // console.log(membersips)
     // @ts-ignore
     return membersips as GQLTypes.Member[]
   },

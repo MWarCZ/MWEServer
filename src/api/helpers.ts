@@ -4,6 +4,7 @@ export enum ProtectedGroups {
   SuperUserAdmin = 'SuperUserAdmin',
   GroupAdmin = 'GroupAdmin',
   SuperGroupAdmin = 'SuperGroupAdmin',
+  TopManager = 'TopManager',
 }
 
 export enum ProtectedUsers {
