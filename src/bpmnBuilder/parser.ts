@@ -743,17 +743,31 @@ export class Parser {
     attr: BpmnFxm.DataObject,
 
   ): T {
+    entity.json = { $strict: !!entity.strict }
+
     let extensionElements = attr[`${this.ns.bpmn2}extensionElements` as 'extensionElements']
     if (typeof extensionElements === 'object') {
       extensionElements.find(ex => {
         let json = ex[`${this.ns.mwe}json` as 'json']
         try {
           if (typeof json === 'string') {
-            entity.json = JSON.parse(json)
+            let tmp = JSON.parse(json)
+            if(typeof entity.json === 'object'){
+              entity.json = {
+                ...entity.json,
+                ...tmp,
+              }
+            }
             return true
           } else if (typeof json === 'object') {
             if (json[0]['#text']) {
-              entity.json = JSON.parse(json[0]['#text'])
+              let tmp = JSON.parse(json[0]['#text'])
+              if(typeof entity.json === 'object'){
+                entity.json = {
+                  ...entity.json,
+                  ...tmp,
+                }
+              }
               return true
             }
           }
