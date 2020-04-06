@@ -41,18 +41,6 @@ export const ManualTask: NodeImplementation = {
         { name: '_state', value: localData.state}
       ],
     })
-
-    // for (let key in context.$OUTPUT) {
-    //   if (context.$OUTPUT[key]) {
-    //     try {
-    //       let keys = Object.keys(context.$OUTPUT[key])
-    //       if (keys.includes(defaultOutputPropState)) {
-    //         let data = context.$LOCAL as ExpectedArgs
-    //         context.$OUTPUT[key][defaultOutputPropState] = data.state
-    //       }
-    //     } catch { }
-    //   }
-    // }
   },
   onCompleting(options) {
     console.log('MANUAL_TASK: completing>')
