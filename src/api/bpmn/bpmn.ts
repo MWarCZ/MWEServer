@@ -1,4 +1,4 @@
-import { Connection, FindConditions } from 'typeorm'
+import { Connection, FindConditions, Like } from 'typeorm'
 import { JsonMap } from 'types/json'
 
 import { BpmnBuilder } from '../../bpmnBuilder'
@@ -70,11 +70,32 @@ export async function getProcessTemplate(options: {
 export async function getProcessTemplates(options: {
   connection: Connection,
   client?: ContextUser,
+  filter?: {
+    isExecutable?: boolean,
+    version?: string,
+    bpmnId?: string,
+    id?: number,
+  },
 }) {
-  const {connection, client} = options
+  const {connection, client, filter} = options
   if (!client) { throw new UnloggedUserError() }
 
   let findConditions: FindConditions<ProcessTemplate> = {}
+  if (filter) {
+    if (typeof filter.isExecutable === 'boolean') {
+      findConditions.isExecutable = filter.isExecutable
+    }
+    if (filter.id) {
+      findConditions.id = findConditions.id
+    }
+    if (filter.bpmnId) {
+      findConditions.bpmnId = findConditions.bpmnId
+    }
+    if (filter.version) {
+      findConditions.version = findConditions.version
+    }
+  }
+
   let process = await connection.manager.find(ProcessTemplate, findConditions)
   return process
 }
@@ -95,11 +116,21 @@ export async function getProcessInstance(options: {
 export async function getProcessInstances(options: {
   connection: Connection,
   client?: ContextUser,
+  filter?: {
+    status?: string,
+  },
 }) {
-  const { connection, client } = options
+  const { connection, client, filter } = options
   if (!client) { throw new UnloggedUserError() }
 
   let findConditions: FindConditions<ProcessInstance> = {}
+  if (filter) {
+    if (filter.status) {
+      // @ts-ignore
+      findConditions.status = Like(`${filter.status}`)
+    }
+  }
+
   let process = await connection.manager.find(ProcessInstance, findConditions)
   return process
 }

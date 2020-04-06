@@ -21,9 +21,22 @@ export const Query: GQLTypes.QueryResolvers = {
     return process as GQLTypes.ProcessTemplate
   },
   processTemplates: async(_, args, { client, db: connection }) => {
+    let filter: {
+      isExecutable?: boolean,
+      version?: string,
+      bpmnId?: string,
+      id?: number,
+    } = {}
+    if (args.filter) {
+      filter.isExecutable = (typeof args.filter.isExecutable === 'boolean') ? args.filter.isExecutable : undefined
+      filter.bpmnId = args.filter.bpmnId || undefined
+      filter.id = args.filter.id || undefined
+      filter.version = args.filter.version || undefined
+    }
     let process = await ApiBpmn.getProcessTemplates({
       connection,
       client,
+      filter,
     })
     // @ts-ignore
     return process as GQLTypes.ProcessTemplate[]
@@ -38,9 +51,13 @@ export const Query: GQLTypes.QueryResolvers = {
     return process as GQLTypes.ProcessInstance
   },
   processInstances: async(_, args, { client, db: connection }) => {
+    let status = (args.filter) ? args.filter.status || undefined : undefined
     let process = await ApiBpmn.getProcessInstances({
       connection,
       client,
+      filter: {
+        status: status,
+      },
     })
     // @ts-ignore
     return process as GQLTypes.ProcessInstance[]
@@ -99,7 +116,11 @@ export const Mutation: GQLTypes.MutationResolvers = {
   nodeAdditions: async(_, args, { client, db: connection, runner, worker }) => {
     if (runner) {
       // TODO Osetrit parsovani a mapu.
-      const additions: JsonMap = JSON.parse(args.json)
+      // const additions: JsonMap = JSON.parse(args.json)
+      let additions = args.input.reduce((acc, item)=>{
+        acc[item.name] = item.value
+        return acc
+      }, {} as JsonMap)
       const result = await ApiBpmn.setNodeAdditions({
         connection,
         runner,
@@ -193,17 +214,21 @@ export const ProcessTemplate: GQLTypes.ProcessTemplateResolvers = {
   instances: async(parrent, args, { db: connection, client }) => {
     // @ts-ignore
     let template = parrent as Bpmn.ProcessTemplate
-    let res: any
+    let status = (args.filter) ? args.filter.status || undefined : undefined
+    let res: Bpmn.ProcessInstance[]
     if (template.processInstances) {
       res = template.processInstances
+      if (status) {
+        res = res.filter(i => status && i.status.toLowerCase() === status.toLowerCase())
+      }
     } else {
-      // res = await connection.manager.find(Bpmn.ProcessInstance, {
-      //   where: {processTemplateId: template.id},
-      // })
       res = await ApiProcessT.getInstances({
         connection,
         client,
-        filter: { processTemplateId: template.id as number },
+        filter: {
+          processTemplateId: template.id as number,
+          status,
+        },
       })
     }
     // @ts-ignore
@@ -223,10 +248,14 @@ export const ProcessTemplate: GQLTypes.ProcessTemplateResolvers = {
   nodeElements: async(parrent, args, { db: connection, client }) => {
     // @ts-ignore
     let template = parrent as { id: number }
+    let implementationContains = (args.filter) ? args.filter.implementationContains || undefined : undefined
     let res = await ApiProcessT.getNodeElements({
       connection,
       client,
-      filter: { processTemplateId: template.id },
+      filter: {
+        processTemplateId: template.id,
+        implementationContains,
+      },
     })
     // @ts-ignore
     return res as GQLTypes.NodeElementTemplate[]
@@ -285,13 +314,17 @@ export const ProcessInstance: GQLTypes.ProcessInstanceResolvers = {
     // @ts-ignore
     let template = parrent as Bpmn.ProcessInstance
     let res: any
+    let status = (args.filter) ? args.filter.status || undefined : undefined
     if (template.nodeElements) {
       res = template.nodeElements
     } else {
       res = await ApiProcessI.getNodeElements({
         connection,
         client,
-        filter: { idProcessInstance: template.id as number },
+        filter: {
+          idProcessInstance: template.id as number,
+          status,
+        },
       })
     }
     // @ts-ignore

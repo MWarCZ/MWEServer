@@ -227,8 +227,8 @@ describe('Testy s bpmnRunner', () => {
 
       let expected = [
         { nodeInstances: 1, completedNodes: 0, readyNodes: 1, processStatus: ProcessStatus.Ready },
-        { nodeInstances: 2, completedNodes: 1, readyNodes: 1, processStatus: ProcessStatus.Ready },
-        { nodeInstances: 3, completedNodes: 2, readyNodes: 1, processStatus: ProcessStatus.Ready },
+        { nodeInstances: 2, completedNodes: 1, readyNodes: 1, processStatus: ProcessStatus.Active },
+        { nodeInstances: 3, completedNodes: 2, readyNodes: 1, processStatus: ProcessStatus.Active },
         { nodeInstances: 3, completedNodes: 3, readyNodes: 0, processStatus: ProcessStatus.Completed },
       ]
       for (let exp of expected ) {
@@ -259,9 +259,9 @@ describe('Testy s bpmnRunner', () => {
         'fifo',
         [
           { nodeInstances: 1, completedNodes: 0, readyNodes: 1, processStatus: ProcessStatus.Ready },
-          { nodeInstances: 2, completedNodes: 1, readyNodes: 1, processStatus: ProcessStatus.Ready },
-          { nodeInstances: 4, completedNodes: 2, readyNodes: 2, processStatus: ProcessStatus.Ready },
-          { nodeInstances: 4, completedNodes: 3, readyNodes: 1, processStatus: ProcessStatus.Ready },
+          { nodeInstances: 2, completedNodes: 1, readyNodes: 1, processStatus: ProcessStatus.Active },
+          { nodeInstances: 4, completedNodes: 2, readyNodes: 2, processStatus: ProcessStatus.Active },
+          { nodeInstances: 4, completedNodes: 3, readyNodes: 1, processStatus: ProcessStatus.Active },
           { nodeInstances: 4, completedNodes: 4, readyNodes: 0, processStatus: ProcessStatus.Completed },
         ],
       ],
@@ -270,9 +270,9 @@ describe('Testy s bpmnRunner', () => {
         'fifo',
         [
           { nodeInstances: 1, completedNodes: 0, readyNodes: 1, processStatus: ProcessStatus.Ready },
-          { nodeInstances: 2, completedNodes: 1, readyNodes: 1, processStatus: ProcessStatus.Ready },
-          { nodeInstances: 4, completedNodes: 2, readyNodes: 2, processStatus: ProcessStatus.Ready },
-          { nodeInstances: 4, completedNodes: 3, readyNodes: 1, processStatus: ProcessStatus.Ready },
+          { nodeInstances: 2, completedNodes: 1, readyNodes: 1, processStatus: ProcessStatus.Active },
+          { nodeInstances: 4, completedNodes: 2, readyNodes: 2, processStatus: ProcessStatus.Active },
+          { nodeInstances: 4, completedNodes: 3, readyNodes: 1, processStatus: ProcessStatus.Active },
           { nodeInstances: 4, completedNodes: 4, readyNodes: 0, processStatus: ProcessStatus.Completed },
         ],
       ],
@@ -281,8 +281,8 @@ describe('Testy s bpmnRunner', () => {
         'fifo',
         [
           { nodeInstances: 1, completedNodes: 0, readyNodes: 1, processStatus: ProcessStatus.Ready },
-          { nodeInstances: 2, completedNodes: 1, readyNodes: 1, processStatus: ProcessStatus.Ready },
-          { nodeInstances: 3, completedNodes: 2, readyNodes: 1, processStatus: ProcessStatus.Ready },
+          { nodeInstances: 2, completedNodes: 1, readyNodes: 1, processStatus: ProcessStatus.Active },
+          { nodeInstances: 3, completedNodes: 2, readyNodes: 1, processStatus: ProcessStatus.Active },
           { nodeInstances: 3, completedNodes: 3, readyNodes: 0, processStatus: ProcessStatus.Completed },
         ],
       ],
@@ -291,8 +291,8 @@ describe('Testy s bpmnRunner', () => {
         'fifo',
         [
           { nodeInstances: 1, completedNodes: 0, readyNodes: 1, processStatus: ProcessStatus.Ready },
-          { nodeInstances: 2, completedNodes: 1, readyNodes: 1, processStatus: ProcessStatus.Ready },
-          { nodeInstances: 3, completedNodes: 2, readyNodes: 1, processStatus: ProcessStatus.Ready },
+          { nodeInstances: 2, completedNodes: 1, readyNodes: 1, processStatus: ProcessStatus.Active },
+          { nodeInstances: 3, completedNodes: 2, readyNodes: 1, processStatus: ProcessStatus.Active },
           { nodeInstances: 3, completedNodes: 3, readyNodes: 0, processStatus: ProcessStatus.Completed },
         ],
       ],
@@ -301,11 +301,11 @@ describe('Testy s bpmnRunner', () => {
         'fifo',
         [
           { nodeInstances: 1, completedNodes: 0, readyNodes: 1, processStatus: ProcessStatus.Ready },
-          { nodeInstances: 2, completedNodes: 1, readyNodes: 1, processStatus: ProcessStatus.Ready },
-          { nodeInstances: 4, completedNodes: 2, readyNodes: 2, processStatus: ProcessStatus.Ready },
-          { nodeInstances: 5, completedNodes: 3, readyNodes: 2, processStatus: ProcessStatus.Ready },
-          { nodeInstances: 5, completedNodes: 4, readyNodes: 1, processStatus: ProcessStatus.Ready },
-          { nodeInstances: 6, completedNodes: 5, readyNodes: 1, processStatus: ProcessStatus.Ready },
+          { nodeInstances: 2, completedNodes: 1, readyNodes: 1, processStatus: ProcessStatus.Active },
+          { nodeInstances: 4, completedNodes: 2, readyNodes: 2, processStatus: ProcessStatus.Active },
+          { nodeInstances: 5, completedNodes: 3, readyNodes: 2, processStatus: ProcessStatus.Active },
+          { nodeInstances: 5, completedNodes: 4, readyNodes: 1, processStatus: ProcessStatus.Active },
+          { nodeInstances: 6, completedNodes: 5, readyNodes: 1, processStatus: ProcessStatus.Active },
           { nodeInstances: 6, completedNodes: 6, readyNodes: 0, processStatus: ProcessStatus.Completed },
         ],
       ],
@@ -314,12 +314,12 @@ describe('Testy s bpmnRunner', () => {
         'lifo',
         [
           { nodeInstances: 1, completedNodes: 0, readyNodes: 1, processStatus: ProcessStatus.Ready },
-          { nodeInstances: 2, completedNodes: 1, readyNodes: 1, processStatus: ProcessStatus.Ready },
-          { nodeInstances: 4, completedNodes: 2, readyNodes: 2, processStatus: ProcessStatus.Ready },
-          { nodeInstances: 5, completedNodes: 3, readyNodes: 2, processStatus: ProcessStatus.Ready },
-          { nodeInstances: 5, completedNodes: 3, readyNodes: 1, processStatus: ProcessStatus.Ready },
-          { nodeInstances: 5, completedNodes: 4, readyNodes: 1, processStatus: ProcessStatus.Ready },
-          { nodeInstances: 6, completedNodes: 5, readyNodes: 1, processStatus: ProcessStatus.Ready },
+          { nodeInstances: 2, completedNodes: 1, readyNodes: 1, processStatus: ProcessStatus.Active },
+          { nodeInstances: 4, completedNodes: 2, readyNodes: 2, processStatus: ProcessStatus.Active },
+          { nodeInstances: 5, completedNodes: 3, readyNodes: 2, processStatus: ProcessStatus.Active },
+          { nodeInstances: 5, completedNodes: 3, readyNodes: 1, processStatus: ProcessStatus.Active },
+          { nodeInstances: 5, completedNodes: 4, readyNodes: 1, processStatus: ProcessStatus.Active },
+          { nodeInstances: 6, completedNodes: 5, readyNodes: 1, processStatus: ProcessStatus.Active },
           { nodeInstances: 6, completedNodes: 6, readyNodes: 0, processStatus: ProcessStatus.Completed },
         ],
       ],
@@ -328,14 +328,14 @@ describe('Testy s bpmnRunner', () => {
         'fifo',
         [
           { nodeInstances: 1, completedNodes: 0, readyNodes: 1, processStatus: ProcessStatus.Ready },
-          { nodeInstances: 2, completedNodes: 1, readyNodes: 1, processStatus: ProcessStatus.Ready },
-          { nodeInstances: 5, completedNodes: 2, readyNodes: 3, processStatus: ProcessStatus.Ready },
-          { nodeInstances: 6, completedNodes: 3, readyNodes: 3, processStatus: ProcessStatus.Ready },
-          { nodeInstances: 7, completedNodes: 4, readyNodes: 3, processStatus: ProcessStatus.Ready },
-          { nodeInstances: 7, completedNodes: 5, readyNodes: 2, processStatus: ProcessStatus.Ready },
-          { nodeInstances: 7, completedNodes: 5, readyNodes: 1, processStatus: ProcessStatus.Ready },
-          { nodeInstances: 7, completedNodes: 6, readyNodes: 1, processStatus: ProcessStatus.Ready },
-          { nodeInstances: 8, completedNodes: 7, readyNodes: 1, processStatus: ProcessStatus.Ready },
+          { nodeInstances: 2, completedNodes: 1, readyNodes: 1, processStatus: ProcessStatus.Active },
+          { nodeInstances: 5, completedNodes: 2, readyNodes: 3, processStatus: ProcessStatus.Active },
+          { nodeInstances: 6, completedNodes: 3, readyNodes: 3, processStatus: ProcessStatus.Active },
+          { nodeInstances: 7, completedNodes: 4, readyNodes: 3, processStatus: ProcessStatus.Active },
+          { nodeInstances: 7, completedNodes: 5, readyNodes: 2, processStatus: ProcessStatus.Active },
+          { nodeInstances: 7, completedNodes: 5, readyNodes: 1, processStatus: ProcessStatus.Active },
+          { nodeInstances: 7, completedNodes: 6, readyNodes: 1, processStatus: ProcessStatus.Active },
+          { nodeInstances: 8, completedNodes: 7, readyNodes: 1, processStatus: ProcessStatus.Active },
           { nodeInstances: 8, completedNodes: 8, readyNodes: 0, processStatus: ProcessStatus.Completed },
         ],
       ],
@@ -344,15 +344,15 @@ describe('Testy s bpmnRunner', () => {
         'lifo',
         [
           { nodeInstances: 1, completedNodes: 0, readyNodes: 1, processStatus: ProcessStatus.Ready },
-          { nodeInstances: 2, completedNodes: 1, readyNodes: 1, processStatus: ProcessStatus.Ready },
-          { nodeInstances: 5, completedNodes: 2, readyNodes: 3, processStatus: ProcessStatus.Ready },
-          { nodeInstances: 6, completedNodes: 3, readyNodes: 3, processStatus: ProcessStatus.Ready },
-          { nodeInstances: 6, completedNodes: 3, readyNodes: 2, processStatus: ProcessStatus.Ready },
-          { nodeInstances: 6, completedNodes: 4, readyNodes: 2, processStatus: ProcessStatus.Ready },
-          { nodeInstances: 7, completedNodes: 5, readyNodes: 2, processStatus: ProcessStatus.Ready },
-          { nodeInstances: 7, completedNodes: 5, readyNodes: 1, processStatus: ProcessStatus.Ready },
-          { nodeInstances: 7, completedNodes: 6, readyNodes: 1, processStatus: ProcessStatus.Ready },
-          { nodeInstances: 8, completedNodes: 7, readyNodes: 1, processStatus: ProcessStatus.Ready },
+          { nodeInstances: 2, completedNodes: 1, readyNodes: 1, processStatus: ProcessStatus.Active },
+          { nodeInstances: 5, completedNodes: 2, readyNodes: 3, processStatus: ProcessStatus.Active },
+          { nodeInstances: 6, completedNodes: 3, readyNodes: 3, processStatus: ProcessStatus.Active },
+          { nodeInstances: 6, completedNodes: 3, readyNodes: 2, processStatus: ProcessStatus.Active },
+          { nodeInstances: 6, completedNodes: 4, readyNodes: 2, processStatus: ProcessStatus.Active },
+          { nodeInstances: 7, completedNodes: 5, readyNodes: 2, processStatus: ProcessStatus.Active },
+          { nodeInstances: 7, completedNodes: 5, readyNodes: 1, processStatus: ProcessStatus.Active },
+          { nodeInstances: 7, completedNodes: 6, readyNodes: 1, processStatus: ProcessStatus.Active },
+          { nodeInstances: 8, completedNodes: 7, readyNodes: 1, processStatus: ProcessStatus.Active },
           { nodeInstances: 8, completedNodes: 8, readyNodes: 0, processStatus: ProcessStatus.Completed },
         ],
       ],
@@ -361,7 +361,7 @@ describe('Testy s bpmnRunner', () => {
         'fifo',
         [
           { nodeInstances: 1, completedNodes: 0, readyNodes: 1, processStatus: ProcessStatus.Ready },
-          { nodeInstances: 2, completedNodes: 1, readyNodes: 1, processStatus: ProcessStatus.Ready },
+          { nodeInstances: 2, completedNodes: 1, readyNodes: 1, processStatus: ProcessStatus.Active },
           { nodeInstances: 2, completedNodes: 2, readyNodes: 0, processStatus: ProcessStatus.Failled },
         ],
       ],
@@ -371,11 +371,11 @@ describe('Testy s bpmnRunner', () => {
         'fifo',
         [
           { nodeInstances: 1, completedNodes: 0, readyNodes: 1, processStatus: ProcessStatus.Ready },
-          { nodeInstances: 2, completedNodes: 1, readyNodes: 1, processStatus: ProcessStatus.Ready },
-          { nodeInstances: 4, completedNodes: 2, readyNodes: 2, processStatus: ProcessStatus.Ready },
-          { nodeInstances: 5, completedNodes: 3, readyNodes: 2, processStatus: ProcessStatus.Ready },
-          { nodeInstances: 6, completedNodes: 4, readyNodes: 2, processStatus: ProcessStatus.Ready },
-          { nodeInstances: 6, completedNodes: 5, readyNodes: 1, processStatus: ProcessStatus.Ready },
+          { nodeInstances: 2, completedNodes: 1, readyNodes: 1, processStatus: ProcessStatus.Active },
+          { nodeInstances: 4, completedNodes: 2, readyNodes: 2, processStatus: ProcessStatus.Active },
+          { nodeInstances: 5, completedNodes: 3, readyNodes: 2, processStatus: ProcessStatus.Active },
+          { nodeInstances: 6, completedNodes: 4, readyNodes: 2, processStatus: ProcessStatus.Active },
+          { nodeInstances: 6, completedNodes: 5, readyNodes: 1, processStatus: ProcessStatus.Active },
           { nodeInstances: 6, completedNodes: 6, readyNodes: 0, processStatus: ProcessStatus.Completed },
         ],
       ],
@@ -459,10 +459,10 @@ describe('Testy s bpmnRunner', () => {
         '../resources/bpmn/simple/simple_scripttask.bpmn',
         [
           { nodeInstances: 1, processStatus: ProcessStatus.Ready },
-          { nodeInstances: 2, processStatus: ProcessStatus.Ready, retVal: {
+          { nodeInstances: 2, processStatus: ProcessStatus.Active, retVal: {
             xxx: { name: 'SkriptX' },
           } },
-          { nodeInstances: 3, processStatus: ProcessStatus.Ready },
+          { nodeInstances: 3, processStatus: ProcessStatus.Active },
           { nodeInstances: 3, processStatus: ProcessStatus.Completed },
         ],
       ],
@@ -470,7 +470,7 @@ describe('Testy s bpmnRunner', () => {
         '../resources/bpmn/simple/simple_scripttask_inputdata.bpmn',
         [
           { nodeInstances: 1, processStatus: ProcessStatus.Ready },
-          { nodeInstances: 2, processStatus: ProcessStatus.Ready, retVal: {
+          { nodeInstances: 2, processStatus: ProcessStatus.Active, retVal: {
               xxx: {
                 name: 'SkriptX',
                 input: { Aaa: {pozdrav: 'ahoj', cislo: 10, existuji: true} },
@@ -479,7 +479,7 @@ describe('Testy s bpmnRunner', () => {
               },
             },
           },
-          { nodeInstances: 3, processStatus: ProcessStatus.Ready },
+          { nodeInstances: 3, processStatus: ProcessStatus.Active },
           { nodeInstances: 3, processStatus: ProcessStatus.Completed },
         ],
       ],
@@ -490,7 +490,7 @@ describe('Testy s bpmnRunner', () => {
             nodeInstances: 1, processStatus: ProcessStatus.Ready,
           },
           {
-            nodeInstances: 2, processStatus: ProcessStatus.Ready, retVal: {
+            nodeInstances: 2, processStatus: ProcessStatus.Active, retVal: {
               xxx: {
                 name: 'SkriptX',
                 input: {},
@@ -499,7 +499,7 @@ describe('Testy s bpmnRunner', () => {
             },
           },
           {
-            nodeInstances: 3, processStatus: ProcessStatus.Ready, dataObjB: {
+            nodeInstances: 3, processStatus: ProcessStatus.Active, dataObjB: {
               a: 1, b: 'B', c: [true, false, false],
             },
           },
@@ -515,7 +515,7 @@ describe('Testy s bpmnRunner', () => {
         [
           { nodeInstances: 1, processStatus: ProcessStatus.Ready },
           {
-            nodeInstances: 2, processStatus: ProcessStatus.Ready, retVal: {
+            nodeInstances: 2, processStatus: ProcessStatus.Active, retVal: {
               xxx: {
                 name: 'SkriptX',
                 input: { Aaa: { pozdrav: 'ahoj', cislo: 10, existuji: true } },
@@ -524,7 +524,7 @@ describe('Testy s bpmnRunner', () => {
               Bbb: { a: 1, b: 'B', c: [true, false, false] },
             },
           },
-          { nodeInstances: 3, processStatus: ProcessStatus.Ready, dataObjB: {
+          { nodeInstances: 3, processStatus: ProcessStatus.Active, dataObjB: {
               a: 1, b: 'B', c: [true, false, false],
             },
           },

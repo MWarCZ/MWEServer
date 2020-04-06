@@ -7,6 +7,7 @@ export function evalExpression(options: {
   expression: string,
 }): boolean {
   const { context, expression } = options
+  // console.log('CONTEXT:', context)
   const vm = new VM({
     timeout: 1000,
     eval: false,

@@ -453,7 +453,7 @@ export class BpmnRunner {
       await manager.save(result.targetNodeInstances) // Nove pripravene instance uzlu
       // console.warn('5555555555')
       try {
-        console.log('saveData:', result.targetSequenceInstances)
+        // console.log('saveData:', result.targetSequenceInstances)
         await manager.save(result.targetSequenceInstances) // Nove pripravene instance seqenci
       } catch { console.log('Problem s ulozenim instance sekvenci.') }
       // console.warn('666666666')
@@ -728,6 +728,9 @@ export class BpmnRunner {
   }) {
     let data = await this.loadDataForRun(options)
 
+    if([ActivityStatus.Completed].includes(data.nodeInstance.status as ActivityStatus)) {
+      throw new Error(`Do uzlu '${data.nodeInstance.status}' neni mozne doplnit nove dodatky.`)
+    }
     // Pridani dodatku do uzlu
     data.nodeInstance.data = {
       ...data.nodeInstance.data,
@@ -832,6 +835,7 @@ export class BpmnRunner {
       nodeImplementation: implementation,
       services,
     })
+    // console.log('BBB:>>', nodeInstance)
 
     //#region Zpracovani vysledku po vykonani uzlu.
 
@@ -856,8 +860,10 @@ export class BpmnRunner {
     let unfinishedNodeInstances = nodeInstances.filter(
       node => [ActivityStatus.Ready, ActivityStatus.Waiting].includes(node.status as ActivityStatus),
     )
-    // Odstraneni prave zpracovavane instance uzlu ze seznamu nedokoncenych instanci uzlu.
-    unfinishedNodeInstances = unfinishedNodeInstances.filter(node => node.id !== nodeInstance.id)
+    // Odstraneni prave zpracovavane instance uzlu ze seznamu nedokoncenych instanci uzlu (pokud je dokoncen).
+    if (![ActivityStatus.Ready, ActivityStatus.Waiting].includes(nodeInstance.status as ActivityStatus)) {
+      unfinishedNodeInstances = unfinishedNodeInstances.filter(node => node.id !== nodeInstance.id)
+    }
     // Pripravit instance uzlu pro pristi spusteni.
     let targetNodeInstances = this.prepareTargetNodeInstances({
       processInstance,
@@ -905,6 +911,9 @@ export class BpmnRunner {
           processInstance.endDateTime = new Date()
         }
         // Jinak pokracuje proces pokracuje dale
+        else {
+          processInstance.status = ProcessStatus.Active
+        }
       }
 
     } else {
@@ -913,9 +922,13 @@ export class BpmnRunner {
         processInstance.status = ProcessStatus.Failled
         processInstance.endDateTime = new Date()
       }
+      else {
+        processInstance.status = ProcessStatus.Active
+      }
     }
-
     //#endregion
+
+    // console.log('CCC:>>', nodeInstance)
 
     let result: SaveData = {
       nodeInstance,

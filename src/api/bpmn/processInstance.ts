@@ -1,4 +1,4 @@
-import { Connection, FindConditions } from 'typeorm'
+import { Connection, FindConditions, Like } from 'typeorm'
 
 import { DataObjectInstance, NodeElementInstance, ProcessTemplate } from '../../entity/bpmn'
 import { ContextUser } from '../../graphql/context'
@@ -42,12 +42,19 @@ export async function getDataObjects(options: {
 export async function getNodeElements(options: {
   connection: Connection,
   client?: ContextUser,
-  filter: { idProcessInstance: number },
+  filter: {
+    idProcessInstance: number,
+    status?: string,
+  },
 }): Promise<NodeElementInstance[]> {
   let { client, connection, filter } = options
 
   let findConditions: FindConditions<NodeElementInstance> = {}
   findConditions.processInstanceId = filter.idProcessInstance
+  if (filter.status) {
+    // @ts-ignore
+    findConditions.status = Like(`${filter.status}`)
+  }
 
   let nodes = await connection.manager.find(NodeElementInstance, {
     where: findConditions,

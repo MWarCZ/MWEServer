@@ -25,8 +25,10 @@ export function safeExecuteNodeFunction(options: {
     status,
   } = options
   try {
-    let result = executeFunction ? executeFunction(executeFunctionArgs) : true
-    nodeInstance.returnValue = executeFunctionArgs.context.$OUTPUT
+    if (executeFunction) {
+      let result = executeFunction ? executeFunction(executeFunctionArgs) : true
+      nodeInstance.returnValue = executeFunctionArgs.context.$OUTPUT
+    }
     nodeInstance.status = status.onSuccess
     return true
   } catch (e) {
@@ -34,7 +36,9 @@ export function safeExecuteNodeFunction(options: {
     nodeInstance.status = status.onFailure
     if (e instanceof Error) {
       nodeInstance.returnValue = { error: { name: e.name, message: e.message, lastStatus } }
+      console.log('AAAAAAAAAAAAAAAAAAAAAAA', nodeInstance)
     } else {
+      console.log('bbbbbbbbbbbbbbbbbbbbbb')
       throw e
     }
     return false
@@ -214,6 +218,7 @@ export function executeNode(options: TopLevelExecuteFunctionArgs) {
       fn,
     },
   })
+  // console.log('000:>>', nodeInstance)
   // status = Active x Waiting
   if (resultPrerun) {
     // status === Actiove
@@ -225,6 +230,8 @@ export function executeNode(options: TopLevelExecuteFunctionArgs) {
         fn,
       },
     })
+    // console.log('111:>>', nodeInstance)
+
     // status = Completing x Failing
     if (resultRun) {
       // status === Completing
@@ -253,6 +260,7 @@ export function executeNode(options: TopLevelExecuteFunctionArgs) {
     nodeInstance.endDateTime = new Date()
   }
 
+  // console.log("AAA:>>", nodeInstance)
   // Volani callbacku z services
   callServiceImplementationFunctions({ services, queues })
 
