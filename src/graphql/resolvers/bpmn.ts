@@ -85,6 +85,24 @@ export const Query: GQLTypes.QueryResolvers = {
     }
     return [] as GQLTypes.NodeAdditions[]
   },
+  nodeInstances: async (_, args, { client, db: connection }) => {
+    let nodes = await ApiBpmn.getNodeInstances({
+      connection,
+      client,
+      filter: args.filter,
+    })
+    // @ts-ignore
+    return nodes as GQLTypes.NodeElementInstance[]
+  },
+  nodeInstance: async (_, args, { client, db: connection }) => {
+    let node = await ApiBpmn.getNodeInstance({
+      connection,
+      client,
+      filter: args.filter,
+    })
+    // @ts-ignore
+    return node as GQLTypes.NodeElementInstance
+  },
 }
 
 export const Mutation: GQLTypes.MutationResolvers = {
@@ -207,6 +225,33 @@ export const Mutation: GQLTypes.MutationResolvers = {
       processInstance: { id: args.idPI },
     })
     return result
+  },
+  updateProcessTemplate: async (_, args, { client, db: connection, worker }) => {
+    let result = await ApiBpmn.updateProcessTemplate({
+      connection,
+      client,
+      processTemplate: {id: args.idPT},
+      data: {
+        isExecutable: args.input.isExecutable as boolean,
+        name: args.input.name as string,
+        candidateManager: args.input.candidateManager as string,
+      },
+    })
+    // @ts-ignore
+    return result.process as GQLTypes.ProcessTemplate
+  },
+  updateNodeTemplate: async (_, args, { client, db: connection, worker }) => {
+    let result = await ApiBpmn.updateNodeTemplate({
+      connection,
+      client,
+      nodeTemplate: { id: args.idNT },
+      data: {
+        name: args.input.name as string,
+        candidateAssignee: args.input.candidateAssignee as string,
+      },
+    })
+    // @ts-ignore
+    return result.process as GQLTypes.NodeElementTemplate
   },
 }
 

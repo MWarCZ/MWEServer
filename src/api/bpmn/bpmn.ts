@@ -3,9 +3,9 @@ import { JsonMap } from 'types/json'
 
 import { BpmnBuilder } from '../../bpmnBuilder'
 import { BpmnRunner, NodeImplementationFlatItemsMap } from '../../bpmnRunner'
-import { NodeElementInstance, ProcessInstance, ProcessStatus, ProcessTemplate } from '../../entity/bpmn'
+import { NodeElementInstance, NodeElementTemplate, ProcessInstance, ProcessStatus, ProcessTemplate } from '../../entity/bpmn'
 import { ContextUser } from '../../graphql/context'
-import { PossibleFilter, ProtectedGroups } from '../helpers'
+import { getClientGroupNames, PossibleFilter, ProtectedGroups } from '../helpers'
 import { PermissionError, UnloggedUserError } from '../permissionError'
 
 export type FilterProcessTemplateById = { id: number }
@@ -58,6 +58,7 @@ export async function getProcessTemplate(options: {
 }) {
   const { connection, client, filter } = options
   if (!client) { throw new UnloggedUserError() }
+  const groupNames = getClientGroupNames(client)
 
   let findConditions: FindConditions<ProcessTemplate> = {}
   findConditions = getProcessTemplateFindConditions({filter})
@@ -79,6 +80,7 @@ export async function getProcessTemplates(options: {
 }) {
   const {connection, client, filter} = options
   if (!client) { throw new UnloggedUserError() }
+  const groupNames = getClientGroupNames(client)
 
   let findConditions: FindConditions<ProcessTemplate> = {}
   if (filter) {
@@ -107,6 +109,7 @@ export async function getProcessInstance(options: {
 }) {
   const { connection, client, filter } = options
   if (!client) { throw new UnloggedUserError() }
+  const groupNames = getClientGroupNames(client)
 
   let findConditions: FindConditions<ProcessInstance> = {}
   findConditions = getProcessInstanceFindConditions({ filter })
@@ -122,6 +125,7 @@ export async function getProcessInstances(options: {
 }) {
   const { connection, client, filter } = options
   if (!client) { throw new UnloggedUserError() }
+  const groupNames = getClientGroupNames(client)
 
   let findConditions: FindConditions<ProcessInstance> = {}
   if (filter) {
@@ -135,6 +139,50 @@ export async function getProcessInstances(options: {
   return process
 }
 
+
+export async function getNodeInstance(options: {
+  connection: Connection,
+  client?: ContextUser,
+  filter?: {
+    id?: number | null,
+  } | null,
+}) {
+  const { connection, client, filter } = options
+  if (!client) { throw new UnloggedUserError() }
+  const groupNames = getClientGroupNames(client)
+
+  let findConditions: FindConditions<NodeElementInstance> = {}
+  if (filter && filter.id) {
+    findConditions.id = filter.id
+  } else {
+    return undefined
+  }
+  let node = await connection.manager.findOne(NodeElementInstance, findConditions)
+  return node
+}
+export async function getNodeInstances(options: {
+  connection: Connection,
+  client?: ContextUser,
+  filter?: {
+    status?: string | null,
+  } | null,
+}) {
+  const { connection, client, filter } = options
+  if (!client) { throw new UnloggedUserError() }
+  const groupNames = getClientGroupNames(client)
+
+  let findConditions: FindConditions<NodeElementInstance> = {}
+  if (filter) {
+    if (filter.status) {
+      // @ts-ignore
+      findConditions.status = Like(`${filter.status}`)
+    }
+  }
+
+  let nodes = await connection.manager.find(NodeElementInstance, findConditions)
+  return nodes
+}
+
 export async function getNodeAdditionsFormat(options: {
   connection: Connection,
   client?: ContextUser,
@@ -143,6 +191,7 @@ export async function getNodeAdditionsFormat(options: {
 }): Promise<NodeImplementationFlatItemsMap> {
   const {runner, node, client} = options
   if (!client) { throw new UnloggedUserError() }
+  const groupNames = getClientGroupNames(client)
 
   let result = await runner.runNodeAdditionsFormat({
     instance: node,
@@ -158,6 +207,7 @@ export async function uploadProcess(options: {
 }) {
   const { connection, client, xml } = options
   if (!client) { throw new UnloggedUserError() }
+  const groupNames = getClientGroupNames(client)
 
   const builder = new BpmnBuilder(connection)
   let process = await builder.loadFromXml(xml)
@@ -174,6 +224,7 @@ export async function initProcess(options: {
 }) {
   const { connection, client, data } = options
   if (!client) { throw new UnloggedUserError() }
+  const groupNames = getClientGroupNames(client)
 
   const runner = new BpmnRunner(connection)
 
@@ -190,6 +241,7 @@ export async function setNodeAdditions(options: {
 }) {
   const { runner, node, additions, client } = options
   if (!client) { throw new UnloggedUserError() }
+  const groupNames = getClientGroupNames(client)
 
   let result = await runner.runNodeAdditions({
     instance: node,
@@ -206,6 +258,7 @@ export async function withdrawnProcess(options: {
 }) {
   const { runner, processInstance, client } = options
   if (!client) { throw new UnloggedUserError() }
+  const groupNames = getClientGroupNames(client)
 
   let result = await runner.runProcessWidhrawn({
     processInstance,
@@ -232,7 +285,7 @@ export async function claimNodeInstance(options: {
   const { connection, client, nodeInstance } = options
 
   if (!client) { throw new UnloggedUserError() }
-  const groupNames = client.membership.map(g => g.group.name) as string[]
+  const groupNames = getClientGroupNames(client)
 
   // Ziskani uzlu pro zabrani
   let node = await connection.manager.findOne(NodeElementInstance, {
@@ -265,7 +318,7 @@ export async function releaseNodeInstance(options: {
   const { connection, client, nodeInstance } = options
 
   if (!client) { throw new UnloggedUserError() }
-  const groupNames = client.membership.map(g => g.group.name) as string[]
+  const groupNames = getClientGroupNames(client)
 
   // Ziskani uzlu pro zabrani
   let node = await connection.manager.findOne(NodeElementInstance, {
@@ -298,7 +351,8 @@ export async function deleteProcessTemplate(options: {
   const { connection, client, processTemplate } = options
 
   if (!client) { throw new UnloggedUserError() }
-  const groupNames = client.membership.map(g => g.group.name) as string[]
+  const groupNames = getClientGroupNames(client)
+
 
   // nalezeni uzlu
   let process = await connection.manager.findOne(ProcessTemplate, {
@@ -323,7 +377,8 @@ export async function deleteProcessInstance(options: {
   const { connection, client, processInstance } = options
 
   if (!client) { throw new UnloggedUserError() }
-  const groupNames = client.membership.map(g => g.group.name) as string[]
+  const groupNames = getClientGroupNames(client)
+
 
   // nalezeni uzlu
   let process = await connection.manager.findOne(ProcessInstance, {
@@ -340,3 +395,84 @@ export async function deleteProcessInstance(options: {
 
   return true
 }
+
+
+export async function updateProcessTemplate(options: {
+  connection: Connection,
+  client?: ContextUser,
+  processTemplate: { id: number },
+  data: {
+    isExecutable?: boolean,
+    name?: string,
+    candidateManager?: string,
+  },
+}) {
+  const { connection, client, processTemplate, data } = options
+
+  if (!client) { throw new UnloggedUserError() }
+  const groupNames = getClientGroupNames(client)
+
+
+  // Overeni prav
+  if (!groupNames.includes(ProtectedGroups.TopManager)) {
+    throw new PermissionError()
+  }
+
+  let process = await connection.manager.findOne(ProcessTemplate, {
+    where: { id: processTemplate.id },
+  })
+  if (!process) {
+    throw new Error(`Process s id '${processTemplate.id}' nebyl nalezen.`)
+  }
+
+  if(typeof data.candidateManager === 'string') {
+    process.candidateManager = data.candidateManager
+  }
+  if (typeof data.isExecutable === 'boolean') {
+    process.isExecutable = data.isExecutable
+  }
+  if (typeof data.name === 'string') {
+    process.name = data.name
+  }
+  process = await connection.manager.save(process)
+
+  return process
+}
+
+export async function updateNodeTemplate(options: {
+  connection: Connection,
+  client?: ContextUser,
+  nodeTemplate: { id: number },
+  data: {
+    name?: string,
+    candidateAssignee?: string,
+  },
+}) {
+  const { connection, client, nodeTemplate, data } = options
+
+  if (!client) { throw new UnloggedUserError() }
+  const groupNames = getClientGroupNames(client)
+
+  // Overeni prav
+  if (!groupNames.includes(ProtectedGroups.TopManager)) {
+    throw new PermissionError()
+  }
+
+  let node = await connection.manager.findOne(NodeElementTemplate, {
+    where: { id: nodeTemplate.id },
+  })
+  if (!node) {
+    throw new Error(`Uzel s id '${nodeTemplate.id}' nebyl nalezen.`)
+  }
+
+  if (typeof data.candidateAssignee === 'string') {
+    node.candidateAssignee = data.candidateAssignee
+  }
+  if (typeof data.name === 'string') {
+    node.name = data.name
+  }
+  node = await connection.manager.save(node)
+
+  return node
+}
+
