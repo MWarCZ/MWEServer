@@ -1,9 +1,12 @@
+import { ContextUser } from '../graphql/context'
 
 export enum ProtectedGroups {
   UserAdmin = 'UserAdmin',
   SuperUserAdmin = 'SuperUserAdmin',
   GroupAdmin = 'GroupAdmin',
   SuperGroupAdmin = 'SuperGroupAdmin',
+  TopManager = 'TopManager',
+  // Manager = 'Manager',
 }
 
 export enum ProtectedUsers {
@@ -22,3 +25,18 @@ export const ProtectedMembers = {
 }
 
 export type PossibleFilter<A, B> = Partial<A> & Partial<B>
+
+
+export function getClientGroupNames(client: ContextUser): string[] {
+  const groupNames = client.membership.map(g => g.group.name)
+  return groupNames
+}
+export function getClientGroupIds(client: ContextUser): number[] {
+  const groupIds = client.membership.reduce((acc, member) => {
+    if (typeof member.group.id !== 'undefined') {
+      acc.push(member.group.id)
+    }
+    return acc
+  }, [] as number[])
+  return groupIds
+}

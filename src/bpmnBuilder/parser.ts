@@ -159,6 +159,24 @@ export class Parser {
     if (!!processes) {
       queues.Process = processes.map(process => this.parseProcess(process))
     }
+
+    let collaborations = definitions[`${this.ns.bpmn2}collaboration` as 'collaboration']
+    if (!!collaborations) {
+      // Load candidateMangaer for process from collaborations
+      collaborations.map(collaboration => {
+        let participants = collaboration[`${this.ns.bpmn2}participant` as 'participant']
+        if (!!participants) {
+          return participants.map(participant => {
+            let attr = participant['#attr']
+            let process = queues.Process.find(proc => attr && (proc.entity.bpmnId === attr.processRef))
+            if (process) {
+              process.entity.candidateManager = (attr) ? attr.name : ''
+            }
+          })
+        }
+        return []
+      })
+    }
     return queues
   }
 
@@ -261,6 +279,25 @@ export class Parser {
   parseSequenceFlow(seq: BpmnFxm.SequenceFlow): BpmnLevel.SequenceFlow {
     let entity = new SequenceFlowTemplate()
     this.preloadBaseElement(entity, seq['#attr'])
+
+    let expression = seq[`${this.ns.bpmn2}expression` as 'expression']
+    if(Array.isArray(expression)) {
+      expression.map(exp=>{
+        entity.expression =  exp['#text'] || ''
+      })
+    } else {
+      entity.expression = expression || ''
+    }
+
+    let conditionExpression = seq[`${this.ns.bpmn2}conditionExpression` as 'conditionExpression']
+    if (Array.isArray(conditionExpression)) {
+      conditionExpression.map(exp => {
+        entity.expression = exp['#text'] || ''
+      })
+    } else {
+      entity.expression = conditionExpression || ''
+    }
+
     return {
       entity,
       data: seq,
@@ -366,12 +403,12 @@ export class Parser {
     // userTask UserTask
     let userTasks = process.data[`${this.ns.bpmn2}userTask` as 'userTask']
     if (typeof userTasks === 'object') {
-      queues.UserTask = userTasks.map(t => this.parseTask(t, 'userTask'))
+      queues.UserTask = userTasks.map(t => this.parseTask(t, SupportedNode.UserTask))
     }
     // manualTask ManualTask
     let manualTasks = process.data[`${this.ns.bpmn2}manualTask` as 'manualTask']
     if (typeof manualTasks === 'object') {
-      queues.ManualTask = manualTasks.map(t => this.parseTask(t, 'manualTask'))
+      queues.ManualTask = manualTasks.map(t => this.parseTask(t, SupportedNode.ManualTask))
     }
     // callActivity CallActivity
     let callActivitys = process.data[`${this.ns.bpmn2}callActivity` as 'callActivity']
@@ -695,8 +732,8 @@ export class Parser {
     attr: BpmnFxm.ScriptTask,
   ): T {
     let script = attr[`${this.ns.bpmn2}script` as 'script']
-    if (typeof script === 'string') {
-      entity.data['script'] = script
+    if (typeof script !== 'object') {
+      entity.data['script'] = `${script}`
     }
     return entity
   }
@@ -706,17 +743,31 @@ export class Parser {
     attr: BpmnFxm.DataObject,
 
   ): T {
+    entity.json = (entity.strict)? { $strict: !!entity.strict } : { }
+
     let extensionElements = attr[`${this.ns.bpmn2}extensionElements` as 'extensionElements']
     if (typeof extensionElements === 'object') {
       extensionElements.find(ex => {
         let json = ex[`${this.ns.mwe}json` as 'json']
         try {
           if (typeof json === 'string') {
-            entity.json = JSON.parse(json)
+            let tmp = JSON.parse(json)
+            if(typeof entity.json === 'object'){
+              entity.json = {
+                ...entity.json,
+                ...tmp,
+              }
+            }
             return true
           } else if (typeof json === 'object') {
             if (json[0]['#text']) {
-              entity.json = JSON.parse(json[0]['#text'])
+              let tmp = JSON.parse(json[0]['#text'])
+              if(typeof entity.json === 'object'){
+                entity.json = {
+                  ...entity.json,
+                  ...tmp,
+                }
+              }
               return true
             }
           }

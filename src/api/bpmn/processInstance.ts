@@ -1,6 +1,6 @@
-import { Connection, FindConditions } from 'typeorm'
+import { Connection, FindConditions, Like } from 'typeorm'
 
-import { DataObjectInstance, NodeElementTemplate, ProcessTemplate } from '../../entity/bpmn'
+import { DataObjectInstance, NodeElementInstance, ProcessTemplate } from '../../entity/bpmn'
 import { ContextUser } from '../../graphql/context'
 
 // template
@@ -10,17 +10,17 @@ import { ContextUser } from '../../graphql/context'
 export async function getTemplate(options: {
   connection: Connection,
   client?: ContextUser,
-  filter: { id: number },
-}): Promise<ProcessTemplate[]> {
+  filter: { idProcessTemplate: number },
+}): Promise<ProcessTemplate|null> {
   let { client, connection, filter } = options
 
   let findConditions: FindConditions<ProcessTemplate> = {}
-  findConditions.id = filter.id
+  findConditions.id = filter.idProcessTemplate
 
-  let instances = await connection.manager.find(ProcessTemplate, {
+  let template = await connection.manager.findOne(ProcessTemplate, {
     where: findConditions,
   })
-  return instances
+  return template || null
 }
 
 export async function getDataObjects(options: {
@@ -33,24 +33,31 @@ export async function getDataObjects(options: {
   let findConditions: FindConditions<DataObjectInstance> = {}
   findConditions.processInstanceId = filter.processInstanceId
 
-  let dataObj = await connection.manager.find(DataObjectInstance, {
+  let dataObjs = await connection.manager.find(DataObjectInstance, {
     where: findConditions,
   })
-  return dataObj
+  return dataObjs
 }
 
 export async function getNodeElements(options: {
   connection: Connection,
   client?: ContextUser,
-  filter: { id: number },
-}): Promise<NodeElementTemplate[]> {
+  filter: {
+    idProcessInstance: number,
+    status?: string,
+  },
+}): Promise<NodeElementInstance[]> {
   let { client, connection, filter } = options
 
-  let findConditions: FindConditions<NodeElementTemplate> = {}
-  findConditions.processTemplateId = filter.id
+  let findConditions: FindConditions<NodeElementInstance> = {}
+  findConditions.processInstanceId = filter.idProcessInstance
+  if (filter.status) {
+    // @ts-ignore
+    findConditions.status = Like(`${filter.status}`)
+  }
 
-  let node = await connection.manager.find(NodeElementTemplate, {
+  let nodes = await connection.manager.find(NodeElementInstance, {
     where: findConditions,
   })
-  return node
+  return nodes
 }

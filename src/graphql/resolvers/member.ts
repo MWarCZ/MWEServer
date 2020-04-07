@@ -61,7 +61,7 @@ export const Mutation: GQLTypes.MutationResolvers = {
 export const Member: GQLTypes.MemberResolvers = {
   user: async(parrent, args, {db: connection, client}, info) => {
     let member = parrent as EntityMember
-    console.log('Member-user', member)
+    // console.log('Member-user', member)
     let user = await ApiMember.getUser({
       connection,
       client,

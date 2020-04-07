@@ -1,6 +1,15 @@
 import { GQLTypes } from '../generated/types'
 import { Mutation as AuthMutation } from './auth'
-import { Mutation as BpmnMutation, Query as BpmnQuery } from './bpmn'
+import {
+  DataObjectInstance,
+  DataObjectTemplate,
+  Mutation as BpmnMutation,
+  NodeElementInstance,
+  NodeElementTemplate,
+  ProcessInstance,
+  ProcessTemplate,
+  Query as BpmnQuery,
+} from './bpmn'
 import { Group, Mutation as GroupMutation, Query as GroupQuery } from './group'
 import { Member, Mutation as MemberMutation } from './member'
 import { Mutation as UserMutation, Query as UserQuery, User } from './user'
@@ -28,5 +37,12 @@ export const resolvers: GQLTypes.Resolvers = {
   User,
   Group,
   Member,
+
+  ProcessTemplate,
+  ProcessInstance,
+  NodeElementTemplate,
+  NodeElementInstance,
+  DataObjectTemplate,
+  DataObjectInstance,
 }
 export default resolvers

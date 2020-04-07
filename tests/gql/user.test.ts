@@ -75,7 +75,7 @@ describe('GQL: User', () => {
 
         expect(res.errors).toBeArrayOfSize(1)
         res.errors && res.errors.forEach(err => {
-          expect(err.message).toBe(UnloggedUserError.defaultMessage)
+          expect(err.message).toBe(UnloggedUserError.defaultMessageCZ)
         })
         expect(res.data).toBeObject()
         if (res.data) {
@@ -135,7 +135,7 @@ describe('GQL: User', () => {
 
         expect(res.errors).toBeArrayOfSize(1)
         res.errors && res.errors.forEach(err => {
-          expect(err.message).toBe(UnloggedUserError.defaultMessage)
+          expect(err.message).toBe(UnloggedUserError.defaultMessageCZ)
         })
         expect(res.data).toBeObject()
         if (res.data) {

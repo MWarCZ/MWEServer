@@ -3,6 +3,7 @@ import { v4 as uuid } from 'uuid'
 
 import { JsonMap } from '../../types/json'
 import { objectFiller, OptionsConstructor } from '../../utils/objectFiller'
+import { Group } from '../group'
 import { BaseElementInstance, BaseElementTemplate, ProcessStatus } from './baseElement'
 import { DataObjectInstance, DataObjectTemplate } from './dataObject'
 import { NodeElementInstance, NodeElementTemplate } from './nodeElement'
@@ -79,6 +80,9 @@ export class ProcessTemplate implements BaseElementTemplate {
   @OneToMany(type => SequenceFlowTemplate, entity => entity.processTemplate)
   sequenceFlows?: SequenceFlowTemplate[]
 
+  @Column('varchar', { default: '', nullable: false, length: 255 })
+  candidateManager?: string
+
   constructor(options?: OptionsConstructor<ProcessTemplate>) {
     objectFiller(this, options)
   }
@@ -132,6 +136,12 @@ export class ProcessInstance implements BaseElementInstance {
 
   @OneToMany(type => SequenceFlowInstance, entity => entity.processInstance)
   sequenceFlows?: SequenceFlowInstance[]
+
+  @ManyToOne(
+    type => Group,
+    { nullable: true },
+  )
+  manager: Group | null = null
 
   constructor(options?: OptionsConstructor<ProcessInstance>) {
     objectFiller(this, options)

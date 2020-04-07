@@ -47,21 +47,39 @@ export const InclusiveGateway: NodeImplementation = {
   run({ context, fn }) {
     // Vyhodnotit podminy odchozich
     const { $OUTGOING } = context
-    let selectedOutgoing: number[] = []
+    // let selectedOutgoing: number[] = []
 
     // Splustit prvni splnujici vyraz
-    if (true) {
-      let tmp = $OUTGOING.find(value => {
-        let { expression = 'true' } = value
-        if (expression === '') expression = 'true'
-        let result = evalExpression({ expression, context })
-        return result
-      })
-      selectedOutgoing = (tmp) ? [tmp.id] : []
+    const defaults = $OUTGOING.filter(o => o.flag === 'default')
+    const normals = $OUTGOING.filter(o => o.flag !== 'default')
+
+    const selected = normals.find(value => {
+      let { expression = 'true' } = value
+      if(expression === '') expression = 'true'
+      const result = evalExpression({ expression, context })
+      return result
+    })
+    if(selected) {
+      if (!fn.initNext) return
+      fn.initNext([selected.id])
+    } else {
+      let nums = defaults.map(v=>v.id)
+      if (!fn.initNext) return
+      fn.initNext(nums)
     }
-    console.warn('OR>', $OUTGOING)
-    if (!fn.initNext) return
-    fn.initNext(selectedOutgoing)
+
+    // if (true) {
+    //   let tmp = $OUTGOING.find(value => {
+    //     let { expression = 'true' } = value
+    //     if (expression === '') expression = 'true'
+    //     let result = evalExpression({ expression, context })
+    //     return result
+    //   })
+    //   selectedOutgoing = (tmp) ? [tmp.id] : []
+    // }
+    // console.warn('OR>', $OUTGOING)
+    // if (!fn.initNext) return
+    // fn.initNext(selectedOutgoing)
 
     return true
   },
@@ -83,16 +101,36 @@ export const ExclusiveGateway: NodeImplementation = {
     let selectedOutgoing: number[] = []
 
     // Spustit vse splnujici vyraz
-    selectedOutgoing = $OUTGOING.filter(value => {
+
+    const defaults = $OUTGOING.filter(o => o.flag === 'default')
+    const normals = $OUTGOING.filter(o => o.flag !== 'default')
+
+    const selected = normals.filter(value => {
       let { expression = 'true' } = value
       if (expression === '') expression = 'true'
-      let result = evalExpression({ expression, context })
+      const result = evalExpression({ expression, context })
       return result
-    }).map(v => v.id)
+    })
 
-    console.warn('XOR>', $OUTGOING)
+    if (selected.length) {
+      selectedOutgoing = selected.map(v => v.id)
+    } else {
+      selectedOutgoing = defaults.map(v => v.id)
+    }
     if (!fn.initNext) return
     fn.initNext(selectedOutgoing)
+
+    // let x = $OUTGOING.filter(value => value.flag='default')
+    // selectedOutgoing = $OUTGOING.filter(value => {
+    //   let { expression = 'true' } = value
+    //   if (expression === '') expression = 'true'
+    //   let result = evalExpression({ expression, context })
+    //   return result
+    // }).map(v => v.id)
+
+    // console.warn('XOR>', $OUTGOING)
+    // if (!fn.initNext) return
+    // fn.initNext(selectedOutgoing)
 
     return true
   },

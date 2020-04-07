@@ -58,6 +58,7 @@ export function authenticateLocal(options: {
     passport.authenticate('local', (err, client) => {
       // console.warn('authLocal: ', client)
       if (err) { rejects(err) }
+      console.log('client: ', client, client instanceof User)
       if (client instanceof User) {
         resolve(client)
       } else {

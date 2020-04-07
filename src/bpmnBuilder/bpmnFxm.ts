@@ -24,7 +24,7 @@ export declare namespace BpmnFxm {
   type Definitions = {
     '#attr'?: DefinitionsAttr,
     process?: Process[],
-    collaboration?: {}[],
+    collaboration?: Collaboration[],
   }
 
   type ProcessAttr = {

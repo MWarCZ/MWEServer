@@ -16,10 +16,12 @@ export interface RunnerServerCallbacks {
 
 export class RunnerServer {
   msWaitTime: number
-  waitTimeout?: NodeJS.Timeout
-  execPromise: Promise<this> = Promise.resolve(this)
+  // waitTimeout?: NodeJS.Timeout
+  // execPromise: Promise<this> = Promise.resolve(this)
   execEnabled: boolean = false
   stepper: boolean = false
+
+  interruptionSignal?: () => void
 
   callbacks: RunnerServerCallbacks
 
@@ -39,7 +41,7 @@ export class RunnerServer {
     this.connection = options.connection
     this.runner = new BpmnRunner(this.connection)
     this.callbacks = {...options.callbacks }
-    this.msWaitTime = options.msWaitTime || 1000 * 60
+    this.msWaitTime = options.msWaitTime || (1000 * 60 * 60)
     this.queues = {
       nodes: options.queueNodes || [],
     }
@@ -53,35 +55,45 @@ export class RunnerServer {
     console.log('S start')
     console.error(process.memoryUsage().heapUsed)
     this.execEnabled = true
-    this.waitExec()
+    this.exec().catch(e => console.error('S start E', e))
     return this
   }
 
   /**
-   * Nastavi waitTimeout po kterem se opet spusti vykonavani uzlu z fronty.
+   * Nastavi cekani po urcitou dobu.
+   * @returns Vraci slib trvajici zadanou dobu a funkci pro preruseni slibu.
    */
-  wait() {
+  wait(ms: number = this.msWaitTime) {
     console.log('S waiting')
-    this.waitTimeout = setTimeout(
-      () => this.waitExec(),
-      this.msWaitTime,
-    )
-    return this
-  }
-  waitExec() {
-    return this.execPromise = this.exec().then(_ => this.wait())
+    // this.waitTimeout = setTimeout(
+    //   () => this.waitExec(),
+    //   this.msWaitTime,
+    // )
+    // return this
+    let interruptionSignal = () => { }
+    const promisse = new Promise((resolve, reject) => {
+      let waitTimeout = setTimeout(() => {
+        resolve()
+      }, ms)
+      interruptionSignal = () => {
+        clearTimeout(waitTimeout)
+        reject('Interrupted')
+      }
+      return this
+    })
+    return {
+      promisse,
+      interruptionSignal,
+    }
   }
 
   /**
-   * Probudi opetovne provadeni ze cekani pokud ceka.
+   * Probudi opetovne provadeni z cekani pokud ceka.
    */
   wake() {
     console.log('S wake')
-    if (this.waitTimeout) {
-      console.log('S wakeUP')
-      clearTimeout(this.waitTimeout)
-      this.waitTimeout = undefined
-      this.waitExec()
+    if (this.interruptionSignal) {
+      this.interruptionSignal()
     }
     return this
   }
@@ -92,9 +104,7 @@ export class RunnerServer {
   stop() {
     console.log('S stop')
     this.execEnabled = false
-    this.waitTimeout && clearTimeout(this.waitTimeout)
-    this.waitTimeout = undefined
-    return this.execPromise
+    return this
   }
 
   /**
@@ -102,40 +112,88 @@ export class RunnerServer {
    */
   async exec() {
     console.log('S exec start')
+    console.warn(process.memoryUsage().heapUsed)
 
     let node: NodeElementInstance | undefined
-    // A) Je povoleno provadeni.
-    // B) Opakuj dokud je co provest.
-    while (this.execEnabled && (node = this.queues.nodes.shift())) {
-      let result = await this.runner.runIt({ instance: node })
+    while (this.execEnabled) {
+      while (this.execEnabled && (node = this.queues.nodes.shift())) {
+        try {
+          let result = await this.runner.runIt({ instance: node })
 
-      // Upraveni fronty s uzly na zaklade vysledku
-      this.changedNodes(result.targetNodeInstances)
+          // Upraveni fronty s uzly na zaklade vysledku
+          this.changedNodes(result.targetNodeInstances)
 
-      // Stepper => pro ladeni, vykona vzdy jen jeden krok.
-      if (this.stepper) {
-        this.stop()
-      }
+          // Stepper => pro ladeni, vykona vzdy jen jeden krok.
+          if (this.stepper) {
+            this.stop()
+          }
 
-      // prochazeni zpetnych volani
-      for (let key in this.callbacks) {
-        let callback = (this.callbacks as any)[key]
-        if (typeof callback !== 'function') break
-        let args: any
-        switch (key) {
-          case RunnerServerCallbackName.changedNodes:
-            args = result.targetNodeInstances
-            break
-          case RunnerServerCallbackName.changedProcess:
-            args = result.processInstance
-            break
-          default:
+          // prochazeni zpetnych volani
+          for (let key in this.callbacks) {
+            let callback = (this.callbacks as any)[key]
+            if (typeof callback !== 'function') break
+            let args: any
+            switch (key) {
+              case RunnerServerCallbackName.changedNodes:
+                args = result.targetNodeInstances
+                break
+              case RunnerServerCallbackName.changedProcess:
+                args = result.processInstance
+                break
+              default:
 
+            }
+            await callback(args)
+          }
+        } catch (e) {
+          console.error('S exec E:', e)
         }
-        await callback(args)
       }
+      // Cekani
+      let wait = this.wait(this.msWaitTime)
+      this.interruptionSignal = wait.interruptionSignal
+      console.log('S exec waiting ...')
+      console.warn(process.memoryUsage().heapUsed)
+      try {
+        await wait.promisse
+        console.log('S exec wakeup timeout')
+      } catch { console.log('S exec wakeup force') }
+      console.warn(process.memoryUsage().heapUsed)
+      this.interruptionSignal = undefined
     }
+    //#region xxx
+    // // A) Je povoleno provadeni.
+    // // B) Opakuj dokud je co provest.
+    // while (this.execEnabled && (node = this.queues.nodes.shift())) {
+    //   let result = await this.runner.runIt({ instance: node })
 
+    //   // Upraveni fronty s uzly na zaklade vysledku
+    //   this.changedNodes(result.targetNodeInstances)
+
+    //   // Stepper => pro ladeni, vykona vzdy jen jeden krok.
+    //   if (this.stepper) {
+    //     this.stop()
+    //   }
+
+    //   // prochazeni zpetnych volani
+    //   for (let key in this.callbacks) {
+    //     let callback = (this.callbacks as any)[key]
+    //     if (typeof callback !== 'function') break
+    //     let args: any
+    //     switch (key) {
+    //       case RunnerServerCallbackName.changedNodes:
+    //         args = result.targetNodeInstances
+    //         break
+    //       case RunnerServerCallbackName.changedProcess:
+    //         args = result.processInstance
+    //         break
+    //       default:
+
+    //     }
+    //     await callback(args)
+    //   }
+    // }
+    //#endregion
     console.log('S exec end')
     console.warn(process.memoryUsage().heapUsed)
     return this
@@ -169,6 +227,7 @@ export class RunnerServer {
     this.stepper = false
   }
   step() {
-    this.start()
+    console.log('S step')
+    return this.start()
   }
 }

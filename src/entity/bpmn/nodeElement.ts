@@ -3,6 +3,7 @@ import { v4 as uuid } from 'uuid'
 
 import { JsonMap } from '../../types/json'
 import { objectFiller, OptionsConstructor } from '../../utils/objectFiller'
+import { User } from '../user'
 import { ActivityStatus } from './baseElement'
 import { DataObjectTemplate } from './dataObject'
 import { FlowElementInstance, FlowElementTemplate } from './flowElement'
@@ -130,6 +131,21 @@ export class NodeElementInstance implements FlowElementInstance {
     { onDelete: 'CASCADE' },
   )
   template?: NodeElementTemplate
+
+  // ==============
+
+  // @Column('varchar', { default: '', nullable: false, length: 255 })
+  // assignee: string = ''
+  @ManyToOne(
+    type => User,
+    { nullable: true },
+  )
+  assignee: User | null = null
+
+  @Column({ nullable: true })
+  assigneeId?: number
+
+  // ==============
 
   constructor(options?: OptionsConstructor<NodeElementInstance>) {
     objectFiller(this, options)

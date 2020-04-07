@@ -4,6 +4,7 @@ import { GraphQLServer } from 'graphql-yoga'
 import { join as pathJoin } from 'path'
 
 import { passportUseStrategies } from './api/auth'
+import { BpmnRunner } from './bpmnRunner'
 import { ActivityStatus, NodeElementInstance } from './entity/bpmn'
 import { generateContextFunction } from './graphql/context'
 import { resolvers } from './graphql/resolvers'
@@ -33,6 +34,7 @@ export async function createGQLServer() {
   let context = await generateContextFunction({
     typeormConnection: connection,
     worker,
+    runner: new BpmnRunner(connection),
   })
   let server =  new GraphQLServer({
     context,

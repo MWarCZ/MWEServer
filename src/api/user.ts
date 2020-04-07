@@ -179,7 +179,7 @@ export async function getMemberships(options: {
     // sam sebe => OK
   } else {
     return []
-    //throw new PermissionError()
+    // throw new PermissionError()
   }
 
   //#endregion
@@ -407,9 +407,15 @@ export async function updateUserInfo(options: {
     where: findConditions,
   })
   if (!user) { throw new Error('Uzivatel nenalezen') }
-  data.email && (user.email = data.email)
-  data.firstName && (user.firstName = data.firstName)
-  data.lastName && (user.lastName = data.lastName)
+  if (typeof data.email === 'string') {
+    user.email = data.email
+  }
+  if (typeof data.firstName === 'string') {
+    user.firstName = data.firstName
+  }
+  if (typeof data.lastName === 'string') {
+    user.lastName = data.lastName
+  }
   user = await connection.manager.save(user)
 
   return user
@@ -444,9 +450,14 @@ export async function deleteUser(options: {
 
   //#endregion
 
-  let result = await connection.manager.delete(User, {
+  let user = await connection.manager.findOne(User, {
     where: findConditions,
   })
+  if (!user) { throw new Error('Uzivatel nenalezen') }
+  if (user.protected) {
+    throw new PermissionError()
+  }
+  await connection.manager.remove(user)
 
   return true
 }

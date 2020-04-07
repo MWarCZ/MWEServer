@@ -18,9 +18,9 @@ export interface NodeImplementation {
   }
 
   // Akce doplnujici hodnoty (dodatky) pro predpokladany validni pruchod pres prerun.
-  // additions?: NodeImplementationFunction
+  additions?: NodeImplementationFunction
   // Vraci jake hodnoty (dotatky) jsou vyzadovany pro spusteni.
-  additionsFormat?: NodeImplementationFunction
+  additionsFormat?: NodeImplementationFlatFunction
   // Akce pred spustenim hlavniho behoveho bloku uzlu
   // pr. validace vstupu, vyhodnoceni podminek, ...
   prerun?: NodeImplementationFunction,
@@ -42,6 +42,7 @@ export interface NodeImplementationFnRegister {
   [key: string]: ((...args: any[]) => void) | undefined,
 }
 
+//#region Funkce pro beh uzlu
 export interface NodeImplementationFunctionOptions {
   context: RunContext,
   fn: NodeImplementationFnRegister,
@@ -50,6 +51,26 @@ export interface NodeImplementationFunctionOptions {
 export interface NodeImplementationFunction {
   (options: NodeImplementationFunctionOptions): any
 }
+//#endregion
+
+//#region Funkce pro zjisteni informaci od uzlu
+export interface NodeImplementationFlatFunctionOptions {
+  context: RunContext,
+}
+
+export interface NodeImplementationFlatFunction {
+  (options: NodeImplementationFlatFunctionOptions): NodeImplementationFlatItemsMap
+}
+export interface NodeImplementationFlatItemsMap {
+  [key: string]: NodeImplementationFlatItem
+}
+export interface NodeImplementationFlatItem {
+  type: 'text' | 'number' | 'select' | 'multiselect',
+  default?: string | number | boolean | null | (string | number | boolean | null)[],
+  possibilities?: (string | number | boolean | null)[],
+  hints: string,
+}
+//#endregion
 
 export type LibrariesWithNodeImplementations = {
   [implementationRef: string]: NodeImplementation | undefined,

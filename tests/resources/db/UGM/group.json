@@ -28,8 +28,9 @@
     "id": 4
   },
   {
-    "name": "Group5",
-    "protected": false,
+    "describe": "TopManager muze provadet destruktivni akce nad procesy.",
+    "name": "TopManager",
+    "protected": true,
     "removed": false,
     "id": 5
   },

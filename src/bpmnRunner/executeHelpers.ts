@@ -25,8 +25,10 @@ export function safeExecuteNodeFunction(options: {
     status,
   } = options
   try {
-    let result = executeFunction ? executeFunction(executeFunctionArgs) : true
-    nodeInstance.returnValue = executeFunctionArgs.context.$OUTPUT
+    if (executeFunction) {
+      let result = executeFunction ? executeFunction(executeFunctionArgs) : true
+      nodeInstance.returnValue = executeFunctionArgs.context.$OUTPUT
+    }
     nodeInstance.status = status.onSuccess
     return true
   } catch (e) {
@@ -34,7 +36,9 @@ export function safeExecuteNodeFunction(options: {
     nodeInstance.status = status.onFailure
     if (e instanceof Error) {
       nodeInstance.returnValue = { error: { name: e.name, message: e.message, lastStatus } }
+      console.log('AAAAAAAAAAAAAAAAAAAAAAA', nodeInstance)
     } else {
+      console.log('bbbbbbbbbbbbbbbbbbbbbb')
       throw e
     }
     return false
@@ -114,28 +118,91 @@ export function executeNodeOnFailing(options: {
   })
 }
 
-// ==========================
-/**
- * @throws Pokud nastane chyba pri volani implementace onFailing, onCompleting.
- * @returns Vraci seznam s SequenceFlow.id, ktere maji byti provedeny.
- */
-export function executeNode(options: {
+
+export function executeNodeAdditions(options: {
   nodeInstance: NodeElementInstance,
   nodeImplementation: NodeImplementation,
-  context: RunContext,
+  executeArgs: {
+    context: RunContext,
+    fn: NodeImplementationFnRegister,
+  },
+}) {
+  return safeExecuteNodeFunction({
+    nodeInstance: options.nodeInstance,
+    status: {
+      onSuccess: ActivityStatus.Ready,
+      onFailure: ActivityStatus.Waiting,
+    },
+    executeFunction: options.nodeImplementation.additions,
+    executeFunctionArgs: options.executeArgs,
+  })
+}
+
+// ==========================
+export function prepareServiceImplementation2Run(options: {
   services: ServiceImplementation[],
 }) {
-  const { nodeInstance, nodeImplementation, context, services } = options
-
   let queues: { [key: string]: any[] } = {}
   const fn: NodeImplementationFnRegister = {}
   // Mapovani nahradni funkce a zasobnik argumentu.
-  for (let service of services) {
+  for (let service of options.services) {
     queues[service.name] = []
     fn[service.name] = (...args) => {
       queues[service.name].push(args)
     }
   }
+  return { queues, fn }
+}
+export function callServiceImplementationFunctions(options: {
+  services: ServiceImplementation[],
+  queues: { [key: string]: any[] },
+}) {
+  // Volani callbacku z services
+  for (let service of options.services) {
+    for (let args of options.queues[service.name]) {
+      service.fn(...args)
+    }
+  }
+}
+
+// ==========================
+export interface TopLevelExecuteFunctionArgs {
+  nodeInstance: NodeElementInstance,
+  nodeImplementation: NodeImplementation,
+  context: RunContext,
+  services: ServiceImplementation[],
+}
+
+export function executeAdditons(options: TopLevelExecuteFunctionArgs) {
+  const { nodeInstance, nodeImplementation, context, services } = options
+
+  // Pripraveni funkci pro uzly a fronty s daty pro zpetna volani sluzeb.
+  const { fn, queues } = prepareServiceImplementation2Run({ services })
+
+  // status === Ready
+  let resultAdditions: boolean = false
+
+  resultAdditions = executeNodeAdditions({
+    nodeInstance,
+    nodeImplementation,
+    executeArgs: {
+      context,
+      fn,
+    },
+  })
+
+  // Volani callbacku z services
+  callServiceImplementationFunctions({ services, queues })
+
+  return nodeInstance.returnValue
+}
+
+
+export function executeNode(options: TopLevelExecuteFunctionArgs) {
+  const { nodeInstance, nodeImplementation, context, services } = options
+
+  // Pripraveni funkci pro uzly a fronty s daty pro zpetna volani sluzeb.
+  const { fn, queues } = prepareServiceImplementation2Run({services})
 
   // status === Ready
   let resultPrerun: boolean = false
@@ -151,6 +218,7 @@ export function executeNode(options: {
       fn,
     },
   })
+  // console.log('000:>>', nodeInstance)
   // status = Active x Waiting
   if (resultPrerun) {
     // status === Actiove
@@ -162,6 +230,8 @@ export function executeNode(options: {
         fn,
       },
     })
+    // console.log('111:>>', nodeInstance)
+
     // status = Completing x Failing
     if (resultRun) {
       // status === Completing
@@ -190,12 +260,9 @@ export function executeNode(options: {
     nodeInstance.endDateTime = new Date()
   }
 
+  // console.log("AAA:>>", nodeInstance)
   // Volani callbacku z services
-  for (let service of services) {
-    for (let args of queues[service.name]) {
-      service.fn(...args)
-    }
-  }
+  callServiceImplementationFunctions({ services, queues })
 
   return nodeInstance.returnValue
 }
