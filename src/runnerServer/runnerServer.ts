@@ -135,7 +135,7 @@ export class RunnerServer {
             let args: any
             switch (key) {
               case RunnerServerCallbackName.changedNodes:
-                args = result.targetNodeInstances
+                args = [result.nodeInstance, ...result.targetNodeInstances]
                 break
               case RunnerServerCallbackName.changedProcess:
                 args = result.processInstance

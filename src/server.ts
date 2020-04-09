@@ -1,6 +1,6 @@
 import { existsSync as fsExists } from 'fs'
 import { importSchema } from 'graphql-import'
-import { GraphQLServer } from 'graphql-yoga'
+import { GraphQLServer, PubSub } from 'graphql-yoga'
 import { join as pathJoin } from 'path'
 
 import { passportUseStrategies } from './api/auth'
@@ -23,10 +23,15 @@ export async function createGQLServer() {
   let connection = await createConn()
 
   let worker: WorkerHelper | undefined
+  let pubsub: PubSub | undefined
   let filename = pathJoin(__dirname, './runnerServer.service.js')
   if (fsExists(filename)) {
     worker = new WorkerHelper({ filename })
-    workerSetupGQL(worker)
+    pubsub = new PubSub()
+    workerSetupGQL({
+      workerHelper: worker,
+      pubsub,
+    })
   } else {
     console.warn(`Server GQL: Worker '${filename}' nebylo mozne najit.`)
   }
@@ -34,6 +39,7 @@ export async function createGQLServer() {
   let context = await generateContextFunction({
     typeormConnection: connection,
     worker,
+    pubsub,
     runner: new BpmnRunner(connection),
   })
   let server =  new GraphQLServer({

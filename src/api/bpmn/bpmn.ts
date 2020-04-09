@@ -209,6 +209,11 @@ export async function uploadProcess(options: {
   if (!client) { throw new UnloggedUserError() }
   const groupNames = getClientGroupNames(client)
 
+  // Overeni prav
+  if (!groupNames.includes(ProtectedGroups.TopManager)) {
+    throw new PermissionError()
+  }
+
   const builder = new BpmnBuilder(connection)
   let process = await builder.loadFromXml(xml)
   return process
@@ -367,7 +372,7 @@ export async function deleteProcessTemplate(options: {
   }
   await connection.manager.remove(process)
 
-  return true
+  return process
 }
 export async function deleteProcessInstance(options: {
   connection: Connection,
@@ -393,7 +398,7 @@ export async function deleteProcessInstance(options: {
   }
   await connection.manager.remove(process)
 
-  return true
+  return process
 }
 
 

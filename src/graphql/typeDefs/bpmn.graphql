@@ -28,6 +28,18 @@ type Mutation {
   updateNodeTemplate(idNT: Int!, input: NodeTemplateUpdateInput!): NodeElementTemplate
 }
 
+type Subscription {
+  newProcessTemplate: ProcessTemplate!,
+  deletedProcessTemplate: ProcessTemplate!,
+  changedProcessTemplate: ProcessTemplate!,
+
+  newProcessInstance: ProcessInstance!,
+  deletedProcessInstance: ProcessInstance!,
+  changedProcessInstance: ProcessInstance!,
+
+  changedNodeInstances(idPI: Int): [NodeElementInstance!]!,
+}
+
 type NodeAdditions {
   name: String
   type: String

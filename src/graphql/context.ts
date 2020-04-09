@@ -1,3 +1,4 @@
+import { PubSub } from 'graphql-yoga'
 import { Context, ContextParameters } from 'graphql-yoga/dist/types'
 import { Connection } from 'typeorm'
 
@@ -19,15 +20,18 @@ export interface MyContext extends Context, ContextParameters {
   client?: ContextUser,
   worker?: WorkerHelper,
   runner?: BpmnRunner,
+  pubsub: PubSub,
 }
 
 export const generateContextFunction = async(options?: {
   typeormConnection?: Connection,
   worker?: WorkerHelper,
   runner?: BpmnRunner,
+  pubsub?: PubSub,
 }) => {
-  const {typeormConnection, worker, runner} = options || {}
+  const {typeormConnection, worker, runner, pubsub: pubsub1} = options || {}
   let db = (typeormConnection) ? typeormConnection : (await createConn())
+  const pubsub = (pubsub1)? pubsub1 : new PubSub()
   return async(param: ContextParameters): Promise<MyContext> => {
     let user: User|undefined
     try {
@@ -52,6 +56,7 @@ export const generateContextFunction = async(options?: {
       client,
       worker,
       runner,
+      pubsub,
     }
   }
 }
