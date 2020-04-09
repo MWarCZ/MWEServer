@@ -265,7 +265,7 @@ export async function withdrawnProcess(options: {
     status: {
       process: ProcessStatus.Withdrawn,
     },
-    fn: runner.processWithdrawn,
+    fn: (...args) => runner.processWithdrawn(...args),
   })
   return result
 }
@@ -435,7 +435,6 @@ export async function updateProcessTemplate(options: {
     process.name = data.name
   }
   process = await connection.manager.save(process)
-
   return process
 }
 

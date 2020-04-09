@@ -958,6 +958,11 @@ export class BpmnRunner {
       },
     })
     if (processInstance) {
+
+      if([ProcessStatus.Completed, ProcessStatus.Failled, ProcessStatus. Terminated].includes(processInstance.status)) {
+        throw new Error('Neni mozne prerusit dany proces.')
+      }
+
       let nodeInstances = (processInstance.nodeElements) ? processInstance.nodeElements : []
       delete processInstance.nodeElements
       let result = options.fn({
@@ -1027,6 +1032,7 @@ export class BpmnRunner {
       process?: ProcessStatus,
     },
   }) {
+    options.processInstance.endDateTime = new Date()
     return this.processUniversalWithdrawn({
       ...options,
       status: {
