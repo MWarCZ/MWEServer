@@ -338,10 +338,20 @@ export const Subscription: GQLTypes.SubscriptionResolvers = {
   },
 
   changedNodeInstances: {
-    subscribe: (_, tmpArgs, tmpContext) => {
-      const { pubsub } = tmpContext as MyContext
-      return pubsub.asyncIterator(SubscriptionChanel.changedNodeInstances)
-    },
+    // subscribe: (_, tmpArgs, tmpContext) => {
+    //   const { pubsub } = tmpContext as MyContext
+    //   return pubsub.asyncIterator(SubscriptionChanel.changedNodeInstances)
+    // },
+    subscribe: withFilter(
+      (_, tmpArgs, tmpContext) => {
+        const { pubsub } = tmpContext as MyContext
+        return pubsub.asyncIterator(SubscriptionChanel.changedNodeInstances)
+      },
+      (payload) => {
+        return Array.isArray(payload.changedNodeInstances)
+          && (payload.changedNodeInstances.length > 0)
+      }
+    ),
     resolve: (payload: any, args: GQLTypes.SubscriptionChangedNodeInstancesArgs) => {
       let nodes = payload.changedNodeInstances as Bpmn.NodeElementInstance[]
       if (args.idPI) {
@@ -349,7 +359,6 @@ export const Subscription: GQLTypes.SubscriptionResolvers = {
           return node && node.id === args.idPI
         })
       }
-      // console.log('NI xxx', payload, args)
       //@ts-ignore
       return nodes as GQLTypes.NodeElementInstance[]
     },
