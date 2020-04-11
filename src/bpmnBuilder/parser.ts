@@ -1,3 +1,5 @@
+import he from 'he'
+
 import { SupportedNode } from '../bpmnRunner/supportedNode'
 import {
   BaseElementTemplate,
@@ -297,6 +299,7 @@ export class Parser {
     } else {
       entity.expression = conditionExpression || ''
     }
+    entity.expression = he.decode(entity.expression)
 
     return {
       entity,
@@ -733,7 +736,7 @@ export class Parser {
   ): T {
     let script = attr[`${this.ns.bpmn2}script` as 'script']
     if (typeof script !== 'object') {
-      entity.data['script'] = `${script}`
+      entity.data['script'] = he.decode(`${script}`)
     }
     return entity
   }
