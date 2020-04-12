@@ -29,9 +29,9 @@ type Mutation {
 }
 
 type Subscription {
-  newProcessTemplate: ProcessTemplate!,
-  deletedProcessTemplate: ProcessTemplate!,
-  changedProcessTemplate: ProcessTemplate!,
+  newProcessTemplates: [ProcessTemplate!],
+  deletedProcessTemplates: [ProcessTemplate!],
+  changedProcessTemplates: [ProcessTemplate!],
 
   newProcessInstance: ProcessInstance!,
   deletedProcessInstance: ProcessInstance!,

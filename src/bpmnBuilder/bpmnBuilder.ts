@@ -1,6 +1,7 @@
 import { parse, validate } from 'fast-xml-parser'
 import { Connection } from 'typeorm'
 
+import { ProcessTemplate } from '../entity/bpmn'
 import { options as fxpOptions } from './fxp.config'
 import { BpmnNamespace } from './namespace'
 import { Parser } from './parser'
@@ -31,9 +32,10 @@ export class BpmnBuilder {
     const level2 = level1.Process.map(process => this.parser.parseLevel2(process))
 
     let process = new Set(level1.Process.map(e => e.entity))
+    let savedProcess: ProcessTemplate[] = []
     await this.connection.transaction(async manager => {
 
-      await manager.save([...process])
+      savedProcess = await manager.save([...process])
 
       await Promise.all(
         level2.map(async(level) => {
@@ -64,8 +66,10 @@ export class BpmnBuilder {
         }),
       )
     })
-
-    return [...process]
+    console.log('=====================')
+    console.log(savedProcess)
+    return savedProcess
+    // return [...process]
   }
 
   async loadFromXml(xmlBpmn: string) {

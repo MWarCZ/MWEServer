@@ -114,8 +114,10 @@ export const Mutation: GQLTypes.MutationResolvers = {
       client,
       xml: xml as string,
     })
-    pubsub.publish(SubscriptionChanel.newProcessTemplate, {
-      [SubscriptionChanel.newProcessTemplate]: process,
+    console.log('AAAAAAAAAAAAAAA')
+    console.log(process)
+    pubsub.publish(SubscriptionChanel.newProcessTemplates, {
+      [SubscriptionChanel.newProcessTemplates]: process,
     })
     // @ts-ignore
     return process as GQLTypes.ProcessTemplate[]
@@ -187,6 +189,7 @@ export const Mutation: GQLTypes.MutationResolvers = {
           worker.postChangedProcess(result.processInstance)
           worker.postChangedNodes([...result.targetNodeInstances])
         }
+        console.log('Withrawn PI', result)
         pubsub.publish(SubscriptionChanel.changedProcessInstance, {
           [SubscriptionChanel.changedProcessInstance]: result.processInstance,
         })
@@ -245,8 +248,9 @@ export const Mutation: GQLTypes.MutationResolvers = {
       client,
       processTemplate: { id: args.idPT },
     })
-    pubsub.publish(SubscriptionChanel.deletedProcessTemplate, {
-      [SubscriptionChanel.deletedProcessTemplate]: result,
+    console.log('Deleted PT:', result)
+    pubsub.publish(SubscriptionChanel.deletedProcessTemplates, {
+      [SubscriptionChanel.deletedProcessTemplates]: [result],
     })
     return true
   },
@@ -272,9 +276,10 @@ export const Mutation: GQLTypes.MutationResolvers = {
         candidateManager: args.input.candidateManager as string,
       },
     })
+    console.log('Updated PT:',result)
 
-    pubsub.publish(SubscriptionChanel.changedProcessTemplate, {
-      [SubscriptionChanel.changedProcessTemplate]: result,
+    pubsub.publish(SubscriptionChanel.changedProcessTemplates, {
+      [SubscriptionChanel.changedProcessTemplates]: [result],
     })
     // @ts-ignore
     return result as GQLTypes.ProcessTemplate
@@ -295,25 +300,25 @@ export const Mutation: GQLTypes.MutationResolvers = {
 }
 
 export const Subscription: GQLTypes.SubscriptionResolvers = {
-  newProcessTemplate: {
+  newProcessTemplates: {
     subscribe: withFilter(
       (_, tmpArgs, tmpContext) => {
         const { pubsub } = tmpContext as MyContext
-        return pubsub.asyncIterator(SubscriptionChanel.newProcessTemplate)
+        return pubsub.asyncIterator(SubscriptionChanel.newProcessTemplates)
       },
       () => { return true }
     ),
   },
-  deletedProcessTemplate: {
+  deletedProcessTemplates: {
     subscribe: (_, tmpArgs, tmpContext) => {
       const { pubsub } = tmpContext as MyContext
-      return pubsub.asyncIterator(SubscriptionChanel.deletedProcessTemplate)
+      return pubsub.asyncIterator(SubscriptionChanel.deletedProcessTemplates)
     },
   },
-  changedProcessTemplate: {
+  changedProcessTemplates: {
     subscribe: (_, tmpArgs, tmpContext) => {
       const { pubsub } = tmpContext as MyContext
-      return pubsub.asyncIterator(SubscriptionChanel.changedProcessTemplate)
+      return pubsub.asyncIterator(SubscriptionChanel.changedProcessTemplates)
     },
   },
 

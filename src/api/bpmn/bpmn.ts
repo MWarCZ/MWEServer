@@ -372,6 +372,7 @@ export async function deleteProcessTemplate(options: {
   }
   await connection.manager.remove(process)
 
+  process.id = processTemplate.id
   return process
 }
 export async function deleteProcessInstance(options: {
@@ -398,6 +399,7 @@ export async function deleteProcessInstance(options: {
   }
   await connection.manager.remove(process)
 
+  process.id = processInstance.id
   return process
 }
 

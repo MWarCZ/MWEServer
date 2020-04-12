@@ -14,8 +14,15 @@ export function workerSetup(options: {
       // napr. PubSub
       console.log('GQL Server: Message:', msg)
       if (msg.code === WorkerMessageCode.nodesChanged) {
+        console.log('=== NodeChange PubSub ===')
         pubsub.publish(SubscriptionChanel.changedNodeInstances, {
           [SubscriptionChanel.changedNodeInstances]: msg.data
+        })
+      }
+      else if (msg.code === WorkerMessageCode.processChanged) {
+        console.log('=== ProcessChange PubSub ===', msg.data)
+        pubsub.publish(SubscriptionChanel.changedProcessInstance, {
+          [SubscriptionChanel.changedProcessInstance]: msg.data
         })
       }
     })

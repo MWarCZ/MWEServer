@@ -1,12 +1,12 @@
 
 export enum SubscriptionChanel {
-  newProcessTemplate = 'newProcessTemplate',
-  deletedProcessTemplate = 'deletedProcessTemplate',
-  changedProcessTemplate = 'cangedProcessTemplate',
+  newProcessTemplates = 'newProcessTemplates',
+  deletedProcessTemplates = 'deletedProcessTemplates',
+  changedProcessTemplates = 'changedProcessTemplates',
 
   newProcessInstance = 'newProcessInstance',
   deletedProcessInstance = 'deletedProcessInstance',
-  changedProcessInstance = 'cangedProcessInstance',
+  changedProcessInstance = 'changedProcessInstance',
 
   // changedNodeInstance = 'changedNodeInstance',
   changedNodeInstances = 'changedNodeInstances',
