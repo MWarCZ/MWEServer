@@ -231,6 +231,25 @@ export async function initProcess(options: {
   if (!client) { throw new UnloggedUserError() }
   const groupNames = getClientGroupNames(client)
 
+  const processT = await connection.manager.findOne(ProcessTemplate, { id: data.processId })
+  if(!processT) {
+    throw new Error(`Sablona procesu s id '${data.processId}' neexistuje.`)
+  }
+  if(!processT.isExecutable) {
+    throw new Error(`Sablona procesu s id '${data.processId}' neni spustitelna.`)
+  }
+  const nodeT = await connection.manager.findOne(NodeElementTemplate, { id: data.firstNodeId })
+  if (!nodeT) {
+    throw new Error(`Sablona uzlu s id '${data.firstNodeId}' neexistuje.`)
+  }
+
+  if (!groupNames.includes(nodeT.candidateAssignee)) {
+    console.log('AUTH:')
+    console.log(nodeT.candidateAssignee)
+    console.log(groupNames)
+    throw new PermissionError()
+  }
+
   const runner = new BpmnRunner(connection)
 
   let process = await runner.initAndSaveProcess({ id: data.processId }, { id: data.firstNodeId })
@@ -244,12 +263,28 @@ export async function setNodeAdditions(options: {
   runner: BpmnRunner,
   additions: JsonMap,
 }) {
-  const { runner, node, additions, client } = options
+  const { connection, runner, node: nodeInstance, additions, client } = options
   if (!client) { throw new UnloggedUserError() }
   const groupNames = getClientGroupNames(client)
 
+
+  let node = await connection.manager.findOne(NodeElementInstance, {
+    relations: ['template', 'assignee'],
+    where: { id: nodeInstance.id },
+  })
+  if (!node) {
+    throw new Error(`Uzel s id '${nodeInstance.id}' nebyl nalezen.`)
+  }
+  if (!node.assignee) {
+    throw new Error(`Neni mozne vlozit dodatky, protoze uzel s id '${node.id}' neni obsazen.`)
+  }
+  // Kontrola zda client muze provezt dodatky
+  if ((node.assignee.id !== client.id)) {
+    throw new PermissionError()
+  }
+
   let result = await runner.runNodeAdditions({
-    instance: node,
+    instance: nodeInstance,
     additions,
   })
   return result
@@ -261,9 +296,25 @@ export async function withdrawnProcess(options: {
   runner: BpmnRunner,
   processInstance: { id: number },
 }) {
-  const { runner, processInstance, client } = options
+  const {connection, runner, processInstance, client } = options
   if (!client) { throw new UnloggedUserError() }
   const groupNames = getClientGroupNames(client)
+
+
+  let process = await connection.manager.findOne(ProcessInstance, {
+    relations: ['processTemplate'],
+    where: { id: processInstance.id },
+  })
+  if(!process) {
+    throw new Error(`Process s id '${processInstance.id}' neexistuje.`)
+  }
+  // Overeni prav
+  const candidateManager = process.processTemplate ? process.processTemplate.candidateManager : ''
+  if (!groupNames.includes(ProtectedGroups.TopManager)
+    && !groupNames.includes(candidateManager || '')
+  ) {
+    throw new PermissionError()
+  }
 
   let result = await runner.runProcessWidhrawn({
     processInstance,
@@ -294,7 +345,7 @@ export async function claimNodeInstance(options: {
 
   // Ziskani uzlu pro zabrani
   let node = await connection.manager.findOne(NodeElementInstance, {
-    relations: ['template'],
+    relations: ['template', 'assignee'],
     where: { id: nodeInstance.id },
   })
   if (!node) {
@@ -327,7 +378,7 @@ export async function releaseNodeInstance(options: {
 
   // Ziskani uzlu pro zabrani
   let node = await connection.manager.findOne(NodeElementInstance, {
-    relations: ['template'],
+    relations: ['template', 'assignee'],
     where: { id: nodeInstance.id },
   })
   if (!node) {
@@ -338,6 +389,7 @@ export async function releaseNodeInstance(options: {
   }
 
   // Kontrola zda client muze provezt uvolneni
+  console.log('Release NI:', node.assignee, client)
   if ((node.assignee.id !== client.id)) {
     throw new PermissionError()
   }
@@ -420,16 +472,19 @@ export async function updateProcessTemplate(options: {
   const groupNames = getClientGroupNames(client)
 
 
-  // Overeni prav
-  if (!groupNames.includes(ProtectedGroups.TopManager)) {
-    throw new PermissionError()
-  }
-
   let process = await connection.manager.findOne(ProcessTemplate, {
     where: { id: processTemplate.id },
   })
   if (!process) {
     throw new Error(`Process s id '${processTemplate.id}' nebyl nalezen.`)
+  }
+
+  // Overeni prav
+  const candidateManager = process ? process.candidateManager : ''
+  if (!groupNames.includes(ProtectedGroups.TopManager)
+    && !groupNames.includes(candidateManager || '')
+  ) {
+    throw new PermissionError()
   }
 
   if(typeof data.candidateManager === 'string') {
@@ -459,16 +514,20 @@ export async function updateNodeTemplate(options: {
   if (!client) { throw new UnloggedUserError() }
   const groupNames = getClientGroupNames(client)
 
-  // Overeni prav
-  if (!groupNames.includes(ProtectedGroups.TopManager)) {
-    throw new PermissionError()
-  }
-
   let node = await connection.manager.findOne(NodeElementTemplate, {
+    relations: ['processTemplate'],
     where: { id: nodeTemplate.id },
   })
   if (!node) {
     throw new Error(`Uzel s id '${nodeTemplate.id}' nebyl nalezen.`)
+  }
+
+  // Overeni prav
+  const candidateManager = node.processTemplate ? node.processTemplate.candidateManager : ''
+  if ( !groupNames.includes(ProtectedGroups.TopManager)
+    && !groupNames.includes(candidateManager || '')
+  ) {
+    throw new PermissionError()
   }
 
   if (typeof data.candidateAssignee === 'string') {
