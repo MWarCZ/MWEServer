@@ -7,6 +7,7 @@ import { ManualTask } from '../bpmnRunnerPlugins/manualTask'
 import { ScriptTask } from '../bpmnRunnerPlugins/scriptTask'
 import { StartEvent } from '../bpmnRunnerPlugins/startEvent'
 import { Task } from '../bpmnRunnerPlugins/task'
+import { User } from '../entity'
 import {
   ActivityStatus,
   DataObjectInstance,
@@ -97,11 +98,13 @@ export class BpmnRunner {
   connection: Connection
   pluginsWithImplementations: LibrariesWithNodeImplementations
   pluginsWithServices: LibrariesWithServiceImplementations
+  systemUser?: User
 
   constructor(
     connection: Connection,
     pluginsWithImplementations?: LibrariesWithNodeImplementations,
     pluginsWithServices?: LibrariesWithServiceImplementations,
+    systemUser?: User,
   ) {
     this.connection = connection
 
@@ -119,6 +122,7 @@ export class BpmnRunner {
     } else {
       this.pluginsWithServices = []
     }
+    this.systemUser = systemUser
   }
 
 
@@ -314,6 +318,7 @@ export class BpmnRunner {
     // Nacteni instance uzlu a vsech informaci okolo
     let nodeInstance = await this.connection.manager.findOneOrFail(NodeElementInstance, {
       relations: [
+        'assignee',
         'template',
         'template.incoming',
         'template.outgoing',
@@ -936,6 +941,11 @@ export class BpmnRunner {
     }
     //#endregion
 
+    if ([ActivityStatus.Completed, ActivityStatus.Failled].includes(nodeInstance.status as ActivityStatus)) {
+      if(!nodeInstance.assignee && this.systemUser) {
+        nodeInstance.assignee = this.systemUser
+      }
+    }
     // console.log('CCC:>>', nodeInstance)
 
     let result: SaveData = {

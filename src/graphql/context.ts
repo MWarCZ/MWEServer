@@ -40,8 +40,8 @@ export const generateContextFunction = async(options?: {
         request,
         response,
       })
-    } catch {
-      console.error('jwt errr')
+    } catch(e) {
+      // console.error('Neznama chyba pri autentizaci.')
     }
     let client: ContextUser | undefined
     if (user) {
