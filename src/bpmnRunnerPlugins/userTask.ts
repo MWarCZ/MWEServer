@@ -1,6 +1,5 @@
-import { RunContextMap } from 'bpmnRunner/runContext'
-
 import { NodeImplementation, NodeImplementationFlatItemsMap } from '../bpmnRunner/pluginsImplementation'
+import { RunContextMap } from '../bpmnRunner/runContext'
 import { Prop, setDefaultOutputProps } from './setDefaultOutputProps'
 import { Task } from './task'
 
