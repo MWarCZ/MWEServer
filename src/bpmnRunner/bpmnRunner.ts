@@ -7,6 +7,7 @@ import { ManualTask } from '../bpmnRunnerPlugins/manualTask'
 import { ScriptTask } from '../bpmnRunnerPlugins/scriptTask'
 import { StartEvent } from '../bpmnRunnerPlugins/startEvent'
 import { Task } from '../bpmnRunnerPlugins/task'
+import { UserTask } from '../bpmnRunnerPlugins/userTask'
 import { User } from '../entity'
 import {
   ActivityStatus,
@@ -42,6 +43,7 @@ export const DefaultPluginsWithNodeImplementations: LibrariesWithNodeImplementat
   [SupportedNode.Task]: Task,
   [SupportedNode.ScriptTask]: ScriptTask,
   [SupportedNode.ManualTask]: ManualTask,
+  [SupportedNode.UserTask]: UserTask,
 
   [SupportedNode.ExclusiveGateway]: ExclusiveGateway,
   [SupportedNode.InclusiveGateway]: InclusiveGateway,

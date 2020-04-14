@@ -64,11 +64,13 @@ export interface NodeImplementationFlatFunction {
 export interface NodeImplementationFlatItemsMap {
   [key: string]: NodeImplementationFlatItem
 }
+
 export interface NodeImplementationFlatItem {
-  type: 'text' | 'number' | 'select' | 'multiselect',
+  type: 'checkbox' | 'password' | 'email' | 'search'
+      | 'tel' | 'number' | 'text' | 'range' | 'select',
   default?: string | number | boolean | null | (string | number | boolean | null)[],
   possibilities?: (string | number | boolean | null)[],
-  hints: string,
+  hints?: string,
 }
 //#endregion
 

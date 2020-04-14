@@ -1,12 +1,14 @@
 import { RunContext } from '../bpmnRunner'
 import { Json } from '../types/json'
 
+export interface Prop {
+  name: string,
+  value: Json,
+}
+
 export function setDefaultOutputProps(options: {
   context: RunContext,
-  props: {
-    name: string,
-    value: Json,
-  }[],
+  props: Prop[],
 }) {
   const {context, props} = options
 
