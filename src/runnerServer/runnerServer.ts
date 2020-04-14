@@ -1,6 +1,7 @@
 import { Connection } from 'typeorm'
 
 import { BpmnRunner } from '../bpmnRunner'
+import { User } from '../entity'
 import { ActivityStatus, NodeElementInstance, ProcessInstance } from '../entity/bpmn'
 
 
@@ -37,9 +38,10 @@ export class RunnerServer {
     callbacks?: RunnerServerCallbacks,
     msWaitTime?: number,
     queueNodes?: NodeElementInstance[],
+    systemUser?: User,
   }) {
     this.connection = options.connection
-    this.runner = new BpmnRunner(this.connection)
+    this.runner = new BpmnRunner(this.connection, undefined, undefined, options.systemUser)
     this.callbacks = {...options.callbacks }
     this.msWaitTime = options.msWaitTime || (1000 * 60 * 60)
     this.queues = {
@@ -135,7 +137,7 @@ export class RunnerServer {
             let args: any
             switch (key) {
               case RunnerServerCallbackName.changedNodes:
-                args = result.targetNodeInstances
+                args = [result.nodeInstance, ...result.targetNodeInstances]
                 break
               case RunnerServerCallbackName.changedProcess:
                 args = result.processInstance

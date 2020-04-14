@@ -17,12 +17,14 @@ export const ScriptTask: NodeImplementation = {
     } else if (!['js', 'JS', 'javascript', 'JavaScript'].includes(scriptFormat)) {
       throw new Error(`Neznami format skriptu '${scriptFormat}'.`)
     }
+    // console.log('SCRIPT TASK CTX:', context)
     const vm = new VM({
       sandbox: context,
       timeout: 1000,
       eval: false,
     })
     let result = vm.run(script)
+    // console.log('SCRIPT TASK CTX2:', context)
     return result
   },
   onCompleting(options) {

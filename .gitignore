@@ -16,4 +16,5 @@ coverage/
 dist/
 lib/
 
+src/graphql/generated/
 

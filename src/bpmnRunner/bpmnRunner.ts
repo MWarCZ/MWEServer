@@ -7,6 +7,7 @@ import { ManualTask } from '../bpmnRunnerPlugins/manualTask'
 import { ScriptTask } from '../bpmnRunnerPlugins/scriptTask'
 import { StartEvent } from '../bpmnRunnerPlugins/startEvent'
 import { Task } from '../bpmnRunnerPlugins/task'
+import { User } from '../entity'
 import {
   ActivityStatus,
   DataObjectInstance,
@@ -89,16 +90,21 @@ export interface SaveDataAfterWithdrawn {
   targetNodeInstances: NodeElementInstance[],
 }
 
+// Výchozí maximální počet opakování vytváření instance z jedné sablony uzlu vramci instance procesu
+const MAX_COUNT_RECURRENCE_NODE = 10
+
 export class BpmnRunner {
 
   connection: Connection
   pluginsWithImplementations: LibrariesWithNodeImplementations
   pluginsWithServices: LibrariesWithServiceImplementations
+  systemUser?: User
 
   constructor(
     connection: Connection,
     pluginsWithImplementations?: LibrariesWithNodeImplementations,
     pluginsWithServices?: LibrariesWithServiceImplementations,
+    systemUser?: User,
   ) {
     this.connection = connection
 
@@ -116,6 +122,7 @@ export class BpmnRunner {
     } else {
       this.pluginsWithServices = []
     }
+    this.systemUser = systemUser
   }
 
 
@@ -311,6 +318,7 @@ export class BpmnRunner {
     // Nacteni instance uzlu a vsech informaci okolo
     let nodeInstance = await this.connection.manager.findOneOrFail(NodeElementInstance, {
       relations: [
+        'assignee',
         'template',
         'template.incoming',
         'template.outgoing',
@@ -455,7 +463,7 @@ export class BpmnRunner {
       try {
         // console.log('saveData:', result.targetSequenceInstances)
         await manager.save(result.targetSequenceInstances) // Nove pripravene instance seqenci
-      } catch { console.log('Problem s ulozenim instance sekvenci.') }
+      } catch { console.error('Problem s ulozenim instance sekvenci.') }
       // console.warn('666666666')
       await manager.save(result.processInstance) // Proces mohl skoncit
       // console.warn('77777777')
@@ -572,7 +580,7 @@ export class BpmnRunner {
 
         // Test na pocet existujicich instanci
         const targetImplementation = this.getImplementation(nodeTemplate.implementation as string)
-        const { max_count_recurrence_node = 1 } = targetImplementation.options || {}
+        const { max_count_recurrence_node = MAX_COUNT_RECURRENCE_NODE } = targetImplementation.options || {}
         // Spocitani existujicich instanci uzlu
         const count = nodeInstances.filter(instance => instance.templateId === nodeTemplate.id).length
         if (count >= max_count_recurrence_node) {
@@ -884,6 +892,7 @@ export class BpmnRunner {
     // Test zda vsechny vytvarene uzly maji spravny stav.
     targetNodeInstances.find(node => {
       if (node.status === ActivityStatus.Failled) {
+        // console.log('T-NI:', node)
         returnValues.finishProcess.finished = true
         returnValues.finishProcess.forced = true
         return true
@@ -895,6 +904,10 @@ export class BpmnRunner {
     // TODO Zamyslet se nad ukoncovanim procesu
     if (returnValues.finishProcess.finished) {
       if (returnValues.finishProcess.forced) {
+        console.error('Proces byl nasilne ukoncen.')
+        console.error(processInstance)
+        console.error(targetNodeInstances)
+        console.error(targetSequenceInstances)
         // Ukoncit proces a vsechny cekajici a pripravene uzly
         processInstance.status = ProcessStatus.Terminated
         // Ukoncit pripravene/cekajici uzly
@@ -928,6 +941,11 @@ export class BpmnRunner {
     }
     //#endregion
 
+    if ([ActivityStatus.Completed, ActivityStatus.Failled].includes(nodeInstance.status as ActivityStatus)) {
+      if(!nodeInstance.assignee && this.systemUser) {
+        nodeInstance.assignee = this.systemUser
+      }
+    }
     // console.log('CCC:>>', nodeInstance)
 
     let result: SaveData = {
@@ -958,6 +976,11 @@ export class BpmnRunner {
       },
     })
     if (processInstance) {
+
+      if([ProcessStatus.Completed, ProcessStatus.Failled, ProcessStatus. Terminated].includes(processInstance.status)) {
+        throw new Error('Neni mozne prerusit dany proces.')
+      }
+
       let nodeInstances = (processInstance.nodeElements) ? processInstance.nodeElements : []
       delete processInstance.nodeElements
       let result = options.fn({
@@ -1027,6 +1050,7 @@ export class BpmnRunner {
       process?: ProcessStatus,
     },
   }) {
+    options.processInstance.endDateTime = new Date()
     return this.processUniversalWithdrawn({
       ...options,
       status: {

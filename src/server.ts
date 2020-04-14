@@ -1,10 +1,11 @@
 import { existsSync as fsExists } from 'fs'
 import { importSchema } from 'graphql-import'
-import { GraphQLServer } from 'graphql-yoga'
+import { GraphQLServer, PubSub } from 'graphql-yoga'
 import { join as pathJoin } from 'path'
 
 import { passportUseStrategies } from './api/auth'
 import { BpmnRunner } from './bpmnRunner'
+import { User } from './entity'
 import { ActivityStatus, NodeElementInstance } from './entity/bpmn'
 import { generateContextFunction } from './graphql/context'
 import { resolvers } from './graphql/resolvers'
@@ -23,18 +24,26 @@ export async function createGQLServer() {
   let connection = await createConn()
 
   let worker: WorkerHelper | undefined
+  let pubsub: PubSub | undefined
   let filename = pathJoin(__dirname, './runnerServer.service.js')
   if (fsExists(filename)) {
     worker = new WorkerHelper({ filename })
-    workerSetupGQL(worker)
+    pubsub = new PubSub()
+    workerSetupGQL({
+      workerHelper: worker,
+      pubsub,
+    })
   } else {
     console.warn(`Server GQL: Worker '${filename}' nebylo mozne najit.`)
   }
 
+  const systemUser = await connection.manager.findOne(User, {id: 1})
+
   let context = await generateContextFunction({
     typeormConnection: connection,
     worker,
-    runner: new BpmnRunner(connection),
+    pubsub,
+    runner: new BpmnRunner(connection, undefined, undefined, systemUser),
   })
   let server =  new GraphQLServer({
     context,
@@ -68,9 +77,13 @@ export async function createRunnerServer() {
   let queueNodes = await connection.manager.find(NodeElementInstance, {
     status: ActivityStatus.Ready,
   })
+
+  const systemUser = await connection.manager.findOne(User, { id: 1 })
+
   let server = new RunnerServer({
     connection,
     queueNodes,
+    systemUser,
   })
 
   let worker: WorkerHelper | undefined

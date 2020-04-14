@@ -1,3 +1,5 @@
+import { withFilter } from 'graphql-yoga'
+
 import * as ApiBpmn from '../../api/bpmn'
 import * as ApiDataI from '../../api/bpmn/dataObjectInstance'
 import * as ApiDataT from '../../api/bpmn/dataObjectTemplate'
@@ -7,7 +9,9 @@ import * as ApiProcessI from '../../api/bpmn/processInstance'
 import * as ApiProcessT from '../../api/bpmn/processTemplate'
 import * as Bpmn from '../../entity/bpmn'
 import { JsonMap } from '../../types/json'
+import { MyContext } from '../context'
 import { GQLTypes } from '../generated/types'
+import { SubscriptionChanel } from '../subscriptionChanel'
 
 
 export const Query: GQLTypes.QueryResolvers = {
@@ -63,7 +67,6 @@ export const Query: GQLTypes.QueryResolvers = {
     return process as GQLTypes.ProcessInstance[]
   },
   nodeAdditionsFormat: async(_, args, { client, db: connection, runner, worker }) => {
-    console.log('=ssssssssssssssss')
     if (runner) {
       const result = await ApiBpmn.getNodeAdditionsFormat({
         connection,
@@ -71,7 +74,6 @@ export const Query: GQLTypes.QueryResolvers = {
         client,
         node: {id: args.idNI },
       })
-      console.log('====>', result)
       let arr:any = []
       for (let key in result) {
         let item = result[key]
@@ -106,16 +108,21 @@ export const Query: GQLTypes.QueryResolvers = {
 }
 
 export const Mutation: GQLTypes.MutationResolvers = {
-  uploadProcess: async(_, { xml }, { client, db: connection }) => {
+  uploadProcess: async(_, { xml }, { client, db: connection, pubsub }) => {
     let process = await ApiBpmn.uploadProcess({
       connection,
       client,
       xml: xml as string,
     })
+    console.log('AAAAAAAAAAAAAAA')
+    console.log(process)
+    pubsub.publish(SubscriptionChanel.newProcessTemplates, {
+      [SubscriptionChanel.newProcessTemplates]: process,
+    })
     // @ts-ignore
     return process as GQLTypes.ProcessTemplate[]
   },
-  initProcess: async(_, { input }, { client, db: connection, worker }) => {
+  initProcess: async(_, { input }, { client, db: connection, worker, pubsub }) => {
     let result = await ApiBpmn.initProcess({
       connection,
       client,
@@ -128,10 +135,16 @@ export const Mutation: GQLTypes.MutationResolvers = {
       worker.postChangedProcess(result.process)
       worker.postChangedNodes([result.node])
     }
+    pubsub.publish(SubscriptionChanel.newProcessInstance, {
+      [SubscriptionChanel.newProcessInstance]: result.process,
+    })
+    pubsub.publish(SubscriptionChanel.changedNodeInstances, {
+      [SubscriptionChanel.changedNodeInstances]: [result.node],
+    })
     // @ts-ignore
     return result.process as GQLTypes.ProcessInstance
   },
-  nodeAdditions: async(_, args, { client, db: connection, runner, worker }) => {
+  nodeAdditions: async(_, args, { client, db: connection, runner, worker, pubsub }) => {
     if (runner) {
       // TODO Osetrit parsovani a mapu.
       // const additions: JsonMap = JSON.parse(args.json)
@@ -152,12 +165,18 @@ export const Mutation: GQLTypes.MutationResolvers = {
           ...result.targetNodeInstances,
         ])
       }
+      pubsub.publish(SubscriptionChanel.changedNodeInstances, {
+        [SubscriptionChanel.changedNodeInstances]: [
+          result.nodeInstance,
+          ...result.targetNodeInstances
+        ],
+      })
       // @ts-ignore
       return result.nodeInstance as GQLTypes.NodeElementInstance
     }
     return null
   },
-  withdrawnProcess: async(_, args, { client, db: connection, runner, worker }) => {
+  withdrawnProcess: async(_, args, { client, db: connection, runner, worker, pubsub }) => {
     if (runner) {
       const result = await ApiBpmn.withdrawnProcess({
         connection,
@@ -170,13 +189,20 @@ export const Mutation: GQLTypes.MutationResolvers = {
           worker.postChangedProcess(result.processInstance)
           worker.postChangedNodes([...result.targetNodeInstances])
         }
+        console.log('Withrawn PI', result)
+        pubsub.publish(SubscriptionChanel.changedProcessInstance, {
+          [SubscriptionChanel.changedProcessInstance]: result.processInstance,
+        })
+        pubsub.publish(SubscriptionChanel.changedNodeInstances, {
+          [SubscriptionChanel.changedNodeInstances]: [result.targetNodeInstances],
+        })
         // @ts-ignore
         return result.processInstance as GQLTypes.ProcessInstance
       }
     }
     return null
   },
-  claimNodeInstance: async(_, args, { client, db: connection, runner, worker }) => {
+  claimNodeInstance: async(_, args, { client, db: connection, runner, worker,pubsub }) => {
     if (runner) {
       const result = await ApiBpmn.claimNodeInstance({
         connection,
@@ -187,13 +213,16 @@ export const Mutation: GQLTypes.MutationResolvers = {
         if (worker) {
           worker.postChangedNodes([result])
         }
+        pubsub.publish(SubscriptionChanel.changedNodeInstances, {
+          [SubscriptionChanel.changedNodeInstances]: [result],
+        })
         // @ts-ignore
         return result as GQLTypes.NodeElementInstance
       }
     }
     return null
   },
-  releaseNodeInstance: async(_, args, { client, db: connection, runner, worker }) => {
+  releaseNodeInstance: async(_, args, { client, db: connection, runner, worker,pubsub }) => {
     if (runner) {
       const result = await ApiBpmn.releaseNodeInstance({
         connection,
@@ -204,29 +233,39 @@ export const Mutation: GQLTypes.MutationResolvers = {
         if (worker) {
           worker.postChangedNodes([result])
         }
+        pubsub.publish(SubscriptionChanel.changedNodeInstances, {
+          [SubscriptionChanel.changedNodeInstances]: [result],
+        })
         // @ts-ignore
         return result as GQLTypes.NodeElementInstance
       }
     }
     return null
   },
-  deleteProcessTemplate: async(_, args, { client, db: connection }) => {
+  deleteProcessTemplate: async(_, args, { client, db: connection,pubsub }) => {
     let result = await ApiBpmn.deleteProcessTemplate({
       connection,
       client,
       processTemplate: { id: args.idPT },
     })
-    return result
+    console.log('Deleted PT:', result)
+    pubsub.publish(SubscriptionChanel.deletedProcessTemplates, {
+      [SubscriptionChanel.deletedProcessTemplates]: [result],
+    })
+    return true
   },
-  deleteProcessInstance: async(_, args, { client, db: connection }) => {
+  deleteProcessInstance: async(_, args, { client, db: connection,pubsub }) => {
     let result = await ApiBpmn.deleteProcessInstance({
       connection,
       client,
       processInstance: { id: args.idPI },
     })
-    return result
+    pubsub.publish(SubscriptionChanel.deletedProcessInstance, {
+      [SubscriptionChanel.deletedProcessInstance]: result,
+    })
+    return true
   },
-  updateProcessTemplate: async (_, args, { client, db: connection, worker }) => {
+  updateProcessTemplate: async (_, args, { client, db: connection, worker,pubsub }) => {
     let result = await ApiBpmn.updateProcessTemplate({
       connection,
       client,
@@ -237,8 +276,13 @@ export const Mutation: GQLTypes.MutationResolvers = {
         candidateManager: args.input.candidateManager as string,
       },
     })
+    console.log('Updated PT:',result)
+
+    pubsub.publish(SubscriptionChanel.changedProcessTemplates, {
+      [SubscriptionChanel.changedProcessTemplates]: [result],
+    })
     // @ts-ignore
-    return result.process as GQLTypes.ProcessTemplate
+    return result as GQLTypes.ProcessTemplate
   },
   updateNodeTemplate: async (_, args, { client, db: connection, worker }) => {
     let result = await ApiBpmn.updateNodeTemplate({
@@ -252,6 +296,77 @@ export const Mutation: GQLTypes.MutationResolvers = {
     })
     // @ts-ignore
     return result.process as GQLTypes.NodeElementTemplate
+  },
+}
+
+export const Subscription: GQLTypes.SubscriptionResolvers = {
+  newProcessTemplates: {
+    subscribe: withFilter(
+      (_, tmpArgs, tmpContext) => {
+        const { pubsub } = tmpContext as MyContext
+        return pubsub.asyncIterator(SubscriptionChanel.newProcessTemplates)
+      },
+      () => { return true }
+    ),
+  },
+  deletedProcessTemplates: {
+    subscribe: (_, tmpArgs, tmpContext) => {
+      const { pubsub } = tmpContext as MyContext
+      return pubsub.asyncIterator(SubscriptionChanel.deletedProcessTemplates)
+    },
+  },
+  changedProcessTemplates: {
+    subscribe: (_, tmpArgs, tmpContext) => {
+      const { pubsub } = tmpContext as MyContext
+      return pubsub.asyncIterator(SubscriptionChanel.changedProcessTemplates)
+    },
+  },
+
+  newProcessInstance: {
+    subscribe: (_, tmpArgs, tmpContext) => {
+      const { pubsub } = tmpContext as MyContext
+      return pubsub.asyncIterator(SubscriptionChanel.newProcessInstance)
+    },
+  },
+
+  deletedProcessInstance: {
+    subscribe: (_, tmpArgs, tmpContext) => {
+      const { pubsub } = tmpContext as MyContext
+      return pubsub.asyncIterator(SubscriptionChanel.deletedProcessInstance)
+    },
+  },
+  changedProcessInstance: {
+    subscribe: (_, tmpArgs, tmpContext) => {
+      const { pubsub } = tmpContext as MyContext
+      return pubsub.asyncIterator(SubscriptionChanel.changedProcessInstance)
+    },
+  },
+
+  changedNodeInstances: {
+    // subscribe: (_, tmpArgs, tmpContext) => {
+    //   const { pubsub } = tmpContext as MyContext
+    //   return pubsub.asyncIterator(SubscriptionChanel.changedNodeInstances)
+    // },
+    subscribe: withFilter(
+      (_, tmpArgs, tmpContext) => {
+        const { pubsub } = tmpContext as MyContext
+        return pubsub.asyncIterator(SubscriptionChanel.changedNodeInstances)
+      },
+      (payload) => {
+        return Array.isArray(payload.changedNodeInstances)
+          && (payload.changedNodeInstances.length > 0)
+      }
+    ),
+    resolve: (payload: any, args: GQLTypes.SubscriptionChangedNodeInstancesArgs) => {
+      let nodes = payload.changedNodeInstances as Bpmn.NodeElementInstance[]
+      if (args.idPI) {
+        nodes = nodes.filter(node=>{
+          return node && node.id === args.idPI
+        })
+      }
+      //@ts-ignore
+      return nodes as GQLTypes.NodeElementInstance[]
+    },
   },
 }
 

@@ -9,6 +9,7 @@ import {
   ProcessInstance,
   ProcessTemplate,
   Query as BpmnQuery,
+  Subscription as BpmnSubscription,
 } from './bpmn'
 import { Group, Mutation as GroupMutation, Query as GroupQuery } from './group'
 import { Member, Mutation as MemberMutation } from './member'
@@ -34,6 +35,8 @@ export const resolvers: GQLTypes.Resolvers = {
     ...MemberMutation,
     ...BpmnMutation,
   },
+  Subscription: BpmnSubscription,
+
   User,
   Group,
   Member,
