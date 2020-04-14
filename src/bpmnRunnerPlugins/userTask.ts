@@ -8,7 +8,7 @@ function checkForm(form: any): form is NodeImplementationFlatItemsMap {
   if (!form) return false
   if (typeof form !== 'object') return false
   for (let key in form) {
-    if(typeof form[key] !== 'object') return false
+    if (typeof form[key] !== 'object') return false
     if (typeof form[key].type !== 'string') return false
   }
   return true
@@ -22,7 +22,7 @@ function findForm($local: RunContextMap): NodeImplementationFlatItemsMap {
       if (checkForm(form)) {
         return {
           ...form,
-          $form_state: { type: 'checkbox', default: true, hints: 'Byl formulář vyplněn?' }
+          $form_state: { type: 'checkbox', default: true, hints: 'Byl formulář vyplněn?' },
         }
       }
     }
@@ -53,7 +53,7 @@ export const UserTask: NodeImplementation = {
 
     const form = findForm(context.$INPUT)
     const props: Prop[] = []
-    for(let key in form) {
+    for (let key in form) {
       let value = context.$LOCAL[key]
       props.push({
         name: key,

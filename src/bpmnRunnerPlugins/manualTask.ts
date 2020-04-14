@@ -38,7 +38,7 @@ export const ManualTask: NodeImplementation = {
     setDefaultOutputProps({
       context,
       props: [
-        { name: '_state', value: localData.state}
+        { name: '_state', value: localData.state},
       ],
     })
   },

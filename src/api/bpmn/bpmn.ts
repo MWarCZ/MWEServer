@@ -232,10 +232,10 @@ export async function initProcess(options: {
   const groupNames = getClientGroupNames(client)
 
   const processT = await connection.manager.findOne(ProcessTemplate, { id: data.processId })
-  if(!processT) {
+  if (!processT) {
     throw new Error(`Sablona procesu s id '${data.processId}' neexistuje.`)
   }
-  if(!processT.isExecutable) {
+  if (!processT.isExecutable) {
     throw new Error(`Sablona procesu s id '${data.processId}' neni spustitelna.`)
   }
   const nodeT = await connection.manager.findOne(NodeElementTemplate, { id: data.firstNodeId })
@@ -305,7 +305,7 @@ export async function withdrawnProcess(options: {
     relations: ['processTemplate'],
     where: { id: processInstance.id },
   })
-  if(!process) {
+  if (!process) {
     throw new Error(`Process s id '${processInstance.id}' neexistuje.`)
   }
   // Overeni prav
@@ -487,7 +487,7 @@ export async function updateProcessTemplate(options: {
     throw new PermissionError()
   }
 
-  if(typeof data.candidateManager === 'string') {
+  if (typeof data.candidateManager === 'string') {
     process.candidateManager = data.candidateManager
   }
   if (typeof data.isExecutable === 'boolean') {

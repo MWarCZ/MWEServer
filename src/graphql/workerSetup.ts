@@ -16,13 +16,13 @@ export function workerSetup(options: {
       if (msg.code === WorkerMessageCode.nodesChanged) {
         console.log('=== NodeChange PubSub ===')
         pubsub.publish(SubscriptionChanel.changedNodeInstances, {
-          [SubscriptionChanel.changedNodeInstances]: msg.data
+          [SubscriptionChanel.changedNodeInstances]: msg.data,
         })
       }
       else if (msg.code === WorkerMessageCode.processChanged) {
         console.log('=== ProcessChange PubSub ===', msg.data)
         pubsub.publish(SubscriptionChanel.changedProcessInstance, {
-          [SubscriptionChanel.changedProcessInstance]: msg.data
+          [SubscriptionChanel.changedProcessInstance]: msg.data,
         })
       }
     })

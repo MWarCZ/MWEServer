@@ -283,8 +283,8 @@ export class Parser {
     this.preloadBaseElement(entity, seq['#attr'])
 
     let expression = seq[`${this.ns.bpmn2}expression` as 'expression']
-    if(Array.isArray(expression)) {
-      expression.map(exp=>{
+    if (Array.isArray(expression)) {
+      expression.map(exp => {
         entity.expression =  exp['#text'] || ''
       })
     } else {
@@ -746,7 +746,7 @@ export class Parser {
     attr: BpmnFxm.DataObject,
 
   ): T {
-    entity.json = (entity.strict)? { $strict: !!entity.strict } : { }
+    entity.json = (entity.strict) ? { $strict: !!entity.strict } : { }
 
     let extensionElements = attr[`${this.ns.bpmn2}extensionElements` as 'extensionElements']
     if (typeof extensionElements === 'object') {
@@ -755,7 +755,7 @@ export class Parser {
         try {
           if (typeof json === 'string') {
             let tmp = JSON.parse(json)
-            if(typeof entity.json === 'object'){
+            if (typeof entity.json === 'object') {
               entity.json = {
                 ...entity.json,
                 ...tmp,
@@ -765,7 +765,7 @@ export class Parser {
           } else if (typeof json === 'object') {
             if (json[0]['#text']) {
               let tmp = JSON.parse(json[0]['#text'])
-              if(typeof entity.json === 'object'){
+              if (typeof entity.json === 'object') {
                 entity.json = {
                   ...entity.json,
                   ...tmp,
