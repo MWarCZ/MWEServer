@@ -168,6 +168,8 @@ export async function getNodeInstances(options: {
     assigneeNullOnly?: boolean | null,
     forMeOnly?: boolean | null,
     assigneeIsMe?: boolean | null,
+    assigneeId?: number | null,
+    assigneeLogin?: string | null,
   } | null,
 }) {
   const { connection, client, filter } = options
@@ -195,6 +197,16 @@ export async function getNodeInstances(options: {
         return node.assignee && node.assignee.id === client.id
       })
     }
+    if(filter.assigneeId) {
+      nodes = nodes.filter(node => {
+        return node.assignee && node.assignee.id === filter.assigneeId
+      })
+    }
+    if(filter.assigneeLogin) {
+      nodes = nodes.filter(node => {
+        return node.assignee && node.assignee.id === filter.assigneeLogin
+      })
+    }
     if (filter.forMeOnly) {
       nodes = nodes.filter(node => {
         return node.template && groupNames.includes(node.template.candidateAssignee)
@@ -202,6 +214,7 @@ export async function getNodeInstances(options: {
     }
   }
   // console.log('\_(^_^)_/===> ', nodes)
+  console.log('\_(^_^)_/===> ', filter)
   return nodes
 }
 

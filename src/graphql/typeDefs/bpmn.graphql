@@ -88,6 +88,8 @@ input NodeInstancesFilter {
   assigneeNullOnly: Boolean
   forMeOnly: Boolean
   assigneeIsMe: Boolean
+  assigneeLogin: String
+  assigneeId: Int
 }
 # =====================
 input InitProcessInput {
