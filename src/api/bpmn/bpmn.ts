@@ -165,6 +165,9 @@ export async function getNodeInstances(options: {
   client?: ContextUser,
   filter?: {
     status?: string | null,
+    assigneeNullOnly?: boolean | null,
+    forMeOnly?: boolean | null,
+    assigneeIsMe?: boolean | null,
   } | null,
 }) {
   const { connection, client, filter } = options
@@ -179,7 +182,26 @@ export async function getNodeInstances(options: {
     }
   }
 
-  let nodes = await connection.manager.find(NodeElementInstance, findConditions)
+  let nodes = await connection.manager.find(NodeElementInstance, {
+    relations: ['template', 'assignee'],
+    where: findConditions,
+  })
+  if (filter) {
+    if (filter.assigneeNullOnly) {
+      nodes = nodes.filter(node => !node.assignee)
+    }
+    if (filter.assigneeIsMe) {
+      nodes = nodes.filter(node => {
+        return node.assignee && node.assignee.id === client.id
+      })
+    }
+    if (filter.forMeOnly) {
+      nodes = nodes.filter(node => {
+        return node.template && groupNames.includes(node.template.candidateAssignee)
+      })
+    }
+  }
+  // console.log('\_(^_^)_/===> ', nodes)
   return nodes
 }
 
