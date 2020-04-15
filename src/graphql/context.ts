@@ -31,7 +31,7 @@ export const generateContextFunction = async(options?: {
 }) => {
   const {typeormConnection, worker, runner, pubsub: pubsub1} = options || {}
   let db = (typeormConnection) ? typeormConnection : (await createConn())
-  const pubsub = (pubsub1)? pubsub1 : new PubSub()
+  const pubsub = (pubsub1) ? pubsub1 : new PubSub()
   return async(param: ContextParameters): Promise<MyContext> => {
     let user: User|undefined
     try {
@@ -40,7 +40,7 @@ export const generateContextFunction = async(options?: {
         request,
         response,
       })
-    } catch(e) {
+    } catch (e) {
       // console.error('Neznama chyba pri autentizaci.')
     }
     let client: ContextUser | undefined

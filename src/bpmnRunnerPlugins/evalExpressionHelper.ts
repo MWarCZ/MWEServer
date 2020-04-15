@@ -17,9 +17,9 @@ export function evalExpression(options: {
   try {
   let result = vm.run(expression)
   // console.log('CONTEXT2:', context)
-  console.log('RES:',result)
+  console.log('RES:', result)
   return !!result
-  } catch(e) {
+  } catch (e) {
   console.log('CONTEXT2:', context)
   console.log('ERR:', e)
     throw e

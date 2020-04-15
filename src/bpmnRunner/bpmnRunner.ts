@@ -7,6 +7,7 @@ import { ManualTask } from '../bpmnRunnerPlugins/manualTask'
 import { ScriptTask } from '../bpmnRunnerPlugins/scriptTask'
 import { StartEvent } from '../bpmnRunnerPlugins/startEvent'
 import { Task } from '../bpmnRunnerPlugins/task'
+import { UserTask } from '../bpmnRunnerPlugins/userTask'
 import { User } from '../entity'
 import {
   ActivityStatus,
@@ -42,6 +43,7 @@ export const DefaultPluginsWithNodeImplementations: LibrariesWithNodeImplementat
   [SupportedNode.Task]: Task,
   [SupportedNode.ScriptTask]: ScriptTask,
   [SupportedNode.ManualTask]: ManualTask,
+  [SupportedNode.UserTask]: UserTask,
 
   [SupportedNode.ExclusiveGateway]: ExclusiveGateway,
   [SupportedNode.InclusiveGateway]: InclusiveGateway,
@@ -736,7 +738,7 @@ export class BpmnRunner {
   }) {
     let data = await this.loadDataForRun(options)
 
-    if([ActivityStatus.Completed].includes(data.nodeInstance.status as ActivityStatus)) {
+    if ([ActivityStatus.Completed].includes(data.nodeInstance.status as ActivityStatus)) {
       throw new Error(`Do uzlu '${data.nodeInstance.status}' neni mozne doplnit nove dodatky.`)
     }
     // Pridani dodatku do uzlu
@@ -942,7 +944,7 @@ export class BpmnRunner {
     //#endregion
 
     if ([ActivityStatus.Completed, ActivityStatus.Failled].includes(nodeInstance.status as ActivityStatus)) {
-      if(!nodeInstance.assignee && this.systemUser) {
+      if (!nodeInstance.assignee && this.systemUser) {
         nodeInstance.assignee = this.systemUser
       }
     }
@@ -977,7 +979,7 @@ export class BpmnRunner {
     })
     if (processInstance) {
 
-      if([ProcessStatus.Completed, ProcessStatus.Failled, ProcessStatus. Terminated].includes(processInstance.status)) {
+      if ([ProcessStatus.Completed, ProcessStatus.Failled, ProcessStatus. Terminated].includes(processInstance.status)) {
         throw new Error('Neni mozne prerusit dany proces.')
       }
 

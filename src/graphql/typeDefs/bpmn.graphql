@@ -85,6 +85,11 @@ input ProcessInstancesFilter {
 }
 input NodeInstancesFilter {
   status: String
+  assigneeNullOnly: Boolean
+  forMeOnly: Boolean
+  assigneeIsMe: Boolean
+  assigneeLogin: String
+  assigneeId: Int
 }
 # =====================
 input InitProcessInput {

@@ -55,15 +55,15 @@ export const InclusiveGateway: NodeImplementation = {
 
     const selected = normals.find(value => {
       let { expression = 'true' } = value
-      if(expression === '') expression = 'true'
+      if (expression === '') expression = 'true'
       const result = evalExpression({ expression, context })
       return result
     })
-    if(selected) {
+    if (selected) {
       if (!fn.initNext) return
       fn.initNext([selected.id])
     } else {
-      let nums = defaults.map(v=>v.id)
+      let nums = defaults.map(v => v.id)
       if (!fn.initNext) return
       fn.initNext(nums)
     }

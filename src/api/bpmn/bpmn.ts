@@ -165,6 +165,11 @@ export async function getNodeInstances(options: {
   client?: ContextUser,
   filter?: {
     status?: string | null,
+    assigneeNullOnly?: boolean | null,
+    forMeOnly?: boolean | null,
+    assigneeIsMe?: boolean | null,
+    assigneeId?: number | null,
+    assigneeLogin?: string | null,
   } | null,
 }) {
   const { connection, client, filter } = options
@@ -179,7 +184,37 @@ export async function getNodeInstances(options: {
     }
   }
 
-  let nodes = await connection.manager.find(NodeElementInstance, findConditions)
+  let nodes = await connection.manager.find(NodeElementInstance, {
+    relations: ['template', 'assignee'],
+    where: findConditions,
+  })
+  if (filter) {
+    if (filter.assigneeNullOnly) {
+      nodes = nodes.filter(node => !node.assignee)
+    }
+    if (filter.assigneeIsMe) {
+      nodes = nodes.filter(node => {
+        return node.assignee && node.assignee.id === client.id
+      })
+    }
+    if (filter.assigneeId) {
+      nodes = nodes.filter(node => {
+        return node.assignee && node.assignee.id === filter.assigneeId
+      })
+    }
+    if (filter.assigneeLogin) {
+      nodes = nodes.filter(node => {
+        return node.assignee && node.assignee.id === filter.assigneeLogin
+      })
+    }
+    if (filter.forMeOnly) {
+      nodes = nodes.filter(node => {
+        return node.template && groupNames.includes(node.template.candidateAssignee)
+      })
+    }
+  }
+  // console.log('\_(^_^)_/===> ', nodes)
+  console.log('\_(^_^)_/===> ', filter)
   return nodes
 }
 
@@ -232,10 +267,10 @@ export async function initProcess(options: {
   const groupNames = getClientGroupNames(client)
 
   const processT = await connection.manager.findOne(ProcessTemplate, { id: data.processId })
-  if(!processT) {
+  if (!processT) {
     throw new Error(`Sablona procesu s id '${data.processId}' neexistuje.`)
   }
-  if(!processT.isExecutable) {
+  if (!processT.isExecutable) {
     throw new Error(`Sablona procesu s id '${data.processId}' neni spustitelna.`)
   }
   const nodeT = await connection.manager.findOne(NodeElementTemplate, { id: data.firstNodeId })
@@ -305,7 +340,7 @@ export async function withdrawnProcess(options: {
     relations: ['processTemplate'],
     where: { id: processInstance.id },
   })
-  if(!process) {
+  if (!process) {
     throw new Error(`Process s id '${processInstance.id}' neexistuje.`)
   }
   // Overeni prav
@@ -487,7 +522,7 @@ export async function updateProcessTemplate(options: {
     throw new PermissionError()
   }
 
-  if(typeof data.candidateManager === 'string') {
+  if (typeof data.candidateManager === 'string') {
     process.candidateManager = data.candidateManager
   }
   if (typeof data.isExecutable === 'boolean') {
