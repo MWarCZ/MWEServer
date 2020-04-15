@@ -197,12 +197,12 @@ export async function getNodeInstances(options: {
         return node.assignee && node.assignee.id === client.id
       })
     }
-    if(filter.assigneeId) {
+    if (filter.assigneeId) {
       nodes = nodes.filter(node => {
         return node.assignee && node.assignee.id === filter.assigneeId
       })
     }
-    if(filter.assigneeLogin) {
+    if (filter.assigneeLogin) {
       nodes = nodes.filter(node => {
         return node.assignee && node.assignee.id === filter.assigneeLogin
       })
