@@ -5,6 +5,7 @@ import { join as pathJoin } from 'path'
 
 import { passportUseStrategies } from './api/auth'
 import { BpmnRunner } from './bpmnRunner'
+import * as CONFIG from './config'
 import { User } from './entity'
 import { ActivityStatus, NodeElementInstance } from './entity/bpmn'
 import { generateContextFunction } from './graphql/context'
@@ -60,10 +61,12 @@ export async function createGQLServer() {
 export async function startGQLServer() {
   const server = await createGQLServer()
   await server.start({
-    port: 4000,
-    endpoint: '/graphql',
+    port: CONFIG.APP_GRAPHQL_PORT,
+    endpoint: CONFIG.APP_GRAPHQL_ENDPOINT,
+    subscriptions: CONFIG.APP_GRAPHQL_SUBSCRIPTIONS,
+    playground: CONFIG.APP_GRAPHQL_PLAYGROUND,
   })
-  console.log('Server GQL running at port 4000 ...')
+  console.log(`Server GQL running at port ${CONFIG.APP_GRAPHQL_PORT} ...`)
   return server
 }
 
