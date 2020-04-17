@@ -18,7 +18,9 @@
   },
   "scripts": {
     "env": "env | sort | grep --color '^npm_'",
-    "start": "node $npm_execpath start:gql",
+    "start": "$npm_execpath start:gql",
+    "start:first": "node $npm_execpath start:gql",
+    "prestart:first": "typeorm schema:drop && typeorm schema:sync && $npm_execpath run load:ugm;",
     "start:gql": "node $npm_package_env_path_dist/gqlServer.service.js",
     "start:runner": "node $npm_package_env_path_dist/runnerServer.service.js",
     "serve:gql": "NODE_ENV=ts ts-node $npm_package_env_path_src/gqlServer.service.ts",
