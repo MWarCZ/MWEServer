@@ -1,11 +1,14 @@
+const shared = {
+  "type": "mysql",
+  "host": "localhost",
+  "port": 3306,
+  "username": "root",
+  "password": "root",
+  "database": "mwe",
+}
 if(process.env.NODE_ENV === 'ts') {
   module.exports = {
-    "type": "mysql",
-    "host": "localhost",
-    "port": 3306,
-    "username": "root",
-    "password": "root",
-    "database": "mwe",
+    ...shared,
     "synchronize": true,
     "logging": false,
     "entities": [
@@ -25,13 +28,8 @@ if(process.env.NODE_ENV === 'ts') {
   }
 } else {
   module.exports = {
-    "type": "mysql",
-    "host": "localhost",
-    "port": 3306,
-    "username": "root",
-    "password": "root",
-    "database": "mwe",
-    "synchronize": true,
+    ...shared,
+    "synchronize": false,
     "logging": false,
     "entities": [
       "dist/entity/**/*.js"
