@@ -9,6 +9,12 @@ scalar Json
 scalar Date
 
 type Query {
-  hello(name:String):String!
+  """
+  Testovaci dotaz k ziskani **Hello World**.
+  """
+  hello(
+    """Koho ma server pozdravit. _(Vychozi je `World`)_"""
+    name:String
+  ):String!
 }
 

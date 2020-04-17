@@ -1,19 +1,27 @@
 
-type Query {
-  me: User
-}
 
 type Mutation {
+  """
+  Získání autorizačniho tokenu pomoci lokalni strategie.
+  """
   login(input: LoginLocalInput!): LoginPayload
 }
 
 input LoginLocalInput {
+  """Heslo uzivatele."""
   password: String!
+  """Uzivatelske jmeno."""
   login: String!
+  """
+  Predpokladana doba setrvani prihlaseni v systemu.
+  _(Doba za kterou dojde k expiraci vygenerovaneho tokenu.)_
+  """
   expires: String
 }
 
 type LoginPayload {
+  """Vygenerovany autorizacni token."""
   token: String!
+  """Zadatel o token pro nejz byl vygenerovan."""
   user: User!
 }
