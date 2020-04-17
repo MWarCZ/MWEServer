@@ -8,10 +8,10 @@ export class Group {
   @PrimaryGeneratedColumn()
   id?: number
 
-  @Column('varchar', {length:255, unique: true})
+  @Column('varchar', {length: 191, unique: true})
   name: string = ''
 
-  @Column('varchar', { default: ''})
+  @Column('varchar', { length: 191, default: ''})
   describe: string = ''
 
   @Column('boolean', {default: false})
