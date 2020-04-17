@@ -21,7 +21,7 @@ export class NodeElementTemplate implements FlowElementTemplate {
   @Column('text')
   bpmnId?: string
 
-  @Column('varchar', { length: 255, default: '' })
+  @Column('varchar', { length: 191, default: '' })
   name?: string
 
   // =============
@@ -39,7 +39,7 @@ export class NodeElementTemplate implements FlowElementTemplate {
   // ============
 
   // @Column('text')
-  @Column('varchar', { default: '', nullable: false, length: 200 })
+  @Column('varchar', { default: '', nullable: false, length: 191 })
   implementation?: string
 
   @Column('simple-json')
@@ -68,7 +68,7 @@ export class NodeElementTemplate implements FlowElementTemplate {
 
   // ==============
 
-  @Column('varchar', { default: '', nullable: false, length: 255 })
+  @Column('varchar', { default: '', nullable: false, length: 191 })
   candidateAssignee: string = ''
 
   // ==============
@@ -134,7 +134,7 @@ export class NodeElementInstance implements FlowElementInstance {
 
   // ==============
 
-  // @Column('varchar', { default: '', nullable: false, length: 255 })
+  // @Column('varchar', { default: '', nullable: false, length: 191 })
   // assignee: string = ''
   @ManyToOne(
     type => User,

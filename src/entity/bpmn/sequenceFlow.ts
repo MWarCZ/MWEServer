@@ -17,7 +17,7 @@ export class SequenceFlowTemplate implements FlowElementTemplate {
   @Column('text')
   bpmnId?: string
 
-  @Column('varchar', { length: 255, default: '' })
+  @Column('varchar', { length: 191, default: '' })
   name?: string
 
   // =============

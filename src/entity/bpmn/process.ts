@@ -35,7 +35,7 @@ export class ProcessTemplate implements BaseElementTemplate {
   @Column('text')
   bpmnId?: string
 
-  @Column('varchar', { length: 255, default: '' })
+  @Column('varchar', { length: 191, default: '' })
   name: string = ''
 
   // ===================
@@ -80,7 +80,7 @@ export class ProcessTemplate implements BaseElementTemplate {
   @OneToMany(type => SequenceFlowTemplate, entity => entity.processTemplate)
   sequenceFlows?: SequenceFlowTemplate[]
 
-  @Column('varchar', { default: '', nullable: false, length: 255 })
+  @Column('varchar', { default: '', nullable: false, length: 191 })
   candidateManager?: string
 
   constructor(options?: OptionsConstructor<ProcessTemplate>) {
