@@ -4,14 +4,14 @@
 
 ## Uvodni seznameni
 
-Prozatím existuje jedíným způsobem, jak vytvořit/nahrát proces do MWEServeru.
+Prozatím existuje jediný způsob, jak vytvořit/nahrát šablonu procesu do serverové aplikace MWEServer.
 MWEServer je schopen zpracovat textový soubor obsahující definici procesu dle specifikace BPMN.
-Pro vytváření souborů BPMN určených k testování MWEServeru byl využíván jeden z ukázkouvých příkladů používající balíček [bpmn-js](https://github.com/bpmn-io/bpmn-js) a [bpmn-js-properties-panel](https://github.com/bpmn-io/bpmn-js-properties-panel).
-Konkrétně se jedná o jeden z ukázkových příkladů [bpmn-js-examples](https://github.com/bpmn-io/bpmn-js-examples/tree/master/properties-panel), který je volně dostupný na webu GitHub.
+Pro vytváření souborů BPMN určených k testování aplikace MWEServer byl využíván jeden z ukázkouvých příkladů, který používající balíček [bpmn-js](https://github.com/bpmn-io/bpmn-js) a [bpmn-js-properties-panel](https://github.com/bpmn-io/bpmn-js-properties-panel).
+Konkrétně se jedná o jeden z ukázkových příkladů [bpmn-js-examples](https://github.com/bpmn-io/bpmn-js-examples/tree/master/properties-panel), který je volně dostupný na serveru GitHub.
 Tento nástroj byl zprovozněn a to s panelem určeným původně pro vytváření souborů BPMN pro nástroje od společnosti Camunda.
 V současné době je dostupný na mém osobním serveru na URL [bpmnio.mwarcz.cz](http://bpmnio.mwarcz.cz).
-Většinu potřebných úkonů potřebných k modelování potřebného procesu lze v tomto nástroji vykonot.
-Vyjímku činí pouze elementy a atributy spadající pod jmenný prostor `http://www.mwarcz.cz/mwe/bpmn/` (Dále označován jen jako jmenný prostor mwe.). 
+Většinu potřebných úkonů potřebných k modelování procesu a vygenerování souboru BPMN potřebného pro aplikaci MWEServer lze v tomto nástroji vykonat.
+Vyjímku činí pouze elementy a atributy spadající pod jmenný prostor `http://www.mwarcz.cz/mwe/bpmn/` (Dále označován jen jako jmenný prostor mwe.), které je nutné přidat manuálně do souboru BPMN. 
 
 ## Omezení
 Při modelování je možné použít veškeré elementy, které jsou vyjmenovány a popsány v kapitole __Plně podporované elementy__.
