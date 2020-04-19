@@ -190,6 +190,7 @@ export declare namespace BpmnFxm {
     messageEventDefinition?: string | MessageEventDefinition[], /** */
     errorEventDefinition?: string | ErrorEventDefinition[], /** */
     signalEventDefinition?: string | SignalEventDefinition[], /** */
+    terminateEventDefinition?: string | TerminateEventDefinition[], /** */
   }
   type IntermediateThrowEventAttr = {
     eventDefinitionRefs?: string,
@@ -249,6 +250,11 @@ export declare namespace BpmnFxm {
   } & EventDefinitionAttr
   type LinkEventDefinition = {
     '#attr'?: LinkEventDefinitionAttr,
+  }
+  type TerminateEventDefinitionAttr = {
+  } & EventDefinitionAttr
+  type TerminateEventDefinition = {
+    '#attr'?: TerminateEventDefinitionAttr,
   }
 
   type GatewayAttr = {

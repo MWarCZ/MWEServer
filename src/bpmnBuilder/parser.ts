@@ -246,10 +246,11 @@ export class Parser {
       tag: 'startEvent',
     }
   }
-  parseEndEvent(event: BpmnFxm.Task): BpmnLevel.EndEvent {
+  parseEndEvent(event: BpmnFxm.EndEvent): BpmnLevel.EndEvent {
     let entity = new NodeElementTemplate()
     this.preloadBaseElement(entity, event['#attr'])
-    this.preloadNodeElement(entity, event['#attr'], SupportedNode.EndEvent)
+    // this.preloadNodeElement(entity, event['#attr'], SupportedNode.EndEvent)
+    this.preloadEndEvent(entity, event)
     return {
       entity,
       data: event,
@@ -832,6 +833,14 @@ export class Parser {
   }
 
 
+  preloadEndEvent(entity: NodeElementTemplate, event: BpmnFxm.EndEvent) {
+    let terminateEventDefinition = event[`${this.ns.bpmn2}terminateEventDefinition` as 'terminateEventDefinition']
+    if (terminateEventDefinition) {
+      this.preloadNodeElement(entity, event['#attr'], SupportedNode.TerminateEndEvent)
+    } else {
+      this.preloadNodeElement(entity, event['#attr'], SupportedNode.EndEvent)
+    }
+  }
 
   preloadIntermediateThrowEvent(entity: NodeElementTemplate, event: BpmnFxm.IntermediateThrowEvent) {
     let linkEventDefinition = event[`${this.ns.bpmn2}linkEventDefinition` as 'linkEventDefinition']

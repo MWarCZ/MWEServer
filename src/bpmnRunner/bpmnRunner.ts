@@ -7,6 +7,7 @@ import { ManualTask } from '../bpmnRunnerPlugins/manualTask'
 import { ScriptTask } from '../bpmnRunnerPlugins/scriptTask'
 import { StartEvent } from '../bpmnRunnerPlugins/startEvent'
 import { Task } from '../bpmnRunnerPlugins/task'
+import { TerminateEndEvent } from '../bpmnRunnerPlugins/terminateEndEvent'
 import { UserTask } from '../bpmnRunnerPlugins/userTask'
 import { User } from '../entity'
 import {
@@ -50,7 +51,9 @@ export const DefaultPluginsWithNodeImplementations: LibrariesWithNodeImplementat
   [SupportedNode.ParallelGateway]: ParallelGateway,
 
   [SupportedNode.StartEvent]: StartEvent,
+
   [SupportedNode.EndEvent]: EndEvent,
+  [SupportedNode.TerminateEndEvent]: TerminateEndEvent,
 
   [SupportedNode.LinkIntermediateCatchEvent]: LinkIntermediateCatchEvent,
   [SupportedNode.LinkIntermediateThrowEvent]: LinkIntermediateThrowEvent,
