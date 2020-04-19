@@ -7,6 +7,7 @@ export enum SupportedNode {
   StartEvent = 'StartEvent',
 
   EndEvent = 'EndEvent',
+  TerminateEndEvent = 'TerminateEndEvent',
 
   IntermediateThrowEvent = 'IntermediateThrowEvent',
   LinkIntermediateThrowEvent = 'LinkIntermediateThrowEvent',
