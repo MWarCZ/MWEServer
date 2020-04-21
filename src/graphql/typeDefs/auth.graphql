@@ -5,6 +5,7 @@ type Query {
 
 type Mutation {
   login(input: LoginLocalInput!): LoginPayload
+  loginGithub(input: LoginGithubInput!): LoginPayload
 }
 
 input LoginLocalInput {
@@ -16,4 +17,8 @@ input LoginLocalInput {
 type LoginPayload {
   token: String!
   user: User!
+}
+
+input LoginGithubInput {
+  expires: String
 }

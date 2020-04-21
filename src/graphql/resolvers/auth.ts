@@ -25,4 +25,24 @@ export const Mutation: GQLTypes.MutationResolvers = {
     }
     return null
   },
+
+  loginGithub: async (_, args, context) => {
+    // console.log(args)
+    let expires = (args.input.expires) ? args.input.expires : '30m'
+    let user = await ApiAuth.authenticateGithub({
+      request: context.request,
+      response: context.response,
+    })
+    if (user) {
+      let token = ApiAuth.genJwt({
+        user, expiresIn: expires,
+      })
+      // @ts-ignore
+      return {
+        token,
+        user,
+      } as GQLTypes.LoginPayload
+    }
+    return null
+  },
 }

@@ -9,6 +9,9 @@ export class User {
   @PrimaryGeneratedColumn()
   id?: number
 
+  @Column('text')
+  idGithub?: string
+
   @Column('varchar', { length: 100, unique: true})
   login?: string
 

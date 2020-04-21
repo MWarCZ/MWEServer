@@ -1,6 +1,7 @@
 import { ContextUser } from 'graphql/context'
 import jwt from 'jsonwebtoken'
 import passport from 'passport'
+import { Strategy as GithubStrategy } from 'passport-github'
 import { Strategy as BearerStrategy } from 'passport-http-bearer'
 import { Strategy as LocalStrategy } from 'passport-local'
 import { Connection } from 'typeorm'
@@ -13,7 +14,61 @@ import { AuthorizationError } from './authorizationError'
 export function passportUseStrategies(connection: Connection) {
   passportUseLocalStrategy(connection)
   passportUseBearerStrategy(connection)
+  passportUseGithubStrategy(connection)
 }
+
+//#region Passport - github
+
+export function passportUseGithubStrategy(connection: Connection) {
+  passport.use(new GithubStrategy({
+    clientID: 'f93659ddfbd1123c804e',
+    clientSecret: 'dd76baa5e001177a0a2a1bb4ee5bef33933fa499',
+    callbackURL: 'http://localhost:4000/play'
+  },
+  async (accessToken, refreshToken, githubProfile, done) => {
+    console.log({accessToken, refreshToken})
+    console.log(githubProfile)
+    // Najit uzivatele dle loginu
+    let client = await connection.manager.findOne(User, {
+      idGithub: githubProfile.id,
+    })
+    // sada kontrol
+    if (!client) {
+      return done(new AuthorizationError(`Ucet uzivatele neexistuje.`))
+    }
+    if (client.removed) {
+      return done(new AuthorizationError(`Ucet uzivatele '${client.login}' jiz neexistuje.`))
+    }
+    if (client.locked) {
+      return done(new AuthorizationError(`Ucet uzivatele '${client.login}' je uzamknut.`))
+    }
+    // vse ok
+    return done(undefined, client, { message: `${client.id}:${client.login}` })
+  }))
+}
+
+// Funkce ktera pozada passport o autentikaci pomoci dane strategie.
+export function authenticateGithub(options: {
+  request: any, response: any, /*auth: { access_token?: string },*/
+}): Promise<User | undefined> {
+  const { request, response, } = options
+  // priprava dat pro passport
+  request.body = { ...request.body }
+  return new Promise((resolve, rejects) => {
+    passport.authenticate('github', (err, client) => {
+      console.warn('authGithub: ', err, client)
+      if (err) { rejects(err) }
+      console.log('client: ', client, client instanceof User)
+      if (client instanceof User) {
+        resolve(client)
+      } else {
+        rejects(new Error(`Neco se stalo s uzivatelem.`))
+      }
+    })(request, response)
+  })
+}
+
+//#endregion
 
 //#region Passport - Local
 // PODOBNE LZE UDELAT FACEBOOK, GOOGLE, AJ.
