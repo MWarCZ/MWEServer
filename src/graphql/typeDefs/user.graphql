@@ -1,67 +1,118 @@
 
 type Query {
-  # UserAdmin => Vsechny mimo skryte (removed)
-  # SuperUserAdmin => Zcela vsechny
-  # User => Jen sebe
-  # Other => Nic
+  """
+  Ziskani konkretniho uzivatele dle zadanych kriterii.
+  _(Dotaz bez parametru vraci prihlaseneho uzivatele.)_
+  """
   user(filter: UserFilter): User
-  # UserAdmin => Vsechny mimo skryte (removed)
-  # SuperUserAdmin => Zcela vsechny
-  # User => Jen sebe
-  # Other => Nic
+  """
+  Sezname uzitavelu v systemu.
+  """
   users: [User]!
 }
+
 type Mutation {
-  # User
+  """
+  Zmena hesla uzivatele.
+  """
   changeUserPassword(input: ChangePasswordInput!, filter: UserFilter!): Boolean
+  """
+  Upravi informace o uzivateli.
+  """
   updateUserInfo(input: UpdateUserInfoInput!, filter: UserFilter!): User
-  # UserAdmin
-  ## updateUserInfo => Pro vsechny uzivatele
+  """
+  Vytvori noveho uzivatele.
+  """
   createNewUser(input: NewUserInput!): User # vytvorit uzivatele
+  """
+  Odstrani uzivatele.
+  _(Zmeni priznak `removed` u uzivatele.)_
+  """
   removeUser(filter: UserFilter!): Boolean # skrit uzivatele s id
+  """
+  Zamkne uzivatele a zakaze jeho prihlasovani do systemu.
+  """
   lockUser(filter: UserFilter!): User
+  """
+  Odemkne uzivatele a povoli jeho prihlasovani do systemu.
+  """
   unlockUser(filter: UserFilter!): User
+  """
+  Nastavi uzivateli nahodne heslo a vrati ho v textove podobe.
+  """
   resetUserPassword(filter: UserFilter!): String
-  # SuperUserAdmin
+  """
+  Trvale smaze uzivatele ze systemu.
+  """
   deleteUser(filter: UserFilter!): Boolean # trvale odstranit
+  """
+  Obnovi uzivatele, ktery byl odstranen.
+  _(Zmeni priznak `removed` u uzivatele.)_
+  """
   recoverUser(filter: UserFilter!): User # obnovit skriteho uzivatele s id
-
-
 }
 
+"""
+Uzivatel v systemu.
+"""
 type User {
+  """ID pod kterym je uzivatel veden v systemu."""
   id: Int!
+  """Jedinecne prihlasovaci jmeno uzivatele."""
   login: String!
+  """Email uzivatele."""
   email: String!
+  """Jmeno uzivatele."""
   firstName: String!
+  """Prijmeni uzivatele."""
   lastName: String!
+  """Uživatelova clenstvi ve skupinach."""
   membership: [Member!]!
+  """Přiznak zda je uzivatel chranen pred odstranenim ze systemu."""
   protected: Boolean!
+  """Priznak zda je uzivateli bokováno prihlaseni do systemu."""
   locked: Boolean!
+  """Priznak zda je uzivatel odstranen."""
   removed: Boolean!
 }
 
+"""Filtr k vyhledani uzivatele."""
 input UserFilter {
+  """ID hledaneho uzivatele."""
   id: Int
+  """Prihlasovaci jmeno hledaneho uzivatele."""
   login: String
 }
 
+"""Informace potrebne pro vytvoreni noveho uzivatele."""
 input NewUserInput {
+  """Heslo pro noveho uzivatele."""
   password: String!
+  """Jedinecne prihlasovaci jmeno pro noveho uzivatele."""
   login: String!
 
+  """Email pro noveho uzivatele."""
   email: String
+  """Jmeno pro noveho uzivatele."""
   firstName: String
+  """Prijmeni pro noveho uzivatele."""
   lastName: String
 }
 
+"""Informace o uzivateli, ktere maji byt zmeneny v systemu."""
 input UpdateUserInfoInput {
+  """Novy email uzivatele."""
   email: String
+  """Nove jmeno uzivatele."""
   firstName: String
+  """Nove prijmeni uzivatele."""
   lastName: String
 }
 
+"""Informace nezbytne pro zmenu hesla."""
 input ChangePasswordInput {
+  """Stare heslo uzivatele."""
   oldPassword: String!
+  """Nove heslo uzivatele."""
   newPassword: String!
 }

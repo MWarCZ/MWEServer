@@ -1,181 +1,332 @@
 
 type Query {
+  """
+  Ziskani konkretni sablony procesu.
+  """
   processTemplate(filter: ProcessTemplateFilter!): ProcessTemplate
+  """
+  Ziskani seznamu sablon procesu dle zadanych kriterii.
+  """
   processTemplates(filter: ProcessTemplateFilter): [ProcessTemplate!]!
+  """
+  Ziskani konkretni instance procesu.
+  """
   processInstance(filter: ProcessInstanceFilter!): ProcessInstance
+  """
+  Ziskani seznamu instanci procesu dle zadanych kriterii.
+  """
   processInstances(filter: ProcessInstancesFilter): [ProcessInstance!]!
 
+  """
+  Ziskani konkretni instance uzlu.
+  """
   nodeInstance(filter: NodeInstanceFilter!): NodeElementInstance
+  """
+  Ziskani seznamu instanci uzlu dle zadanych kriterii.
+  """
   nodeInstances(filter: NodeInstancesFilter): [NodeElementInstance!]!
 
-  # Zadost. Co vse je potreba pro provedeni uzlu
+  """
+  Ziskani seznamu doplnku, ktere dana instance uzlu potrebuje, ke svemu dokonceni.
+  """
   nodeAdditionsFormat(idNI: Int!): [NodeAdditions!]!
 }
 type Mutation {
+  """
+  Nahraje na server nouve sablony procesu.
+  """
   uploadProcess(xml: String): [ProcessTemplate]
+  """
+  Spusti novu instanci procesu.
+  """
   initProcess(input: InitProcessInput!): ProcessInstance
 
+  """
+  Doplni pozadovane doplnky do dane instance uzlu.
+  """
   nodeAdditions(idNI: Int!,input: [NodeAdditionsInput!]!): NodeElementInstance
+  """
+  Stahnuti/Zruseni instance procesu a vsech jeho uzlu.
+  """
   withdrawnProcess(idPI: Int!): ProcessInstance
 
+  """
+  Zabrani dane instance uzlu k obsouzeni.
+  """
   claimNodeInstance(idNI: Int!): NodeElementInstance
+  """
+  Uvolneni dane instance uzlu k obsouzeni pro nekoho jineho.
+  """
   releaseNodeInstance(idNI: Int!): NodeElementInstance
 
+  """
+  Trvale smazani sablony procesu a vsech jejich instanci.
+  """
   deleteProcessTemplate(idPT: Int!): Boolean
+  """
+  Trvale smazani instance procesu.
+  """
   deleteProcessInstance(idPI: Int!): Boolean
 
+  """
+  Upraveni informaci a priznaku v konkretni sablone procesu.
+  """
   updateProcessTemplate(idPT: Int!, input: ProcessTemplateUpdateInput!): ProcessTemplate
+  """
+  Upraveni informaci v konkretni sablone uzlu.
+  """
   updateNodeTemplate(idNT: Int!, input: NodeTemplateUpdateInput!): NodeElementTemplate
 }
 
 type Subscription {
+  """
+  Nove vytvorene sablony procesu.
+  """
   newProcessTemplates: [ProcessTemplate!],
+  """
+  Trvale smazane sablony procesu.
+  """
   deletedProcessTemplates: [ProcessTemplate!],
+  """
+  Zmeny v sablonach procesu.
+  """
   changedProcessTemplates: [ProcessTemplate!],
 
+  """
+  Nove vytvorene instance procesu.
+  """
   newProcessInstance: ProcessInstance!,
+  """
+  Trvale smazane instance procesu.
+  """
   deletedProcessInstance: ProcessInstance!,
+  """
+  Zmeny v inctanci procesu.
+  """
   changedProcessInstance: ProcessInstance!,
 
+  """
+  Zmeny v instancich uzlu.
+  """
   changedNodeInstances(idPI: Int): [NodeElementInstance!]!,
 }
 
+"""Pozadovane doplky, ktere ocekava uzel."""
 type NodeAdditions {
+  """Nazev dane polozky."""
   name: String
+  """Typ dane polozky."""
   type: String
+  """Vychozi hodnota dane polozky."""
   default: Json
+  """
+  Mozne hodnoty pro danou polozku nebo omezujici hodnoty.
+  _(Zalezi na zvolenem typu polozky.)_
+  """
   possibilities: [Json]
+  """Napoveda k vyplnene dane polozky."""
   hints: String
 }
 
 # =========================
+"""Informace, ktere je mozne menit v sablone procesu."""
 input ProcessTemplateUpdateInput {
   # bpmnId: String
+  """Nazev procesu."""
   name: String
+  """Spustitelnost procesu."""
   isExecutable: Boolean
   # processType: String
   # version: String
   # versionType: String
+  """Nazev skupiny pro identifikaci postu manager."""
   candidateManager: String
 }
+
 input NodeTemplateUpdateInput {
+  """Nazev uzlu."""
   name: String
+  """Nazev skupiny pro identifikaci moznych nabyvatelu. _(Obsluha instanci uzlu.)_"""
   candidateAssignee: String
 }
 
 # =========================
 
+"""Filter k nalezeni sablon procesu."""
 input ProcessTemplateFilter {
+  """ID hledaneho procesu."""
   id: Int
+  """BPMN ID hledaneho procesu."""
   bpmnId: String
+  """Verze hledaneho procesu."""
   version: String
+  """Spustitelnost heledaneho procesu."""
   isExecutable: Boolean
 }
 input ProcessInstanceFilter {
+  """ID hledane instance procesu."""
   id: Int!
 }
 input NodeTemplateFilter {
+  """ID hledane sablony uzlu."""
   id: Int!
 }
 input NodeInstanceFilter {
+  """ID hledane instance uzlu."""
   id: Int!
 }
 input ProcessInstancesFilter {
+  """Stav hledanych instanci procesu."""
   status: String
 }
 input NodeInstancesFilter {
+  """Stav hledanych instanci uzlu."""
   status: String
+  """Najde instance uzlu, ktera nema jeste nabyvatele."""
   assigneeNullOnly: Boolean
+  """Najde instance uzlu, ktere muze prihlaseny uzivatel zabrat a obslouzit."""
   forMeOnly: Boolean
+  """Najde instance uzlu, ktere obsadil prihlaseny uzivatel."""
   assigneeIsMe: Boolean
+  """Najde instance uzlu obsazene uzivatelem s danym prihlasovacim jmenem."""
   assigneeLogin: String
+  """Najde instance uzlu obsazene uzivatelem s danym ID."""
   assigneeId: Int
 }
+
 # =====================
+
 input InitProcessInput {
-  """ProcessInstance will create from ProcessTemplate with this id."""
+  """ID sablony procesu z niz bude vytvorena instance procesu."""
   idProcess: Int!
-  """ProcessInstance will start on NodeTemplate with this id."""
+  """ID uzlu v sablone procesu, ktery bude privnim/startovnim uzlem v instanci procesu."""
   idFirstNode: Int!
 }
 input NodeAdditionsInput {
+  """Nazev polozky/doplnku."""
   name: String!
+  """Hodnota polozky/doplnku."""
   value: Json
 }
 # ==============================
 
 input PT_NodeFilterInput {
+  """Najde uzly jejiz implementace obsahuje hledany text."""
   implementationContains: String
 }
 input PT_InstanceFilterInput {
+  """Najde instance procesu, ktere maji hledany stav."""
   status: String
 }
 input PI_NodeFilterInput {
+  """Najde instance uzlu, ktere maji hledany stav."""
   status: String
 }
 
+# ==============================
+
 type ProcessTemplate {
+  """ID sablony procesu pod kterym je vedena v systemu."""
   id: Int!
+  """BPMN ID sablony procesu."""
   bpmnId: String!
+  """Nazev procesu."""
   name: String!
 
+  """Spustitelnost procesu."""
   isExecutable: Boolean!
+  """Type procesu."""
   processType: String!
+  """Verze procesu."""
   version: String!
+  """Type verze procesu. _(number, semver)_"""
   versionType: String!
 
+  """Nazev skupiny pro identifikaci postu manager."""
   candidateManager: String
+  """Skupina splnujici identifikaci obsahujici kandidaty pro post manager."""
   candidateGroup: Group
 
+  """Instance sablonu procesu."""
   instances(filter: PT_InstanceFilterInput): [ProcessInstance!]!
+  """Sablony datovych objektu v procesu."""
   dataObjects: [DataObjectTemplate!]!
+  """Sablony uzlu v procesu."""
   nodeElements(filter: PT_NodeFilterInput): [NodeElementTemplate!]!
   # sequenceFlows
 }
+
 type ProcessInstance {
+  """ID instacne procesu pod kterym je vedena v systemu."""
   id: Int!
+  """Datum a cas spusteni instance procesu."""
   startDateTime: Date
+  """Datum a cas ukonceni instance procesu."""
   endDateTime: Date
+  """Stav procesu."""
   status: String
 
+  """Sablona procesu pro danou instanci procesu."""
   template: ProcessTemplate!
+  """Interni data ulozena v instanci procesu."""
   data: Json
 
   # data
+  """Instance datovych objektu s daty spadajici do instance procesu."""
   dataObjects: [DataObjectInstance!]!
+  """Instance uzlu spadajici do instance procesu."""
   nodeElements(filter: PI_NodeFilterInput): [NodeElementInstance!]!
   # sequenceFlows: [!]!
 }
+
 type NodeElementTemplate {
+  """ID sablony uzlu pod kterym je veden v systemu."""
   id: Int!
+  """BPMN ID sablony uzlu."""
   bpmnId: String!
+  """Nazev sablony uzlu."""
   name: String!
 
+  """Nazev implementace dane sablony uzlu."""
   implementation: String!
+  """Nazev skupiny pro identifikaci moznych nabyvatelu. _(Obsluha instanci uzlu.)_"""
   candidateAssignee: String # Jenom textova podoba
+  """Skupina splnujici identifikaci obsahujici kandidaty pro obsazeni/obsouzeni instaci uzlu."""
   candidateGroup: Group # Text prirazeny ke konkretni skupine
 
+  """Sablona procesu do niz uzel patri."""
   processTemplate: ProcessTemplate!
+  """Instance uzlu vychazejici z dane sablonu uzlu."""
   instances: [NodeElementInstance!]!
   # inputs
   # outputs
   # incoming
   # outgoing
 }
+
 type NodeElementInstance {
+  """ID instance uzlu pod kterym je vedena v systemu."""
   id: Int!
+  """Datum a cas vytvoreni instance uzlu."""
   startDateTime: Date
+  """Datum a cas ukonceni instance uzlu."""
   endDateTime: Date
+  """Stav instance uzlu."""
   status: String
 
+  """Sablona uzlu z niz vychazi dana instance uzlu."""
   template: NodeElementTemplate!
+  """Instance procesu pod niz spada dana instacne uzlu."""
   processInstance: ProcessInstance!
 
+  """Interni data ulozena v instanci uzlu."""
   data: Json
+  """Data, ktera uzle pri svem zpracovani naposled vratil."""
   returnValue: Json
-  assignee: User # TODO
-
+  """Nabyvatel, ktery obsadil dany uzle."""
+  assignee: User
 }
+
 type DataObjectTemplate {
   id: Int!
   bpmnId: String!
@@ -186,6 +337,7 @@ type DataObjectTemplate {
 
   instances: [DataObjectInstance!]!
 }
+
 type DataObjectInstance {
   id: Int!
 

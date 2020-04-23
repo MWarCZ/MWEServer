@@ -1,43 +1,71 @@
 
 type Query {
-  # GroupAdmin => Vsechmi mimo skryte (removed)
-  # SuperGroupAdmin => Zcela vsechny
-  # Other => Nic
+  """
+  Ziskani konkretni skupiny.
+  """
   group(filter: GroupFilter!): Group
-  # GroupAdmin => Vsechmi mimo skryte (removed)
-  # SuperGroupAdmin => Zcela vsechny
-  # Other => Nic
+  """
+  Ziskani seznamu skupin.
+  """
   groups: [Group!]!
 }
 type Mutation {
-  # GroupAdmin
+  """
+  Vytvoreni nove skupiny.
+  """
   createNewGroup(input: NewGroupInput!): Group # vytvorit skupinu
+  """
+  Upraveni informaci o skupine.
+  """
   updateGroupInfo(input: UpdateGroupInfoInput!, filter: GroupFilter!): Group
+  """
+  Odstraneni skupiny.
+  _(Zmeni priznak `removed` u skupiny.)_
+  """
   removeGroup(filter: GroupFilter!): Boolean # skript skupinu
-    # Members->addMember: Pridat uzivatele do skupiny s id
-    # Members->removeMember: Odebrat uzivatele ze skupiny s id
-    # Members->setMemberPermisions: Nastaveni lokalnich prav uzivatele
-  # SuperGroupAdmin
+  """
+  Travale smazani skupiny ze systemu.
+  """
   deleteGroup(filter: GroupFilter!): Boolean # trvale odstranit skupinu
+  """
+  Obnoveni skupiny.
+  _(Zmeni priznak `removed` u skupiny.)_
+  """
   recoverGroup(filter: GroupFilter!): Group # obnovit skritou skupinu s id
 }
+
+"""Skupina."""
 type Group {
+  """ID pod kterym je vedena v systemu."""
   id: Int!
+  """Jedinecny nazev skupiny."""
   name: String!
+  """Clenove dane skupiny."""
   members: [Member!]!
+  """Popis skupiny."""
   describe: String!
+  """Priznka zda je skupina chranena."""
   protected: Boolean!
+  """Priznak odstraneni skupiny."""
   removed: Boolean!
 }
 
+"""Filter pro nalezeni skupiny."""
 input GroupFilter {
+  """ID skupiny."""
   id: Int
+  """Nazev skupiny."""
   name: String
 }
+  """"""
 input NewGroupInput {
+  """Novy jedinecny nazev skupiny."""
   name: String!
+  """Novy popis skupiny."""
   describe: String
 }
+"""Informace ke zmeneneni ve skupine."""
 input UpdateGroupInfoInput {
+  """Novy popis skupiny."""
   describe: String
 }

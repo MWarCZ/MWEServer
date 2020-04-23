@@ -1,28 +1,56 @@
 
-# type Query {
-
-# }
 type Mutation {
+  """
+  Prida uzivatele do skupiny.
+  """
   addMember(filter: MemberFilter!, input: MemberPermisionsInput): Member
+  """
+  Odstrani uzivatele ze skupiny.
+  """
   removeMember(filter: MemberFilter!): Boolean
+  """
+  Nastavi nova prava pro dane clenstvi.
+  """
   setMemberPermisions(filter: MemberFilter!, input: MemberPermisionsInput!): Member # Nastaveni lokalnich prav uzivatele
-
 }
 
+"""Clenstvi predstavuje vztah mezi uzivatelem a skupinou."""
 type Member {
+  """Skupina v niz je dany uzivatel clenem."""
   group: Group!
+  """Uzivatel, ktery je clenem ve dane skupine."""
   user: User!
+  """Priznak zda je clenstvi uzivatele ve skupine chraneno."""
   protected: Boolean!
+  """Priznak zda uzivatel muze pridavat cleny do dane skupiny."""
   addMember: Boolean!
+  """Priznak zda uzivatel muze odstranit cleny z dane skupiny."""
   removeMember: Boolean!
+  """Priznak zda uzivatel muze videt dalsi cleny z dane skupiny."""
   showMembers: Boolean!
 }
+
+"""Informace o nastaveni ci zruseni priznaku pro clenstvi."""
 input MemberPermisionsInput {
+  """
+  Nova hodnata priznaku prava pridavat cleny do skupiny.
+  _(true: Pridat; false: Odebrat; null: Nezmeneno)_
+  """
   addMember: Boolean
+  """
+  Nova hodnata priznaku prava odebirat cleny ze skupiny.
+  _(true: Pridat; false: Odebrat; null: Nezmeneno)_"""
   removeMember: Boolean
+  """
+  Nova hodnata priznaku prava videt dalsi cleny skupiny.
+  _(true: Pridat; false: Odebrat; null: Nezmeneno)_"""
   showMembers: Boolean
 }
+
+"""Filtr pro vyhledani skupiny."""
 input MemberFilter {
+  """Identifikace skupiny."""
   group: GroupFilter!
+  """Identifikace uzivatele."""
   user: UserFilter!
 }
