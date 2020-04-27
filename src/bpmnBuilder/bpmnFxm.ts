@@ -32,6 +32,7 @@ export declare namespace BpmnFxm {
     processType?: string,
     versionType?: string,
     version?: string,
+    versionTag?: string,
   } & BaseElementAttr
   type Process = {
     '#attr'?: ProcessAttr,
