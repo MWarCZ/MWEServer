@@ -410,6 +410,7 @@ describe('Testy pro parsovani dle urovne (L1, L2, aj.).', () => {
           xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
           xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"
           xmlns:di="http://www.omg.org/spec/DD/20100524/DI"
+          xmlns:camunda="http://camunda.org/schema/1.0/bpmn"
           xmlns:mwe="http://www.mwarcz.cz/mwe/bpmn/"
           id="Definitions_1">
 
@@ -445,6 +446,37 @@ describe('Testy pro parsovani dle urovne (L1, L2, aj.).', () => {
         </bpmn:process>
       `, options)
       definitions = {...definitions, ...data}
+
+      let processes = parser.parseLevel1(definitions)
+      expect(processes.Process).toBeArrayOfSize(1)
+      processes.Process.forEach(process => {
+        expect(process.entity).toBeInstanceOf(ProcessTemplate)
+        expect(process.entity.bpmnId).toBe(test.process.id)
+        expect(process.entity.isExecutable).toBe(test.process.isExecutable)
+        expect(process.entity.processType).toBe(test.process.processType)
+        expect(process.entity.versionType).toBe(test.process.versionType)
+        expect(process.entity.version).toBe(test.process.version)
+      })
+    })
+    it('Jeden proces s camunda verzi', () => {
+      let test = {
+        process: {
+          id: 'P1',
+          isExecutable: true,
+          processType: ProcessType.Private,
+          versionType: VersionType.number,
+          version: 123,
+        },
+      }
+      let data = fxpParse(`
+        <bpmn:process id="${test.process.id}"
+          isExecutable="${test.process.isExecutable}"
+          processType="${test.process.processType}"
+          mwe:versionType="${test.process.versionType}"
+          camunda:versionTag="${test.process.version}">
+        </bpmn:process>
+      `, options)
+      definitions = { ...definitions, ...data }
 
       let processes = parser.parseLevel1(definitions)
       expect(processes.Process).toBeArrayOfSize(1)

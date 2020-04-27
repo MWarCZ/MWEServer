@@ -130,6 +130,10 @@ export class Parser {
         default:
           throw new ParseError(`Process: Unknown value '${tmpProcessType}' in processType.`)
       }
+
+      let tmpVersionTag = process['#attr'][`${this.ns.camunda}versionTag` as 'versionTag']
+      tmpVersionTag && (entity.version = tmpVersionTag)
+
       let tmpVerType = process['#attr'][`${this.ns.mwe}versionType` as 'versionType']
       switch (tmpVerType) {
         case VersionType.number:
