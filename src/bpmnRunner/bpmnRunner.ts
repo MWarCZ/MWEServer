@@ -795,13 +795,13 @@ export class BpmnRunner {
       // Seznam obsahujici id sequenceFlow, ktere maji byt provedeny.
       initNext: number[],
       // Informace o ukoceni procesu.
-      finishProcess: { finished: boolean, forced: boolean },
+      finishProcess: { finished: boolean, forced: boolean, type: string },
       registerGlobal: JsonMap,
       registerLocal: JsonMap,
       outputs?: JsonMap,
     } = {
       initNext: [],
-      finishProcess: { finished: false, forced: false },
+      finishProcess: { finished: false, forced: false, type: '' },
       registerGlobal: {},
       registerLocal: {},
     }
@@ -823,6 +823,9 @@ export class BpmnRunner {
             returnValues.finishProcess.finished = data.finished
             if (data.forced) {
               returnValues.finishProcess.forced = data.forced
+            }
+            if (data.type) {
+              returnValues.finishProcess.type = data.type
             }
           }
         },
@@ -909,10 +912,10 @@ export class BpmnRunner {
     // TODO Zamyslet se nad ukoncovanim procesu
     if (returnValues.finishProcess.finished) {
       if (returnValues.finishProcess.forced) {
-        console.error('Proces byl nasilne ukoncen.')
-        console.error(processInstance)
-        console.error(targetNodeInstances)
-        console.error(targetSequenceInstances)
+        // console.error('Proces byl nasilne ukoncen.')
+        // console.error(processInstance)
+        // console.error(targetNodeInstances)
+        // console.error(targetSequenceInstances)
         // Ukoncit proces a vsechny cekajici a pripravene uzly
         processInstance.status = ProcessStatus.Terminated
         // Ukoncit pripravene/cekajici uzly
@@ -939,6 +942,13 @@ export class BpmnRunner {
       if (unfinishedNodeInstances.length === 0 && targetNodeInstances.length === 0) {
         processInstance.status = ProcessStatus.Failled
         processInstance.endDateTime = new Date()
+        processInstance.data = {
+          ...processInstance.data,
+          error: {
+            name: 'unexist_another_node_instances',
+            message: `V instanci procesu neexistují jiné instance uzlů, které by mohly být zpracovány.`,
+          },
+        }
       }
       else {
         processInstance.status = ProcessStatus.Active
