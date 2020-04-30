@@ -67,7 +67,8 @@ export interface NodeImplementationFlatItemsMap {
 
 export interface NodeImplementationFlatItem {
   type: 'checkbox' | 'password' | 'email' | 'search'
-      | 'tel' | 'number' | 'text' | 'range' | 'select',
+      | 'tel' | 'number' | 'text' | 'range' | 'select'
+      | 'hidden' | 'html',
   default?: string | number | boolean | null | (string | number | boolean | null)[],
   possibilities?: (string | number | boolean | null)[],
   hints?: string,

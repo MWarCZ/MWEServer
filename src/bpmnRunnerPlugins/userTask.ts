@@ -15,6 +15,9 @@ function checkForm(form: any): form is NodeImplementationFlatItemsMap {
 }
 function findForm($local: RunContextMap): NodeImplementationFlatItemsMap {
   // console.log('#> findForm:', $local)
+  const defaultForm: NodeImplementationFlatItemsMap = {
+    $form_state: { type: 'hidden', default: true, hints: 'Byl formulář vyplněn?' },
+  }
   for (let key in $local) {
     const data = $local[key]
     const form = data && data.$form
@@ -22,12 +25,15 @@ function findForm($local: RunContextMap): NodeImplementationFlatItemsMap {
       if (checkForm(form)) {
         return {
           ...form,
-          $form_state: { type: 'checkbox', default: true, hints: 'Byl formulář vyplněn?' },
+          ...defaultForm,
         }
       }
     }
   }
-  throw new Error('Nebyl nalezem validní formulář ve vstupních datových objektech.')
+  return {
+    $error: { type: 'html', hints: '<b style="color:red;">Nebyl nalezen validní formulář!</b>' },
+    ...defaultForm
+  }
 }
 
 export const UserTask: NodeImplementation = {
