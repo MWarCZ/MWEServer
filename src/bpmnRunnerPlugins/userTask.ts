@@ -32,7 +32,7 @@ function findForm($local: RunContextMap): NodeImplementationFlatItemsMap {
   }
   return {
     $error: { type: 'html', hints: '<b style="color:red;">Nebyl nalezen validní formulář!</b>' },
-    ...defaultForm
+    ...defaultForm,
   }
 }
 

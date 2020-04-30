@@ -36,9 +36,9 @@ export function safeExecuteNodeFunction(options: {
     nodeInstance.status = status.onFailure
     if (e instanceof Error) {
       nodeInstance.returnValue = { error: { name: e.name, message: e.message, lastStatus } }
-      console.log('AAAAAAAAAAAAAAAAAAAAAAA', nodeInstance)
+      // console.log('AAAAAAAAAAAAAAAAAAAAAAA', nodeInstance)
     } else {
-      console.log('bbbbbbbbbbbbbbbbbbbbbb')
+      // console.log('bbbbbbbbbbbbbbbbbbbbbb')
       throw e
     }
     return false
