@@ -6,6 +6,8 @@
 *.zip
 *.map
 
+*.skip.*
+
 logs/
 tmp/
 temp/
