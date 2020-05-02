@@ -59,7 +59,7 @@ export class User {
   @BeforeInsert()
   @BeforeUpdate()
   checkProtected() {
-    if(this.protected && this.removed) {
+    if (this.protected && this.removed) {
       throw new Error(`Uživatel '${this.login}' je chráněn. Není možné ho odstranit.`)
     }
   }
