@@ -45,7 +45,7 @@ export class User {
   @BeforeRemove()
   async canBeRemoved() {
     if (this.protected)
-    throw new Error(`User '${this.login}' is protected. Impossible remove it.`)
+    throw new Error(`Uživatel '${this.login}' je chráněn. Není možné ho smazat.`)
   }
 
   @BeforeInsert()
@@ -54,6 +54,13 @@ export class User {
     if (typeof this.password === 'string') {
       this.password = await hash(this.password, 13)
       // console.log(`Hash passwd for user ${this.login}`)
+    }
+  }
+  @BeforeInsert()
+  @BeforeUpdate()
+  checkProtected() {
+    if(this.protected && this.removed) {
+      throw new Error(`Uživatel '${this.login}' je chráněn. Není možné ho odstranit.`)
     }
   }
 
