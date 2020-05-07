@@ -344,8 +344,14 @@ export async function changeUserPassword(options: {
     isOther: async() => {
       // Pokud nemeni heslo sam sobe.
       if (checkRequestHimself({ client, filter })) {
+        console.log('áaaaaaaaaaa')
+        console.log(data)
+        console.log(client)
         if (client && data.oldPassword) {
+          console.log('bbbbbbbbbbb')
+          console.log(data)
           if (await client.comparePassword(data.oldPassword)) {
+            console.log('ok')
             return
           }
         }
