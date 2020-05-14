@@ -1,3 +1,8 @@
+///////////////////////////////////////
+// Soubor: src/entity/bpmn/process.ts
+// Projekt: MWEServer
+// Autor: Miroslav Válka
+///////////////////////////////////////
 import { BeforeInsert, Column, Entity, ManyToOne, OneToMany, PrimaryGeneratedColumn } from 'typeorm'
 import { v4 as uuid } from 'uuid'
 
@@ -27,6 +32,10 @@ export interface OptionsProcess {
   version: string,
 }
 
+/**
+ * Sablona procesu.
+ * Predstavuje vzor podnikoveho procesu, ktery sleduji bezici instance.
+ */
 @Entity()
 export class ProcessTemplate implements BaseElementTemplate {
   @PrimaryGeneratedColumn()
@@ -94,6 +103,10 @@ export class ProcessTemplate implements BaseElementTemplate {
   }
 }
 
+/**
+ * Instance procesu.
+ * Jedna se o reprezentaci spustene sablony procesu.
+ */
 @Entity()
 export class ProcessInstance implements BaseElementInstance {
   @PrimaryGeneratedColumn()

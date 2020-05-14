@@ -1,8 +1,15 @@
-import process from 'process'
+///////////////////////////////////////
+// Soubor: src/utils/workerHelpers.ts
+// Projekt: MWEServer
+// Autor: Miroslav Válka
+///////////////////////////////////////
 import { isMainThread, MessagePort, parentPort, Worker } from 'worker_threads'
 
 import { NodeElementInstance, ProcessInstance } from '../entity/bpmn'
 
+// import process from 'process'
+
+/** Kody zprav pro rozliseni typu zpravy pri komunikaci mezi pracovnimi vlakny. */
 export enum WorkerMessageCode {
   wake, // Probud pracanta => pokud ceka
   end, // Ukonci pracanta => prerus nekonecny cyklus
@@ -13,18 +20,21 @@ export enum WorkerMessageCode {
   processChanged,
 }
 
+/** Zprava urcena ke komunikaci mezi pracovnimi vlakny */
 export type WorkerMessage = WorkerMesageNodeChanged | WorkerMesageProcessChanged
 
+/** Zprava typu oznameni o zmenach instanci uzlu */
 export interface WorkerMesageNodeChanged {
   code: WorkerMessageCode.nodesChanged,
   data: NodeElementInstance[],
 }
+/** Zprava typu oznameni o zmenach instance procesu */
 export interface WorkerMesageProcessChanged {
   code: WorkerMessageCode.processChanged,
   data: ProcessInstance,
 }
 
-
+/** Funkce pro odeslani zpravy o zmene instancich uzlu */
 export async function postChangedNodes(options: {
   port: MessagePort | Worker,
   nodes: NodeElementInstance[],
@@ -43,6 +53,7 @@ export async function postChangedNodes(options: {
   // Odeslani zpravy
   options.port.postMessage(msg)
 }
+/** Funkce pro odeslani zpravy o zmene instance procesu */
 export async function postChangedProcess(options: {
   port: MessagePort | Worker,
   process: ProcessInstance,
@@ -63,6 +74,11 @@ export async function postChangedProcess(options: {
   options.port.postMessage(msg)
 }
 
+/**
+ * Pomocny objekt obalujici praci s pracovnimi vlakny a pracovniky.
+ * Zjednodusuje pouziti ve vlaknech.
+ * Resi rozdily mezi hlavnim a vedlejsim vlaknem.
+ */
 export class WorkerHelper {
   worker?: Worker
   port?: MessagePort

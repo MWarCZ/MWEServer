@@ -1,3 +1,8 @@
+///////////////////////////////////////
+// Soubor: src/graphql/context.ts
+// Projekt: MWEServer
+// Autor: Miroslav Válka
+///////////////////////////////////////
 import { PubSub } from 'graphql-yoga'
 import { Context, ContextParameters } from 'graphql-yoga/dist/types'
 import { Connection } from 'typeorm'
@@ -11,18 +16,28 @@ import { WorkerHelper } from '../utils/workerHelpers'
 interface ContextUserMember extends Member {
   group: Group,
 }
+/** Datovy typ reprezentujici uzivatele s nactenymi clenstvimi ve skupinach */
 export interface ContextUser extends User {
   membership: ContextUserMember[]
 }
 
+/** Kontext pouzity v serveru GraphQL */
 export interface MyContext extends Context, ContextParameters {
+  /** Pripojeni k databazi */
   db: Connection,
+  /** Autorizovany uzivatel */
   client?: ContextUser,
+  /** Pomocny objekt pro komunikaci mezi pracovnimi vlakny */
   worker?: WorkerHelper,
+  /** Hlavni behove jadro procesu */
   runner?: BpmnRunner,
+  /** Modul pro praci s odbery v GraphQL */
   pubsub: PubSub,
 }
 
+/**
+ * Vygeneruje funkci pro ziskavani kontextu GraphQL.
+ */
 export const generateContextFunction = async(options?: {
   typeormConnection?: Connection,
   worker?: WorkerHelper,

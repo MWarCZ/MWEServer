@@ -1,3 +1,8 @@
+#######################################
+## Soubor: src/graphql/typeDefs/group.graphql
+## Projekt: MWEServer
+## Autor: Miroslav Válka
+#######################################
 
 type Query {
   """

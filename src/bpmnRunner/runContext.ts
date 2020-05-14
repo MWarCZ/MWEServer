@@ -1,3 +1,8 @@
+///////////////////////////////////////
+// Soubor: src/bpmnRunner/runContext.ts
+// Projekt: MWEServer
+// Autor: Miroslav Válka
+///////////////////////////////////////
 import { Connection, Equal, In } from 'typeorm'
 
 import {
@@ -25,9 +30,12 @@ export type RunContextMap = {
 export type RunContextInput = RunContextMap
 export type RunContextOutput = RunContextMap
 
+/** Kontext predstavujici vstupni sekvence */
 export type RunContextIncoming = { id: number, came: boolean, flag: string }
+/** Kontext predstavujici vystupni sekvence */
 export type RunContextOutgoing = { id: number, expression: string, flag: string }
 
+/** Kontext predstavujici uzel */
 export type RunContextNodeElement = {
   // Z instance
   id: number,
@@ -39,7 +47,7 @@ export type RunContextNodeElement = {
   bpmnId: string,
   implementation: string,
 }
-
+/** Kontext predstavujici dadatecne informace o sablonach uzlu v procesu */
 export interface RunContextProvideNodes {
   id: number,
   bpmnId: string,
@@ -48,6 +56,7 @@ export interface RunContextProvideNodes {
   data: JsonMap,
 }
 
+/** Kontext pro beh zpracovani instance uzlu */
 export type RunContext = {
   // Data ulozena v registru instance procesu.
   $GLOBAL: JsonMap,
@@ -69,6 +78,7 @@ export type RunContext = {
 
 //#endregion
 
+/** Skupina funkci pro vytvareni objektu kontextu */
 //#region Funkce CreateXXX
 
 export function createEmptyContext(): RunContext {
@@ -261,6 +271,7 @@ export function createContextForNode(
 
 //#region Funkce LoacXXX
 
+/** Funkce pro nacteni datovych instanci, ktere jsou ve vztahu k vstupnim entitam. */
 export async function loadFilteredDataInstances(options: {
   typeormConnection: Connection,
   dataTemplates: DataObjectTemplate[],
@@ -282,7 +293,7 @@ export async function loadFilteredDataInstances(options: {
   })
   return dataInstances
 }
-
+/** Funkce pro nacteni sekvencnich instanci, ktere jsou ve vztahu k vstupnim entitam. */
 export async function loadFilteredSequenceInstances(options: {
   typeormConnection: Connection,
   sequenceTemplates: SequenceFlowTemplate[],
@@ -305,6 +316,7 @@ export async function loadFilteredSequenceInstances(options: {
   return sequenceInstances
 }
 
+/** Vytvoreni kontextu s informacemi o dalsich sablonach uzlu v procesu. */
 export function convertToProvideNodes(options: {
   nodeTemplates: NodeElementTemplate[],
 }): RunContextProvideNodes[] {

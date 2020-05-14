@@ -1,3 +1,8 @@
+///////////////////////////////////////
+// Soubor: src/bpmnRunner/plugins/EmptyServicePlugin.ts
+// Projekt: MWEServer
+// Autor: Miroslav Válka
+///////////////////////////////////////
 import { ServiceImplementation } from '../pluginsImplementation'
 
 //#region EmptyServicePlugin
@@ -5,6 +10,7 @@ import { ServiceImplementation } from '../pluginsImplementation'
 export interface EmptyServicePluginDone {
   (...args: any[]): void
 }
+/** Jednoduchy modul, ktery nedela nic. */
 export class EmptyServicePlugin implements ServiceImplementation {
   done?: EmptyServicePluginDone
   name = 'empty'

@@ -1,3 +1,8 @@
+///////////////////////////////////////
+// Soubor: src/utils/entityHelpers.ts
+// Projekt: MWEServer
+// Autor: Miroslav Válka
+///////////////////////////////////////
 import { Constructor } from 'types/constructor'
 
 import {

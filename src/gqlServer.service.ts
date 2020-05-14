@@ -1,3 +1,8 @@
+///////////////////////////////////////
+// Soubor: src/gqlServer.service.ts
+// Projekt: MWEServer
+// Autor: Miroslav Válka
+///////////////////////////////////////
 import { startGQLServer } from './server'
 
 startGQLServer()

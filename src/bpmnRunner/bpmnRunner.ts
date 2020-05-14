@@ -1,3 +1,8 @@
+///////////////////////////////////////
+// Soubor: src/bpmnRunner/bpmnRunner.ts
+// Projekt: MWEServer
+// Autor: Miroslav Válka
+///////////////////////////////////////
 import { Connection, Equal, In } from 'typeorm'
 
 import { EndEvent } from '../bpmnRunnerPlugins/endEvent'
@@ -39,7 +44,10 @@ import {
 import { convertToProvideNodes, createContextForNode, createEmptyContext, RunContextProvideNodes } from './runContext'
 import { SupportedNode } from './supportedNode'
 
-
+/**
+ * Vychozi knihovna obsahujici implementace uzlu
+ * tj. zasuvne moduly s implementaci uzlu a prideleni jejich jmen k identifikaci uzlem.
+*/
 export const DefaultPluginsWithNodeImplementations: LibrariesWithNodeImplementations = {
   [SupportedNode.Task]: Task,
   [SupportedNode.ScriptTask]: ScriptTask,
@@ -59,12 +67,14 @@ export const DefaultPluginsWithNodeImplementations: LibrariesWithNodeImplementat
   [SupportedNode.LinkIntermediateThrowEvent]: LinkIntermediateThrowEvent,
 }
 
+/** Vychozi knihovna s implementacemi sluzeb */
 export const DefaultPluginsWithServiceImplementations: LibrariesWithServiceImplementations = [
   new IDsCollector({
     name: 'initNext',
   }),
 ]
 
+/** Datovy typ pro ucely nacteni vsech potrebnych dat z databare a jejich predani. */
 export interface LoadedData {
   nodeInstance: NodeElementInstance,
   nodeTemplate: NodeElementTemplate,
@@ -82,6 +92,7 @@ export interface LoadedData {
   nodeInstances: NodeElementInstance[],
 }
 
+/** Datovy objekt pro ulozeni zmenenych ci vytvorenych entit */
 export interface SaveData {
   nodeInstance: NodeElementInstance,
   outputsDataInstances: DataObjectInstance[],
@@ -90,19 +101,29 @@ export interface SaveData {
   processInstance: ProcessInstance,
 }
 
+/** Datovy objekt pro ulozeni zmenenych ci vytvorenych entit po stahnuti instance procesu */
 export interface SaveDataAfterWithdrawn {
   processInstance: ProcessInstance,
   targetNodeInstances: NodeElementInstance[],
 }
 
-// Výchozí maximální počet opakování vytváření instance z jedné sablony uzlu vramci instance procesu
+/**
+ * Výchozí maximální počet opakování vytváření instance z jedné sablony uzlu
+ * v ramci instance procesu.
+ */
 const MAX_COUNT_RECURRENCE_NODE = 10
 
+/**
+ * Hlavni behove jadro procesu slouzi ke zpracovavani instanci uzlu.
+ */
 export class BpmnRunner {
-
+  /** Pripojeni k databazi */
   connection: Connection
+  /** Knihovna s implementacemi uzlu */
   pluginsWithImplementations: LibrariesWithNodeImplementations
+  /** Knihovna s implementacemi sluzeb */
   pluginsWithServices: LibrariesWithServiceImplementations
+  /** Systemovy uzivatel, ktery obsluhuje instance ve vychozim stavu */
   systemUser?: User
 
   constructor(
@@ -130,9 +151,8 @@ export class BpmnRunner {
     this.systemUser = systemUser
   }
 
-
   //#region Funkce InitXXX - Kontrola, vytvoreni instance, ulozeni instance.
-
+  /** Vytvoreni instance elementu */
   async initElement<T extends FlowElementTemplate, I extends FlowElementInstance>(
     options: {
       templateClass: Constructor<T>,
@@ -169,11 +189,13 @@ export class BpmnRunner {
     }))
     return elementIs
   }
+  /** Ulozeni instance elementu do databaze */
   async saveElement<I extends FlowElementInstance | FlowElementInstance[]>(
     elementI: I,
   ): Promise<I> {
     return this.connection.manager.save(elementI)
   }
+  /** Vytvoreni nove instance elementu a nasledne ulozeni do databaze */
   async initAndSaveElement<T extends FlowElementTemplate, I extends FlowElementInstance>(
     options: {
       templateClass: Constructor<T>,
@@ -186,6 +208,7 @@ export class BpmnRunner {
     elementI = await this.saveElement(elementI)
     return elementI
   }
+  /** Funkce pro vytvoreni nove instance ze sablony pokud jeste neexistuje */
   async initIfUnexistElement<T extends FlowElementTemplate, I extends FlowElementInstance>(
     options: {
       templateClass: Constructor<T>,
@@ -233,6 +256,7 @@ export class BpmnRunner {
     return []
   }
 
+  /** Vytvoreni nove instance procesu a jeji prvni instance uzlu a nasledne ulozeni do databaze */
   async initAndSaveProcess(
     processTemplate: { id: number } | ProcessTemplate,
     startEvent: { id: number } | NodeElementTemplate,
@@ -270,6 +294,7 @@ export class BpmnRunner {
     }
   }
 
+  /** Vytvoreni instance uzlu */
   initNodeElement(
     processInstance: { id: number } | ProcessInstance,
     nodeElement: ({ id: number } | NodeElementTemplate)[],
@@ -284,6 +309,7 @@ export class BpmnRunner {
     return (onlyIfUnexist) ? this.initIfUnexistElement(options) : this.initElement(options)
   }
 
+  /** Vytvoreni instance datoveho objektu */
   initDataObject(
     processInstance: { id: number } | ProcessInstance,
     dataObject: ({ id: number } | DataObjectTemplate)[],
@@ -298,6 +324,7 @@ export class BpmnRunner {
     return (onlyIfUnexist) ? this.initIfUnexistElement(options) : this.initElement(options)
   }
 
+  /** Vytvoreni instance sekvencniho toku */
   initSequenceFlow(
     processInstance: { id: number } | ProcessInstance,
     sequence: ({ id: number } | SequenceFlowTemplate)[],
@@ -316,6 +343,9 @@ export class BpmnRunner {
 
   //#region Pomocne funkci na praci s db
 
+  /**
+   * Nacteni vsech entit potrebnych ke zpracovani instance uzlu z databaze.
+   */
   async loadDataForRun(options: {
     instance: NodeElementInstance | { id: number },
   }): Promise<LoadedData> {
@@ -455,6 +485,9 @@ export class BpmnRunner {
     return result
   }
 
+  /**
+   * Ulozeni entit po zpracovani do databaze.
+   */
   async saveData(result: SaveData) {
     // console.warn('1111111')
     await this.connection.transaction(async(manager) => {
@@ -479,6 +512,7 @@ export class BpmnRunner {
 
   //#region Pomocne funkce na predpripravu/upravu dat
 
+  /** Pomocna funkce pro ziskani implementace uzlu z knihovny */
   getImplementation(name: string): NodeImplementation {
     let implementation = this.pluginsWithImplementations[name]
     if (typeof implementation !== 'object') {
@@ -487,6 +521,7 @@ export class BpmnRunner {
     return implementation
   }
 
+  /** Slozeni kontextu pro beh zpracovani instance uzlu */
   prepareContext(options: LoadedData) {
     let {
       incomingSequenceInstances,
@@ -535,6 +570,9 @@ export class BpmnRunner {
     return context
   }
 
+  /**
+   * Uloženi dat ziskanych po zpracovani do instanci datovych objektu.
+  */
   storeDataToDataObject(options: {
     dataObject?: JsonMap,
     outputsDataTemplates: DataObjectTemplate[],
@@ -568,6 +606,10 @@ export class BpmnRunner {
     return outputsDataInstances
   }
 
+  /**
+   * Vytvoreni instanci uzlu, ktere maji pokracovat
+   * v sekvencim toku, o kterem rozhodla implementace uzlu.
+   */
   prepareTargetNodeInstances(options: {
     processInstance: ProcessInstance,
     nodeTemplates: NodeElementTemplate[],
@@ -604,7 +646,9 @@ export class BpmnRunner {
     })
     return result
   }
-
+  /**
+   * Vytvoreni instanci sekvenci, ktere propojuji zdrojovy uzel s cilovimi uzly
+   */
   prepareTargetSequenceInstances(options: {
     outgoingSequenceTemplates: SequenceFlowTemplate[],
     outgoingSequenceInstances: SequenceFlowInstance[],
@@ -648,52 +692,10 @@ export class BpmnRunner {
 
   //#endregion
 
-
   //#region Funkce RunXXX, ExecuteXXX
-
-  // ExecuteXXX - synchronni funkce
-  // RunXXX - asynchronni funkce
-  // [ ] Vzit instanci uzlu z fronty X
-  // [x] Najit implementaci uzlu
-  //    [x] Pokud neexistuje vyhod chybu
-  // [x] Vytvo5it kontext pro uzel
-  //    [x] incoming: [{idSeq: int, came: bool}, ...]
-  //    [x] outgoing: [{idTargetNode: int, expression: string, flag: string}]
-  // [x] Poskladat dodatky/argumenty pro uzel
-  //    [x] Nacist data ze sablony uzlu
-  //    [x] Nacist data z instance uzlu
-  //    [x] Spojit data ze sablony, instance a jine.
-  // [x] Spustit instanci uzlu
-  //    [x] prerun
-  //    [x] run
-  //    [x] oncomplete
-  //    [x] onfailling
-  //    [x] osetreni vsech vyjimek zpusobenych implementaci
-  // [x] Ulozit vystupni data
-  //    [x] Ziskej instance datovych objekt; pokud existuji
-  //    [x] Neexistuje instance datoveho objektu, tak ji vytvo5
-  //    [x] Prochazet vzstupni data v kontextu (obj key = dT name)
-  // [ ] Ukoncuje uzel proces?
-  //    [ ] Ukoncuje nasilne? (Neceka se na dokonceni ostatnich)
-  //        [ ] Ano:
-  //            [ ] Nastav proces jako ukonceny
-  //            [ ] U vsech existujicich instanci uzlu nastav stav jako preruseny
-  //            (Ready, Waiting -> Widraw) -> Zmena se musi projevit ve fronte X
-  //        [x] Ne:
-  //            [x] Kontrola zda existuje jina aktivni instance v procesu.
-  //            [x] Existuje: tak pokracovat dal.
-  //            [x] Neexistuje: Ukoncist proces.
-  // [ ] Spusti uzel dalsi uzly?
-  //    [x] Ziskat sablonu uzlu
-  //    [ ] Ziskat implementaci uzlu
-  //    [ ] Vyhodnotit podminky stanovene v nastaveni implementace
-  //    [x] Vytvorit novou ci najit cekajici instanci uzlu a nastavit status na ready
-  //        [ ] Vlozit instance do fronty Y
-  //    [x] Vytvorit instance sekvenci seqI(seqT, sourceNodeI, targetNodeI)
-  // [x] Ulozit vse do databaze
-  // [ ] Naplanovat zpracovani dalsich uzlu
-  //    [ ] Uzly z fronty Y do fronty X
-  //
+  /**
+   * Hlavni vstupni funkce, ktera obstarava cely proces zpracovani instance uzlu.
+   */
   async runIt(options: {
     instance: NodeElementInstance | { id: number },
   }) {
@@ -712,6 +714,7 @@ export class BpmnRunner {
     return result
   }
 
+  /** Pomocna funkce pro spusteni zpracovani pomoci implementace uzlu */
   runNode(options: LoadedData): SaveData {
     return this.runNodeWithFn({
       data: options,
@@ -719,6 +722,7 @@ export class BpmnRunner {
     })
   }
 
+  /** Hlavni vstupni funkce, ktera obslouzi cely proces ziskani formatu a pozadavku na dodatky */
   async runNodeAdditionsFormat(options: {
     instance: NodeElementInstance | { id: number },
   }) {
@@ -735,6 +739,7 @@ export class BpmnRunner {
     return {}
   }
 
+  /** Hlavni vstupni funkce, ktera obstara cely proces doplneni dodatku do instance uzlu. */
   async runNodeAdditions(options: {
     instance: NodeElementInstance | { id: number },
     additions: JsonMap,
@@ -758,6 +763,7 @@ export class BpmnRunner {
     return result
   }
 
+  /** Pomocna funkce pro spusteni doplnovani dodatku pomoci implementace uzlu */
   additionsNode(options: LoadedData): SaveData {
     return this.runNodeWithFn({
       data: options,
@@ -766,6 +772,7 @@ export class BpmnRunner {
   }
 
   // Funkce obaluje spousteni funkci nad uzly pro zvolene funkce/scenare.
+  /** Pomocna funkce ktera obaluje proces pro provedeni implementace uzlu */
   runNodeWithFn(options: {
     data: LoadedData,
     executeFn: (options: TopLevelExecuteFunctionArgs) => any,
@@ -977,6 +984,9 @@ export class BpmnRunner {
 
   //#region Funkce pro meneni sta
 
+  /**
+   * Hlavni vstupni funkce, ktera obstarava stazeni instance procesu.
+   */
   async runProcessWidhrawn(options: {
     processInstance: ProcessInstance | { id: number },
     fn: (x: any) => SaveDataAfterWithdrawn,
@@ -1012,6 +1022,9 @@ export class BpmnRunner {
     return null
   }
 
+  /**
+   * Hlavni vstupni funkce, ktera obstarava navraceni stazene instance procesu.
+   */
   processUniversalWithdrawn(options: {
     processInstance: ProcessInstance,
     nodeInstance?: NodeElementInstance,

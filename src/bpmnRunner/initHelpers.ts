@@ -1,3 +1,8 @@
+///////////////////////////////////////
+// Soubor: src/bpmnRunner/initHelpers.ts
+// Projekt: MWEServer
+// Autor: Miroslav Válka
+///////////////////////////////////////
 import {
   ActivityStatus,
   DataObjectInstance,
@@ -18,6 +23,7 @@ import { convertTemplate2Instance } from '../utils/entityHelpers'
 
 //#region Pomocne funkce vytvarejici ze sablon instance.
 
+/** Vytvoreni instance procesu */
 export function createProcess(process: ProcessTemplate): ProcessInstance {
   const processInstance = new ProcessInstance()
   processInstance.processTemplate = process
@@ -26,6 +32,7 @@ export function createProcess(process: ProcessTemplate): ProcessInstance {
   return processInstance
 }
 
+/** Pomocna fuknce pro vytvoreni libovolne instance uzlu */
 export function createInstance<T extends FlowElementTemplate, I extends FlowElementInstance>(
   instance: Constructor<I>,
   template: T,
@@ -44,6 +51,7 @@ export function createInstance<T extends FlowElementTemplate, I extends FlowElem
 
 //#region Pomocne funkce pro testovani
 
+/** Test vztahu mezi procesem a elementem procesu */
 export function checkIsElementInsideProcess<T extends FlowElementTemplate>(
   process: ProcessTemplate | { id?: number },
   child: T | { processTemplateId?: number },
@@ -70,6 +78,7 @@ export function checkIsElementInsideProcess<T extends FlowElementTemplate>(
 
 //#region Funkce InitNewXXX - Kontrola, vytvoreni instance.
 
+/** Pomocna funkce pro kontrolovane vytvoreni nove instance libovolneho elementu. */
 export function initNewElement<T extends FlowElementTemplate, I extends FlowElementInstance>(
   options: {
     templateClass: Constructor<T>,
@@ -109,6 +118,7 @@ export function initNewElement<T extends FlowElementTemplate, I extends FlowElem
   return elementI
 }
 
+/** Funkce pro vztvoreni nove instance procesu. */
 export function initNewProcess(
   processTemplate: ProcessTemplate,
 ): ProcessInstance {
@@ -116,6 +126,7 @@ export function initNewProcess(
   return processI
 }
 
+/** Funkce pro kontrolovane vztvoreni instance libovolneho uzlu. */
 export function initNewNodeElement(
   processInstance: ProcessInstance,
   nodeTemplate: NodeElementTemplate,
@@ -131,6 +142,7 @@ export function initNewNodeElement(
   })
 }
 
+/** Funkce pro konrolovane vytvoreni instance datoveho objektu. */
 export function initNewDataObject(
   processInstance: ProcessInstance,
   dataObjectTemplate: DataObjectTemplate,
@@ -145,7 +157,7 @@ export function initNewDataObject(
     },
   })
 }
-
+/** Funkce pro kontrolovane vztvoreni instance sekvencniho toku. */
 export function initNewSequenceFlow(
   processInstance: ProcessInstance,
   sequenceTemplate: SequenceFlowTemplate,

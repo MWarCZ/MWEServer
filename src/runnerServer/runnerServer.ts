@@ -1,35 +1,53 @@
+///////////////////////////////////////
+// Soubor: src/runnerServer/runnerServer.ts
+// Projekt: MWEServer
+// Autor: Miroslav Válka
+///////////////////////////////////////
 import { Connection } from 'typeorm'
 
 import { BpmnRunner } from '../bpmnRunner'
 import { User } from '../entity'
 import { ActivityStatus, NodeElementInstance, ProcessInstance } from '../entity/bpmn'
 
-
+/**
+ * Nazvy zpetnych volani, ktere server podporuje
+ */
 export enum RunnerServerCallbackName {
   changedNodes = 'changedNodes',
   changedProcess = 'changedProcess',
 }
 
+/** Knihovna zpetnych volani serveru */
 export interface RunnerServerCallbacks {
   [RunnerServerCallbackName.changedNodes] ?: (nodes: NodeElementInstance[]) => any,
   [RunnerServerCallbackName.changedProcess] ?: (process: ProcessInstance) => any,
 }
 
+/**
+ * Server pro beh zpracovani uzlu.
+ * Jenda se o server, ktery vyuziva sluheb behoveho jadra procesu
+ * k opakovanemu provadeni pripravenych uzlu.
+ */
 export class RunnerServer {
+  /** Doba pro cekani pred opetovnym nahlednutim do fronty s pripravenymi uzly */
   msWaitTime: number
-  // waitTimeout?: NodeJS.Timeout
-  // execPromise: Promise<this> = Promise.resolve(this)
+  /** Povoleni zpracovavat instance uzlu */
   execEnabled: boolean = false
+  /** Priznak aktivace rezimu krokovace */
   stepper: boolean = false
-
+  /** Signal pro preruseni cekani pred opetovnym nahlednutim do fronty s pripravenymi uzly */
   interruptionSignal?: () => void
 
+  /** Knihovna zpetnych valani pro reakce na zmeny v instancich */
   callbacks: RunnerServerCallbacks
-
+  /** Pripojeni k databazi */
   connection: Connection
+  /** Instance hlavniho behoveho jadra procesu */
   runner: BpmnRunner
 
+  /** Fronty */
   queues: {
+    /** Fronta obsahujici pripravene instance uzlu ke zpracovani */
     nodes: NodeElementInstance[],
   }
 
@@ -54,8 +72,8 @@ export class RunnerServer {
    * Navic po vyprazdneni fronty uzlu dojde k cekani a opetovne aktivaci.
    */
   start() {
-    console.log('S start')
-    console.error(process.memoryUsage().heapUsed)
+    // console.log('S start')
+    // console.error(process.memoryUsage().heapUsed)
     this.execEnabled = true
     this.exec().catch(e => console.error('S start E', e))
     return this
@@ -66,12 +84,7 @@ export class RunnerServer {
    * @returns Vraci slib trvajici zadanou dobu a funkci pro preruseni slibu.
    */
   wait(ms: number = this.msWaitTime) {
-    console.log('S waiting')
-    // this.waitTimeout = setTimeout(
-    //   () => this.waitExec(),
-    //   this.msWaitTime,
-    // )
-    // return this
+    // console.log('S waiting')
     let interruptionSignal = () => { }
     const promisse = new Promise((resolve, reject) => {
       let waitTimeout = setTimeout(() => {
@@ -93,7 +106,7 @@ export class RunnerServer {
    * Probudi opetovne provadeni z cekani pokud ceka.
    */
   wake() {
-    console.log('S wake')
+    // console.log('S wake')
     if (this.interruptionSignal) {
       this.interruptionSignal()
     }
@@ -104,7 +117,7 @@ export class RunnerServer {
    * Zastavi provadeni fronty v nejblizsi mozne dobe.
    */
   stop() {
-    console.log('S stop')
+    // console.log('S stop')
     this.execEnabled = false
     return this
   }
@@ -113,8 +126,8 @@ export class RunnerServer {
    * Provadi postupne uzly z fronty dokud neni fronta prazdna.
    */
   async exec() {
-    console.log('S exec start')
-    console.warn(process.memoryUsage().heapUsed)
+    // console.log('S exec start')
+    // console.warn(process.memoryUsage().heapUsed)
 
     let node: NodeElementInstance | undefined
     while (this.execEnabled) {
@@ -154,13 +167,13 @@ export class RunnerServer {
       // Cekani
       let wait = this.wait(this.msWaitTime)
       this.interruptionSignal = wait.interruptionSignal
-      console.log('S exec waiting ...')
-      console.warn(process.memoryUsage().heapUsed)
+      // console.log('S exec waiting ...')
+      // console.warn(process.memoryUsage().heapUsed)
       try {
         await wait.promisse
-        console.log('S exec wakeup timeout')
+        // console.log('S exec wakeup timeout')
       } catch { console.log('S exec wakeup force') }
-      console.warn(process.memoryUsage().heapUsed)
+      // console.warn(process.memoryUsage().heapUsed)
       this.interruptionSignal = undefined
     }
     //#region xxx
@@ -196,8 +209,8 @@ export class RunnerServer {
     //   }
     // }
     //#endregion
-    console.log('S exec end')
-    console.warn(process.memoryUsage().heapUsed)
+    // console.log('S exec end')
+    // console.warn(process.memoryUsage().heapUsed)
     return this
   }
 

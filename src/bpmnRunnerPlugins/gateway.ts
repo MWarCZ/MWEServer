@@ -1,3 +1,8 @@
+///////////////////////////////////////
+// Soubor: src/bpmnRunnerPlugins/gateway.ts
+// Projekt: MWEServer
+// Autor: Miroslav Válka
+///////////////////////////////////////
 import { NodeImplementation } from '../bpmnRunner'
 import { evalExpression } from './evalExpressionHelper'
 
@@ -23,7 +28,7 @@ export const ParallelGateway: NodeImplementation = {
     const { $OUTGOING } = context
     let selectedOutgoing: number[] = []
 
-    console.warn('AND>', $OUTGOING)
+    // console.warn('AND>', $OUTGOING)
 
     // Vsechny incoming musi biti prichozi
     selectedOutgoing = $OUTGOING.map(v => v.id)
@@ -68,19 +73,6 @@ export const InclusiveGateway: NodeImplementation = {
       fn.initNext(nums)
     }
 
-    // if (true) {
-    //   let tmp = $OUTGOING.find(value => {
-    //     let { expression = 'true' } = value
-    //     if (expression === '') expression = 'true'
-    //     let result = evalExpression({ expression, context })
-    //     return result
-    //   })
-    //   selectedOutgoing = (tmp) ? [tmp.id] : []
-    // }
-    // console.warn('OR>', $OUTGOING)
-    // if (!fn.initNext) return
-    // fn.initNext(selectedOutgoing)
-
     return true
   },
 }
@@ -119,18 +111,6 @@ export const ExclusiveGateway: NodeImplementation = {
     }
     if (!fn.initNext) return
     fn.initNext(selectedOutgoing)
-
-    // let x = $OUTGOING.filter(value => value.flag='default')
-    // selectedOutgoing = $OUTGOING.filter(value => {
-    //   let { expression = 'true' } = value
-    //   if (expression === '') expression = 'true'
-    //   let result = evalExpression({ expression, context })
-    //   return result
-    // }).map(v => v.id)
-
-    // console.warn('XOR>', $OUTGOING)
-    // if (!fn.initNext) return
-    // fn.initNext(selectedOutgoing)
 
     return true
   },

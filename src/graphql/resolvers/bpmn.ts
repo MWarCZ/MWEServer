@@ -1,3 +1,8 @@
+///////////////////////////////////////
+// Soubor: src/graphql/resolvers/bpmn.ts
+// Projekt: MWEServer
+// Autor: Miroslav Válka
+///////////////////////////////////////
 import { withFilter } from 'graphql-yoga'
 
 import * as ApiBpmn from '../../api/bpmn'

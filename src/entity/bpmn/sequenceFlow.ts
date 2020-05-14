@@ -1,3 +1,8 @@
+///////////////////////////////////////
+// Soubor: src/entity/bpmn/sequenceFlow.ts
+// Projekt: MWEServer
+// Autor: Miroslav Válka
+///////////////////////////////////////
 import { BeforeInsert, Column, Entity, ManyToOne, OneToMany, PrimaryGeneratedColumn } from 'typeorm'
 import { v4 as uuid } from 'uuid'
 
@@ -7,7 +12,8 @@ import { NodeElementInstance, NodeElementTemplate } from './nodeElement'
 import { ProcessInstance, ProcessTemplate } from './process'
 
 /**
- * Propopoj mezi uzly BPMN. SequenceFlow2FlowNode
+ * Sablona sekvencniho toku mezi uzly.
+ * tj. Propopoj mezi uzly BPMN.
  */
 @Entity()
 export class SequenceFlowTemplate implements FlowElementTemplate {
@@ -78,6 +84,9 @@ export class SequenceFlowTemplate implements FlowElementTemplate {
   }
 }
 
+/**
+ * Instance sekvencniho toku.
+ */
 @Entity()
 export class SequenceFlowInstance implements FlowElementInstance {
 

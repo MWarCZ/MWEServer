@@ -1,3 +1,8 @@
+///////////////////////////////////////
+// Soubor: src/utils/OneOf.ts
+// Projekt: MWEServer
+// Autor: Miroslav Válka
+///////////////////////////////////////
 
 export type OneOf_ItemX = [boolean, (() => any) | undefined]
 

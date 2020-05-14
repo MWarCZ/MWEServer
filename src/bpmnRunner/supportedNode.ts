@@ -1,3 +1,8 @@
+///////////////////////////////////////
+// Soubor: src/bpmnRunner/supportedNode.ts
+// Projekt: MWEServer
+// Autor: Miroslav Válka
+///////////////////////////////////////
 
 /** Nazvy pro podporovane implementace uzlu */
 export enum SupportedNode {

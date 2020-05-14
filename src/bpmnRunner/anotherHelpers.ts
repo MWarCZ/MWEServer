@@ -1,3 +1,8 @@
+///////////////////////////////////////
+// Soubor: src/bpmnRunner/anotherhelpers.ts
+// Projekt: MWEServer
+// Autor: Miroslav Válka
+///////////////////////////////////////
 import { Connection } from 'typeorm'
 
 import { BaseElementInstance, BaseElementTemplate } from '../entity/bpmn'
@@ -5,6 +10,7 @@ import { Constructor } from '../types/constructor'
 
 //#region Pomocne funkce k ziskani sablony z sablony ci id_sablony.
 
+/** Pomocna funkce pro ziskani entit sablon, ktera omezi duplicitni nacitani z databaze.  */
 export async function getTemplate<T extends BaseElementTemplate>(
   options: {
     typeormConnection: Connection,
@@ -23,7 +29,7 @@ export async function getTemplate<T extends BaseElementTemplate>(
   }
   return res
 }
-
+/** Pomocna funkce pro ziskani entit instanci, ktera omezi duplicitni nacitani z databaze.  */
 export async function getInstance<T extends BaseElementInstance>(
   options: {
     typeormConnection: Connection,

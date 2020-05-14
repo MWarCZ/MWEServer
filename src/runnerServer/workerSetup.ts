@@ -1,3 +1,8 @@
+///////////////////////////////////////
+// Soubor: src/runnerServer/workerSetup.ts
+// Projekt: MWEServer
+// Autor: Miroslav Válka
+///////////////////////////////////////
 import {
   WorkerHelper,
   WorkerMesageNodeChanged,
@@ -7,7 +12,10 @@ import {
 } from '../utils/workerHelpers'
 import { RunnerServer } from './runnerServer'
 
-
+/**
+ * Funkce pro nastaveni komunikace mezi pracovnimi vlakny
+ * ze strany serveru pro beh zpracovani uzlu.
+ */
 export function workerSetup(options: {
   worker: WorkerHelper,
   server: RunnerServer,
@@ -27,7 +35,7 @@ export function workerSetup(options: {
       console.log('Runner Server: Message:', msg)
     })
     port.on('exit', (code) => {
-      console.warn('Runner Server: Worker exit with code:', code)
+      console.error('Runner Server: Worker exit with code:', code)
     })
     // Zpetna volani posilajici zpravy.
     options.server.callbacks = {

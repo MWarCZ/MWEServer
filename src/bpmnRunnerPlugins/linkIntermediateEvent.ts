@@ -1,3 +1,8 @@
+///////////////////////////////////////
+// Soubor: src/bpmnRunnerPlugins/linkIntermediateEvent.ts
+// Projekt: MWEServer
+// Autor: Miroslav Válka
+///////////////////////////////////////
 import { NodeImplementation, SupportedNode } from '../bpmnRunner'
 
 /**
@@ -18,7 +23,9 @@ export const LinkIntermediateThrowEvent: NodeImplementation = {
     return links
   },
 }
-
+/**
+ *
+ */
 export const LinkIntermediateCatchEvent: NodeImplementation = {
   run() { return true },
   onCompleting({ fn, context }) {

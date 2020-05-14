@@ -1,4 +1,12 @@
-
+///////////////////////////////////////
+// Soubor: src/bpmnBuilder/bpmnFxm.ts
+// Projekt: MWEServer
+// Autor: Miroslav Válka
+///////////////////////////////////////
+/**
+ * Datove typy tvorici ocekavanou strukturu dat
+ * pri zpracovavani souboru BPMN prostrednictvim nastroje z balicku `fast-xml-parser`.
+ */
 export declare namespace BpmnFxm {
   /** XML Elements */
 

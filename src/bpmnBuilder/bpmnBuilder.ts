@@ -1,3 +1,8 @@
+///////////////////////////////////////
+// Soubor: src/bpmnBuilder/bpmnBuilder.ts
+// Projekt: MWEServer
+// Autor: Miroslav Válka
+///////////////////////////////////////
 import { parse, validate } from 'fast-xml-parser'
 import { Connection } from 'typeorm'
 
@@ -6,8 +11,13 @@ import { options as fxpOptions } from './fxp.config'
 import { BpmnNamespace } from './namespace'
 import { Parser } from './parser'
 
-
+/**
+ * Stavitel sablon procesu slouzi pro prevod obsahu souboru BPMN do internich objektu databaze.
+ */
 export class BpmnBuilder {
+  /**
+   * Naposledy nactene aliasy jmennych prostoru.
+   */
   ns: BpmnNamespace = {
     xsi: '',
     bpmn2: '',
@@ -17,7 +27,14 @@ export class BpmnBuilder {
     camunda: '',
     mwe: '',
   }
+  /**
+   * Instance parseru pouzivana pro prevody dat
+   * o podnikovych procesech na interni entity pro ulozeni do databaze.
+   */
   parser: Parser
+  /**
+   * Pripojeni k databazi.
+   */
   connection: Connection
 
   constructor(connection: Connection) {
@@ -25,9 +42,14 @@ export class BpmnBuilder {
     this.parser = new Parser()
   }
 
+  /**
+   * Provadi zpracovani dat obsahujici podnikovy proces, jejich prevod na interni entity
+   * a jejich nasledne ulozeni do databaze.
+   * @param dataFxp Data nesouci informace o procesech, ktera vznikla pomoci balicku `fast-xml-parser`.
+   */
   async loadFromFxp(dataFxp: any ) {
     const definitions = this.parser.parseDefinitions(dataFxp)
-    this.parser.loadNamespaces(definitions)
+    this.ns = this.parser.loadNamespaces(definitions)
     const level1 = this.parser.parseLevel1(definitions)
     const level2 = level1.Process.map(process => this.parser.parseLevel2(process))
 
@@ -72,6 +94,12 @@ export class BpmnBuilder {
     // return [...process]
   }
 
+  /**
+   * Provadi zakladni validaci zpracovavaneho textu XML, ktery je nasledovan
+   * prevodem dat v XML na interni entity a k jejich ulozeni do databaze.
+   * @see loadFromFxp
+   * @param xmlBpmn Obsah souboru BPMN, ktery nese informace o podkinovych procesech.
+   */
   async loadFromXml(xmlBpmn: string) {
     validate(xmlBpmn, {
       allowBooleanAttributes: false,

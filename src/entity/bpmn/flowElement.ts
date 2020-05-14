@@ -1,3 +1,8 @@
+///////////////////////////////////////
+// Soubor: src/entity/bpmn/flowElement.ts
+// Projekt: MWEServer
+// Autor: Miroslav Válka
+///////////////////////////////////////
 import { BaseElementInstance, BaseElementTemplate } from './baseElement'
 import { ProcessInstance, ProcessTemplate } from './process'
 

@@ -1,8 +1,17 @@
-import { WorkerHelper, WorkerMessage, WorkerMessageCode } from '../utils/workerHelpers'
+///////////////////////////////////////
+// Soubor: src/graphql/workerSetup.ts
+// Projekt: MWEServer
+// Autor: Miroslav Válka
+///////////////////////////////////////
 import { PubSub } from 'graphql-yoga'
+
+import { WorkerHelper, WorkerMessage, WorkerMessageCode } from '../utils/workerHelpers'
 import { SubscriptionChanel } from './subscriptionChanel'
 
-
+/**
+ * Funkce pro nastaveni komunikace mezi pracovnimi vlakny
+ * ze strany weboveho serveru.
+ */
 export function workerSetup(options: {
   workerHelper: WorkerHelper,
   pubsub: PubSub,
