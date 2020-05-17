@@ -40,9 +40,9 @@ export const ParallelGateway: NodeImplementation = {
 }
 
 /**
- * Inclusive Gateway (OR)
+ * Exclusive Gateway (XOR)
  */
-export const InclusiveGateway: NodeImplementation = {
+export const ExclusiveGateway: NodeImplementation = {
   options: {
     scope_inputs: 'global',
   },
@@ -78,9 +78,9 @@ export const InclusiveGateway: NodeImplementation = {
 }
 
 /**
- * Exclusive Gateway (XOR)
+ * Inclusive Gateway (OR)
  */
-export const ExclusiveGateway: NodeImplementation = {
+export const InclusiveGateway: NodeImplementation = {
   options: {
     scope_inputs: 'global',
   },
