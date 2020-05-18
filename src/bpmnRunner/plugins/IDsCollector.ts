@@ -1,3 +1,8 @@
+///////////////////////////////////////
+// Soubor: src/bpmnRunner/plugins/IDsCollector.ts
+// Projekt: MWEServer
+// Autor: Miroslav Válka
+///////////////////////////////////////
 import { ServiceImplementation } from '../pluginsImplementation'
 
 //#region IDsCollector
@@ -12,6 +17,10 @@ export interface IDsCollectorDone {
 }
 type IDsCollectorFnItem = number | { id: number }
 export type IDsCollectorFnOptions = IDsCollectorFnItem | (IDsCollectorFnItem[])
+/**
+ * Modul urceni ke sberu id pro ruzne typy objektu.
+ * pr. cislo predstavujici id, objekt obsahujici polozku id, nebo predchozi ve variaci v poli.
+ */
 export class IDsCollector implements ServiceImplementation {
   done?: IDsCollectorDone
   name = 'idsCollector'

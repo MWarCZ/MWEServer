@@ -1,3 +1,8 @@
+///////////////////////////////////////
+// Soubor: src/server.ts
+// Projekt: MWEServer
+// Autor: Miroslav Válka
+///////////////////////////////////////
 import { existsSync as fsExists } from 'fs'
 import { importSchema } from 'graphql-import'
 import { GraphQLServer, PubSub } from 'graphql-yoga'
@@ -17,10 +22,14 @@ import { WorkerHelper } from './utils/workerHelpers'
 
 //#region GQL server
 
+/** Kompletni schema GraphQL */
 const typeDefs = importSchema(
   pathJoin(__dirname, './graphql/typeDefs/schema.graphql'),
 )
 
+/**
+ * Vytvoreni a nastaveni weboveho serveru GraphQL.
+ */
 export async function createGQLServer() {
   let connection = await createConn()
 
@@ -57,7 +66,9 @@ export async function createGQLServer() {
   passportUseStrategies(connection)
   return server
 }
-
+/**
+ * Vytvoreni a spusteni weboveho serveru GraphQL.
+ */
 export async function startGQLServer() {
   const server = await createGQLServer()
   await server.start({
@@ -74,6 +85,9 @@ export async function startGQLServer() {
 
 //#region Runner server
 
+/**
+ * Vytvoreni a nastaveni serveru pro beh zpracovani uzlu.
+ */
 export async function createRunnerServer() {
   let connection = await createConn()
 
@@ -104,7 +118,9 @@ export async function createRunnerServer() {
 
   return server
 }
-
+/**
+ * Vytvoreni a spusteni serveru pro beh zpracoani uzlu.
+ */
 export async function startRunnerServer() {
   const server = await createRunnerServer()
   server.start()

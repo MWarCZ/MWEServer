@@ -1,3 +1,8 @@
+///////////////////////////////////////
+// Soubor: src/bpmnBuilder/parser.ts
+// Projekt: MWEServer
+// Autor: Miroslav Válka
+///////////////////////////////////////
 import he from 'he'
 
 import { SupportedNode } from '../bpmnRunner/supportedNode'
@@ -17,7 +22,13 @@ import { BpmnNamespace, BpmnNamespaceUri } from './namespace'
 import { ParseError } from './parseError'
 
 
+/**
+ * Slouzi k extrakci dat o podnikovych procesech.
+ */
 export class Parser {
+  /**
+   * Aliasy jmennych prostoru pouzitych v BPMN pro definici struktury procesu.
+   */
   ns: BpmnNamespace = {
     xsi: '',
     bpmn2: '',
@@ -29,6 +40,7 @@ export class Parser {
   }
 
   // Definitions
+  /** Zpracovani a validace tagu `Definitions`.*/
   parseDefinitions(data: any): BpmnFxm.Definitions {
     let keys = Object.keys(data)
     if (keys.length !== 1)
@@ -46,6 +58,7 @@ export class Parser {
     return definitions
   }
   // Namespace
+  /** Nalezeni definic jmennych prostoru a nalezeni jejich aliasu. */
   parseNamespaces(definitions: BpmnFxm.Definitions): BpmnNamespace {
     const ns: BpmnNamespace = {
       xsi: '',
@@ -82,11 +95,13 @@ export class Parser {
     }
     return ns
   }
+  /** Nacteni aliasu jmennych prostoru z definice pro identifikaci elementu. */
   loadNamespaces(definitions: BpmnFxm.Definitions): BpmnNamespace {
     return this.ns = this.parseNamespaces(definitions)
   }
 
   // BaseElement
+  /** Nacteni zakladnich atributu pro kazdy element. */
   preloadBaseElement<T extends BaseElementTemplate>(entity: T, attr?: BpmnFxm.BaseElementAttr): T {
     if (attr) {
       entity.bpmnId = attr.id
@@ -95,6 +110,7 @@ export class Parser {
     return entity
   }
   // BaseElement
+  /** Nacteni zakladnich atributu pro kazdy uzel. */
   preloadNodeElement<T extends NodeElementTemplate>(
     entity: T,
     attr?: BpmnFxm.NodeElementAttr,
@@ -106,11 +122,13 @@ export class Parser {
     return entity
   }
   // FlowElementTemplate
+  /** Nacteni zakladnich vlastnosti pro podelementy procesu. */
   loadFlowElement<T extends FlowElementTemplate>(entity: T, process: ProcessTemplate): T {
     entity.processTemplate = process
     return entity
   }
   // Process
+  /** Zpracovani tagu `process` a vytvoreni zakladu jeho reprezentace. */
   parseProcess(process: BpmnFxm.Process): BpmnLevel.Process {
     let entity = new ProcessTemplate()
     this.preloadBaseElement(entity, process['#attr'])
@@ -154,6 +172,7 @@ export class Parser {
     }
   }
   // Level 1
+  /** Zpracovani 1. urovne - tj. vytvoreni zakladu sablon procesu a identifikace manageru */
   parseLevel1(definitions: BpmnFxm.Definitions) {
     const queues: {
       Process: BpmnLevel.Process[],
@@ -187,6 +206,7 @@ export class Parser {
   }
 
   // DataObject
+  /** Zpracovani tagu `dataObject` a vytvoreni zakladu jeho reprezentace. */
   parseDataObject(dataObject: BpmnFxm.DataObject): BpmnLevel.DataObject {
     let entity = new DataObjectTemplate()
     this.preloadBaseElement(entity, dataObject['#attr'])
@@ -199,6 +219,7 @@ export class Parser {
       tag: 'dataObject',
     }
   }
+  /** Zpracovani tagu `dataObjectReference` a vytvoreni podkladu pro jeho napojeni na datovy objekt. */
   parseDataObjectReference(dataObjectReference: BpmnFxm.DataObjectReference): BpmnLevel.DataObjectReference {
     let refObject = {
       bpmnId: '',
@@ -217,6 +238,7 @@ export class Parser {
       tag: 'dataObjectReference',
     }
   }
+  /** Zpracovani tagu `task` a vytvoreni zakladu jeho reprezentace. */
   parseTask(task: BpmnFxm.Task, defaultImplementation?: string): BpmnLevel.Task {
     let entity = new NodeElementTemplate()
     this.preloadBaseElement(entity, task['#attr'])
@@ -227,6 +249,7 @@ export class Parser {
       tag: 'task',
     }
   }
+  /** Zpracovani tagu `scriptTask` a vytvoreni zakladu jeho reprezentace. */
   parseScriptTask(task: BpmnFxm.ScriptTask): BpmnLevel.ScriptTask {
     let entity = new NodeElementTemplate()
     this.preloadBaseElement(entity, task['#attr'])
@@ -240,6 +263,7 @@ export class Parser {
       tag: 'scriptTask',
     }
   }
+  /** Zpracovani tagu `StartEvent` a vytvoreni zakladu jeho reprezentace. */
   parseStartEvent(event: BpmnFxm.StartEvent): BpmnLevel.StartEvent {
     let entity = new NodeElementTemplate()
     this.preloadBaseElement(entity, event['#attr'])
@@ -250,6 +274,7 @@ export class Parser {
       tag: 'startEvent',
     }
   }
+  /** Zpracovani tagu `EndEvent` a vytvoreni zakladu jeho reprezentace. */
   parseEndEvent(event: BpmnFxm.EndEvent): BpmnLevel.EndEvent {
     let entity = new NodeElementTemplate()
     this.preloadBaseElement(entity, event['#attr'])
@@ -261,6 +286,7 @@ export class Parser {
       tag: 'endEvent',
     }
   }
+  /** Zpracovani tagu `IntermediateThrowEvent` a vytvoreni zakladu jeho reprezentace. */
   parseIntermediateThrowEvent(event: BpmnFxm.IntermediateThrowEvent): BpmnLevel.IntermediateThrowEvent {
     let entity = new NodeElementTemplate()
     this.preloadBaseElement(entity, event['#attr'])
@@ -272,6 +298,7 @@ export class Parser {
       tag: 'intermediateThrowEvent',
     }
   }
+  /** Zpracovani tagu `IntermediateCatchEvent` a vytvoreni zakladu jeho reprezentace. */
   parseIntermediateCatchEvent(event: BpmnFxm.IntermediateCatchEvent): BpmnLevel.IntermediateCatchEvent {
     let entity = new NodeElementTemplate()
     this.preloadBaseElement(entity, event['#attr'])
@@ -283,6 +310,7 @@ export class Parser {
       tag: 'intermediateCatchEvent',
     }
   }
+  /** Zpracovani tagu `SequenceFlow` a vytvoreni zakladu jeho reprezentace. */
   parseSequenceFlow(seq: BpmnFxm.SequenceFlow): BpmnLevel.SequenceFlow {
     let entity = new SequenceFlowTemplate()
     this.preloadBaseElement(entity, seq['#attr'])
@@ -313,6 +341,7 @@ export class Parser {
     }
   }
 
+  /** Zpracovani tagu `*gateway` a vytvoreni zakladu jeho reprezentace. */
   parseGateway(gateway: BpmnFxm.Gateway, implementation: string): BpmnLevel.Gateway {
     let entity = new NodeElementTemplate()
     this.preloadBaseElement(entity, gateway['#attr'])
@@ -329,6 +358,12 @@ export class Parser {
   }
 
   // Level 2
+  /**
+   * Zpracovani 2. urovne
+   * Vytvoreni obsahu a struktury tvorici sablonu procesu.
+   * Zahrnuje zpracovani vsech elementu obsazenich v procesu
+   * a vytvoreni jejich vzajemnych vztahu.
+   */
   parseLevel2(process: BpmnLevel.Process) {
     //#region Queues
     let queues: {
@@ -623,6 +658,7 @@ export class Parser {
     })
   }
 
+  /** Pomocna funkce pro propojeni uzlu a odchozi sekvence. */
   connectNode2SequenceFlow<T extends NodeElementTemplate>(
     sequenceFlowEntity: SequenceFlowTemplate, nodeEntity: T, referenceBpmnId: string,
   ): boolean {
@@ -632,7 +668,7 @@ export class Parser {
     }
     return false
   }
-
+  /** Pomocna funkce pro propojeni uzlu a prichozi sekvence. */
   connectSequenceFlow2Node<T extends NodeElementTemplate>(
     sequenceFlowEntity: SequenceFlowTemplate, nodeEntity: T, referenceBpmnId: string,
   ): boolean {
@@ -643,6 +679,7 @@ export class Parser {
     return false
   }
 
+  /** Pomocna fukce pro nalezeni vztahu prirazeni datovych objektu k uzlu. */
   parseTaskDataAssociation(
     queueDataObjectReference: BpmnLevel.DataObjectReference[],
     queueDataObjects: BpmnLevel.DataObject[],
@@ -677,6 +714,7 @@ export class Parser {
     return []
   }
 
+  /** Pomocna funkce pro rozliseni mezi datovym objektem a referenci na nej. */
   parseTaskDataAssociationReference(
     queueDataObjectReference: BpmnLevel.DataObjectReference[],
     queueDataObjects: BpmnLevel.DataObject[],
@@ -690,6 +728,7 @@ export class Parser {
     return (obj) ? obj.entity : undefined
   }
 
+  /** Nacteni vlastnosti a vytahu pro vstupni datove hodnoty uzlu. */
   loadNodeInputs<T extends NodeElementTemplate>(
     entity: T,
     attr: BpmnFxm.NodeElement,
@@ -712,6 +751,7 @@ export class Parser {
     }
     return entity
   }
+  /** Nacteni vlastnosti a vytahu pro vystupni datove hodnoty uzlu. */
   loadNodeOutputs<T extends NodeElementTemplate>(
     entity: T,
     attr: BpmnFxm.NodeElement,
@@ -735,6 +775,7 @@ export class Parser {
     return entity
   }
 
+  /** Nacteni vlastnosti pro elementy script task. */
   loadScriptTask<T extends NodeElementTemplate>(
     entity: T,
     attr: BpmnFxm.ScriptTask,
@@ -745,7 +786,7 @@ export class Parser {
     }
     return entity
   }
-
+  /** Nacteni vlastnosti pro elementy data object. */
   loadDataObject<T extends DataObjectTemplate>(
     entity: T,
     attr: BpmnFxm.DataObject,
@@ -787,7 +828,7 @@ export class Parser {
     }
     return entity
   }
-
+  /** Nacteni vlastnosti pro elementy typu gateway. */
   loadGateway<T extends NodeElementTemplate>(
     entity: T,
     attr: BpmnFxm.Gateway,
@@ -807,8 +848,7 @@ export class Parser {
     }
     return entity
   }
-
-
+  /** Nacteni vlastnosti a vztahu pro elementy sequence flow. */
   loadSequenceFlow<T extends SequenceFlowTemplate>(
     entity: T,
     attr: BpmnFxm.SequenceFlow,
@@ -836,7 +876,7 @@ export class Parser {
     return entity
   }
 
-
+  /** Pomocna funkce pro nacitani vlastnasti elementu EndEvent na zaklade jeho obsahu. */
   preloadEndEvent(entity: NodeElementTemplate, event: BpmnFxm.EndEvent) {
     let terminateEventDefinition = event[`${this.ns.bpmn2}terminateEventDefinition` as 'terminateEventDefinition']
     if (terminateEventDefinition) {
@@ -845,7 +885,7 @@ export class Parser {
       this.preloadNodeElement(entity, event['#attr'], SupportedNode.EndEvent)
     }
   }
-
+  /** Pomocna funkce pro nacitani vlastnasti elementu IntermediateThrowEvent na zaklade jeho obsahu. */
   preloadIntermediateThrowEvent(entity: NodeElementTemplate, event: BpmnFxm.IntermediateThrowEvent) {
     let linkEventDefinition = event[`${this.ns.bpmn2}linkEventDefinition` as 'linkEventDefinition']
     if (linkEventDefinition) {
@@ -865,7 +905,7 @@ export class Parser {
     }
     // TODO dalsi mozne event definice (else if)
   }
-
+/** Pomocna funkce pro nacitani vlastnasti elementu IntermediateCatchEvent na zaklade jeho obsahu. */
   preloadIntermediateCatchEvent(entity: NodeElementTemplate, event: BpmnFxm.IntermediateCatchEvent) {
     let linkEventDefinition = event[`${this.ns.bpmn2}linkEventDefinition` as 'linkEventDefinition']
     let timerEventDefinition = event[`${this.ns.bpmn2}timerEventDefinition` as 'timerEventDefinition']

@@ -1,9 +1,14 @@
+///////////////////////////////////////
+// Soubor: src/bpmnRunner/index.ts
+// Projekt: MWEServer
+// Autor: Miroslav Válka
+///////////////////////////////////////
 import { ActivityStatus, NodeElementInstance } from '../entity/bpmn'
 import { NodeImplementation, NodeImplementationFnRegister, ServiceImplementation } from './pluginsImplementation'
 import { RunContext } from './runContext'
 
 /**
- *
+ * Funkce pro bezpecne vykonani funkce z implementace uzlu nad instanci uzlu.
  * @returns Vraci `true` pokud vse probeho OK nebo v pripade chyby vraci `false`.
  */
 export function safeExecuteNodeFunction(options: {
@@ -36,15 +41,14 @@ export function safeExecuteNodeFunction(options: {
     nodeInstance.status = status.onFailure
     if (e instanceof Error) {
       nodeInstance.returnValue = { error: { name: e.name, message: e.message, lastStatus } }
-      // console.log('AAAAAAAAAAAAAAAAAAAAAAA', nodeInstance)
     } else {
-      // console.log('bbbbbbbbbbbbbbbbbbbbbb')
       throw e
     }
     return false
   }
 }
 
+/** Vykonani implementace uzlu pro predzpracovani instance uzlu */
 export function executeNodePrerun(options: {
   nodeInstance: NodeElementInstance,
   nodeImplementation: NodeImplementation,
@@ -63,6 +67,7 @@ export function executeNodePrerun(options: {
     executeFunctionArgs: options.executeArgs,
   })
 }
+/** Vykonani implementace uzlu pro zpracovani instance uzlu */
 export function executeNodeRun(options: {
   nodeInstance: NodeElementInstance,
   nodeImplementation: NodeImplementation,
@@ -81,6 +86,7 @@ export function executeNodeRun(options: {
     executeFunctionArgs: options.executeArgs,
   })
 }
+/** Vykonani implementace uzlu pro dokonceni instance uzlu */
 export function executeNodeOnCompleting(options: {
   nodeInstance: NodeElementInstance,
   nodeImplementation: NodeImplementation,
@@ -99,6 +105,7 @@ export function executeNodeOnCompleting(options: {
     executeFunctionArgs: options.executeArgs,
   })
 }
+/** Vykonani implementace uzlu pro chybne dokonceni instance uzlu */
 export function executeNodeOnFailing(options: {
   nodeInstance: NodeElementInstance,
   nodeImplementation: NodeImplementation,
@@ -118,7 +125,7 @@ export function executeNodeOnFailing(options: {
   })
 }
 
-
+/** Vykonani implementace uzlu pro doplneni dodatku pro zpracovani instance uzlu */
 export function executeNodeAdditions(options: {
   nodeInstance: NodeElementInstance,
   nodeImplementation: NodeImplementation,
@@ -139,6 +146,7 @@ export function executeNodeAdditions(options: {
 }
 
 // ==========================
+/** Pripraveni funkci a dat z knihovny implementaci sluzeb. */
 export function prepareServiceImplementation2Run(options: {
   services: ServiceImplementation[],
 }) {
@@ -153,6 +161,7 @@ export function prepareServiceImplementation2Run(options: {
   }
   return { queues, fn }
 }
+/** Vykonani funkci nad daty ziskanymi behem zpracovani uzlu pomoci sluzeb. */
 export function callServiceImplementationFunctions(options: {
   services: ServiceImplementation[],
   queues: { [key: string]: any[] },
@@ -173,6 +182,7 @@ export interface TopLevelExecuteFunctionArgs {
   services: ServiceImplementation[],
 }
 
+/** Vykonani doplneni dodatku do instance uzlu. */
 export function executeAdditons(options: TopLevelExecuteFunctionArgs) {
   const { nodeInstance, nodeImplementation, context, services } = options
 
@@ -197,7 +207,7 @@ export function executeAdditons(options: TopLevelExecuteFunctionArgs) {
   return nodeInstance.returnValue
 }
 
-
+/** Vykonani zpracovani instance uzlu implementaci. */
 export function executeNode(options: TopLevelExecuteFunctionArgs) {
   const { nodeInstance, nodeImplementation, context, services } = options
 
@@ -265,48 +275,4 @@ export function executeNode(options: TopLevelExecuteFunctionArgs) {
   callServiceImplementationFunctions({ services, queues })
 
   return nodeInstance.returnValue
-}
-
-
-/**
- * Ukazka implementace sluzky se zpetnym volanim.
- * fn: pole obsahujici polozky id nebo objekt s id
- * done: pole obsahujici polozky id
- */
-class InitNext implements ServiceImplementation {
-  done?: (...ids: number[]) => void
-  name = 'initNext'
-  fn(...targetIds: (number | { id: number })[]) {
-    let ids = targetIds.map(t => typeof t === 'number' ? t : t.id)
-    this.done && this.done(...ids)
-  }
-  constructor(options?: {
-    name?: string,
-    done?: (...ids: number[]) => void,
-  }) {
-    let {name, done} = options || {}
-    name && (this.name = name)
-    done && (this.done = done)
-  }
-}
-
-
-function aaa(services: ServiceImplementation[]) {
-  let queues: {[key: string]: any[] } = {}
-  let fn: Partial<NodeImplementationFnRegister> = {}
-  // Mapovani nahradni funkce a zasobnik argumentu.
-  for (let service of services) {
-    queues[service.name] = []
-    fn[service.name] = (...args) => {
-      queues[service.name].push(args)
-    }
-  }
-  // run()
-  // Volani callbacku z service
-  for (let service of services) {
-    for (let args of queues[service.name]) {
-      service.fn(...args)
-    }
-  }
-
 }

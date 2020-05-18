@@ -1,5 +1,13 @@
+///////////////////////////////////////
+// Soubor: src/bpmnBuilder/fxp.config.ts
+// Projekt: MWEServer
+// Autor: Miroslav Válka
+///////////////////////////////////////
 import { X2jOptionsOptional } from 'fast-xml-parser'
 
+/**
+ * Nastaveni pro zpracovani xml pomoci nastroje z balicku `fast-xml-parser`.
+ */
 export const options: X2jOptionsOptional = {
   attributeNamePrefix: '',
   attrNodeName: '#attr',

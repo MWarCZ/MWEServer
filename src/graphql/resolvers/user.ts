@@ -1,3 +1,8 @@
+///////////////////////////////////////
+// Soubor: src/graphql/resolvers/user.ts
+// Projekt: MWEServer
+// Autor: Miroslav Válka
+///////////////////////////////////////
 import { PermissionError } from '../../api/permissionError'
 import * as ApiUser from '../../api/user'
 import { GQLTypes } from '../generated/types'
@@ -79,9 +84,6 @@ export const Mutation: GQLTypes.MutationResolvers = {
     let user = await ApiUser.getUser({
       connection, client, filter: filter as ApiUser.FilterUserBy,
     })
-    // if (!user || !(await user.comparePassword(input.oldPassword))) {
-    //  throw new Error('Nespravne zadane stare heslo uzivatele.')
-    // }
     user = await ApiUser.changeUserPassword({
       connection,
       client,

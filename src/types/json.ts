@@ -1,3 +1,8 @@
+///////////////////////////////////////
+// Soubor: src/types/json.ts
+// Projekt: MWEServer
+// Autor: Miroslav Válka
+///////////////////////////////////////
 
 export interface JsonMap {
   [member: string]: string | number | boolean | null | JsonArray | JsonMap

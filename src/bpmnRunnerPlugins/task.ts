@@ -1,9 +1,15 @@
+///////////////////////////////////////
+// Soubor: src/bpmnRunnerPlugins/task.ts
+// Projekt: MWEServer
+// Autor: Miroslav Válka
+///////////////////////////////////////
 import { NodeImplementation, RunContextOutgoing } from '../bpmnRunner'
 import { evalExpression } from './evalExpressionHelper'
 
 /**
  * Task je uloha, ktera se vzdy vykona uspesne.
- * Slouzi prevazne k ladeni.
+ * Tato implementace je obohacena o sirsi rozlisovani
+ * sekvencnich toku a viberu uzlu pro spusteni.
  */
 export const Task: NodeImplementation = {
   run() {

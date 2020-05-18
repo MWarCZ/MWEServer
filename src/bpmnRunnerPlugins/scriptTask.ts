@@ -1,3 +1,8 @@
+///////////////////////////////////////
+// Soubor: src/bpmnRunnerPlugins/scriptTask.ts
+// Projekt: MWEServer
+// Autor: Miroslav Válka
+///////////////////////////////////////
 import { VM } from 'vm2'
 
 import { NodeImplementation } from '../bpmnRunner'

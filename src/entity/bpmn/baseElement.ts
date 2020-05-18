@@ -1,3 +1,8 @@
+///////////////////////////////////////
+// Soubor: src/entity/bpmn/baseElement.ts
+// Projekt: MWEServer
+// Autor: Miroslav Válka
+///////////////////////////////////////
 
 /**
  * Zakladni entita obsahujici spolecne vlstnosti pro vsechny elementy sablony BPMN.
@@ -19,8 +24,7 @@ export interface BaseElementInstance {
 }
 
 /**
- * Stav aktivity. Aktivita jest napr. instance ulohy nebo procesu.
- * viz. diagram ve specifikaci BPMN Figure 13.2
+ * Stav aktivity. Aktivita jest napr. instance ulohy.
  */
 export enum ActivityStatus {
   None = 'None',
@@ -35,6 +39,9 @@ export enum ActivityStatus {
   Withdrawn = 'Withdrawn',  // Pri ukoncovani/ruseni akce (pr. Klient stornoval obednavku)
 }
 
+/**
+ * Stav procesu
+ */
 export enum ProcessStatus {
   None = 'None',
   Ready = 'Ready', // Pri vytvoreni instance

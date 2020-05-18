@@ -255,7 +255,7 @@ describe('Testy s bpmnRunner', () => {
 
     it.each([
       [
-        '../resources/bpmn/simple/simple_xor_outgoing.bpmn',
+        '../resources/bpmn/simple/simple_or_outgoing.bpmn',
         'fifo',
         [
           { nodeInstances: 1, completedNodes: 0, readyNodes: 1, processStatus: ProcessStatus.Ready },
@@ -277,7 +277,7 @@ describe('Testy s bpmnRunner', () => {
         ],
       ],
       [
-        '../resources/bpmn/simple/simple_or_outgoing.bpmn',
+        '../resources/bpmn/simple/simple_xor_outgoing.bpmn',
         'fifo',
         [
           { nodeInstances: 1, completedNodes: 0, readyNodes: 1, processStatus: ProcessStatus.Ready },

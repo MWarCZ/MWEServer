@@ -1,3 +1,8 @@
+///////////////////////////////////////
+// Soubor: src/bpmnRunnerPlugins/startEvent.ts
+// Projekt: MWEServer
+// Autor: Miroslav Válka
+///////////////////////////////////////
 import { NodeImplementation } from '../bpmnRunner'
 
 /**

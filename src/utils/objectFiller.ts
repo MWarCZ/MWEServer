@@ -1,3 +1,8 @@
+///////////////////////////////////////
+// Soubor: src/utils/objectFiller.ts
+// Projekt: MWEServer
+// Autor: Miroslav Válka
+///////////////////////////////////////
 
 export type NonFunctionPropertyNames<T> = {
   [K in keyof T]: T[K] extends Function ? never : K
@@ -6,7 +11,11 @@ export type NonFunctionPropertyNames<T> = {
 export type NonFunctionProerties<T> = Pick<T, NonFunctionPropertyNames<T>>
 
 export type OptionsConstructor<T> = Partial<NonFunctionProerties<T>>
-
+/**
+ * Slouzi k naplneni objektu daty.
+ * @param element Objekt, ktery ma byt naplnen daty.
+ * @param options Data, kterymi ma byt naplnen objekt.
+ */
 export function objectFiller<T>(element: any, options?: OptionsConstructor<T>) {
   if (!!options) {
     Object.keys(options).forEach(key => {

@@ -1,3 +1,8 @@
+///////////////////////////////////////
+// Soubor: src/bpmnRunnerPlugins/manualTask.ts
+// Projekt: MWEServer
+// Autor: Miroslav Válka
+///////////////////////////////////////
 import { NodeImplementation } from '../bpmnRunner'
 import { setDefaultOutputProps } from './setDefaultOutputProps'
 import { Task } from './task'
@@ -9,7 +14,7 @@ const ExtectedStateValues = ['completed', 'storno']
  */
 export const ManualTask: NodeImplementation = {
   additionsFormat() {
-    console.log('MANUAL_TASK: F>')
+    // console.log('MANUAL_TASK: F>')
     return {
       state: {
         hints: '',
@@ -21,7 +26,7 @@ export const ManualTask: NodeImplementation = {
   // A) Zkontrolovat stav v datech udalosti
   prerun({ context }) {
     let data = context.$LOCAL as ExpectedArgs | undefined
-    console.log('MANUAL_TASK: prerun>', data)
+    // console.log('MANUAL_TASK: prerun>', data)
     if (data) {
       if (ExtectedStateValues.includes(data.state)) {
         return true
@@ -30,7 +35,7 @@ export const ManualTask: NodeImplementation = {
     throw new Error('Manualni uloha nebyla potvrzena ani zrusena.')
   },
   run({ context }) {
-    console.log('MANUAL_TASK: run>')
+    // console.log('MANUAL_TASK: run>')
     const defaultOutputPropState = '_state'
 
     const localData = context.$LOCAL as ExpectedArgs
@@ -38,12 +43,12 @@ export const ManualTask: NodeImplementation = {
     setDefaultOutputProps({
       context,
       props: [
-        { name: '_state', value: localData.state},
+        { name: defaultOutputPropState, value: localData.state},
       ],
     })
   },
   onCompleting(options) {
-    console.log('MANUAL_TASK: completing>')
+    // console.log('MANUAL_TASK: completing>')
     Task.onCompleting && Task.onCompleting(options)
   },
 }

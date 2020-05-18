@@ -1,3 +1,8 @@
+///////////////////////////////////////
+// Soubor: src/entity/group.ts
+// Projekt: MWEServer
+// Autor: Miroslav Válka
+///////////////////////////////////////
 import { BeforeRemove, Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm'
 
 import { objectFiller, OptionsConstructor } from '../utils/objectFiller'

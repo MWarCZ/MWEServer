@@ -1,3 +1,8 @@
+///////////////////////////////////////
+// Soubor: src/entity/user.ts
+// Projekt: MWEServer
+// Autor: Miroslav Válka
+///////////////////////////////////////
 import { compare, hash } from 'bcryptjs'
 import { BeforeInsert, BeforeRemove, BeforeUpdate, Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm'
 

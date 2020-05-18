@@ -1,9 +1,13 @@
+///////////////////////////////////////
+// Soubor: src/graphql/resolvers/member.ts
+// Projekt: MWEServer
+// Autor: Miroslav Válka
+///////////////////////////////////////
 import { FilterGroupBy } from '../../api/group'
 import * as ApiMember from '../../api/member'
 import { FilterUserBy } from '../../api/user'
 import { Member as EntityMember } from '../../entity'
 import { GQLTypes } from '../generated/types'
-
 
 // export const Query: GQLTypes.QueryResolvers = {
 // }

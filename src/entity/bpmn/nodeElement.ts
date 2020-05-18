@@ -1,3 +1,8 @@
+///////////////////////////////////////
+// Soubor: src/entity/bpmn/nodeElement.ts
+// Projekt: MWEServer
+// Autor: Miroslav Válka
+///////////////////////////////////////
 import { BeforeInsert, Column, Entity, JoinTable, ManyToMany, ManyToOne, OneToMany, PrimaryGeneratedColumn } from 'typeorm'
 import { v4 as uuid } from 'uuid'
 
@@ -11,7 +16,9 @@ import { ProcessInstance, ProcessTemplate } from './process'
 import { SequenceFlowTemplate } from './sequenceFlow'
 
 /**
- * Propopoj mezi uzly BPMN. SequenceFlow2FlowNode
+ * Sablona uzlu.
+ * Predstavuje elementy, ktere tvori strukturu sablony procesu.
+ * Pro prirovnani k BPMN se jedna o ulohy, brany, udalosti.
  */
 @Entity()
 export class NodeElementTemplate implements FlowElementTemplate {
@@ -84,6 +91,7 @@ export class NodeElementTemplate implements FlowElementTemplate {
   }
 }
 
+/** Instance uzlu */
 @Entity()
 export class NodeElementInstance implements FlowElementInstance {
   @PrimaryGeneratedColumn()

@@ -1,3 +1,8 @@
+///////////////////////////////////////
+// Soubor: src/bpmnRunnerPlugins/setDefaultOutputProps.ts
+// Projekt: MWEServer
+// Autor: Miroslav Válka
+///////////////////////////////////////
 import { RunContext } from '../bpmnRunner'
 import { Json } from '../types/json'
 
@@ -5,7 +10,9 @@ export interface Prop {
   name: string,
   value: Json,
 }
-
+/**
+ * Pomocna funkce pro ulozeni vychozich hodnot do vystupnich objektu.
+ */
 export function setDefaultOutputProps(options: {
   context: RunContext,
   props: Prop[],

@@ -1,3 +1,8 @@
+///////////////////////////////////////
+// Soubor: src/bpmnBuilder/bpmnLevel.ts
+// Projekt: MWEServer
+// Autor: Miroslav Válka
+///////////////////////////////////////
 import {
   BaseElementTemplate,
   DataObjectTemplate,
@@ -7,9 +12,10 @@ import {
 } from '../entity/bpmn'
 import { BpmnFxm } from './bpmnFxm'
 
-
-
-// import { NodeToSequenceFlow, SequenceFlowToNode } from '../entity/bpmn/sequenceFlowToNode'
+/**
+ * Datove typy pro pouziti behem analyzy a prevodu dat
+ * ze souboru BPMN do interni reprezentace v databazi.
+ */
 export declare namespace BpmnLevel {
 
   /** Parsovani BPMN Level 1 */
@@ -51,7 +57,6 @@ export declare namespace BpmnLevel {
     entity: NodeElementTemplate, data: BpmnFxm.IntermediateCatchEvent, tag: 'intermediateCatchEvent',
   }
 
-
   type Gateway = {
     entity: NodeElementTemplate, data: BpmnFxm.Gateway, tag: 'gateway',
   }
@@ -64,12 +69,12 @@ export declare namespace BpmnLevel {
     | IntermediateThrowEvent
     | IntermediateCatchEvent
 
-type NodeElement = Task
-  | Gateway
-  | ScriptTask
-  | StartEvent
-  | EndEvent
-  | IntermediateThrowEvent
-  | IntermediateCatchEvent
+  type NodeElement = Task
+    | Gateway
+    | ScriptTask
+    | StartEvent
+    | EndEvent
+    | IntermediateThrowEvent
+    | IntermediateCatchEvent
 
 }

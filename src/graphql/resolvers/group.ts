@@ -1,3 +1,8 @@
+///////////////////////////////////////
+// Soubor: src/graphql/resolvers/group.ts
+// Projekt: MWEServer
+// Autor: Miroslav Válka
+///////////////////////////////////////
 import * as ApiGroup from '../../api/group'
 import { GQLTypes } from '../generated/types'
 

@@ -1,3 +1,8 @@
+///////////////////////////////////////
+// Soubor: src/bpmnRunnerPlugins/userTask.ts
+// Projekt: MWEServer
+// Autor: Miroslav Válka
+///////////////////////////////////////
 import { NodeImplementation, NodeImplementationFlatItemsMap } from '../bpmnRunner/pluginsImplementation'
 import { RunContextMap } from '../bpmnRunner/runContext'
 import { Prop, setDefaultOutputProps } from './setDefaultOutputProps'
@@ -38,14 +43,14 @@ function findForm($local: RunContextMap): NodeImplementationFlatItemsMap {
 
 export const UserTask: NodeImplementation = {
   additionsFormat({ context }) {
-    console.log('USER_TASK: F>')
+    // console.log('USER_TASK: F>')
     const form = findForm(context.$INPUT)
     return form
   },
 
   prerun({ context }) {
     let data = context.$LOCAL
-    console.log('USER_TASK: prerun>', data)
+    // console.log('USER_TASK: prerun>', data)
     if (data) {
       if (data.$form_state) {
         return true
@@ -55,7 +60,7 @@ export const UserTask: NodeImplementation = {
   },
 
   run({ context }) {
-    console.log('USER_TASK: run>')
+    // console.log('USER_TASK: run>')
 
     const form = findForm(context.$INPUT)
     const props: Prop[] = []
@@ -75,7 +80,7 @@ export const UserTask: NodeImplementation = {
   },
 
   onCompleting(options) {
-    console.log('USER_TASK: completing>')
+    // console.log('USER_TASK: completing>')
     Task.onCompleting && Task.onCompleting(options)
   },
 }

@@ -1,3 +1,8 @@
+///////////////////////////////////////
+// Soubor: src/config.ts
+// Projekt: MWEServer
+// Autor: Miroslav Válka
+///////////////////////////////////////
 
 export const APP_GRAPHQL_ENDPOINT = '/graphql'
 export const APP_GRAPHQL_PORT = 4000

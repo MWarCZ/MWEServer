@@ -1,3 +1,8 @@
+///////////////////////////////////////
+// Soubor: src/types/jwt.ts
+// Projekt: MWEServer
+// Autor: Miroslav Válka
+///////////////////////////////////////
 import { JwtHeader } from 'jsonwebtoken'
 
 export { JwtHeader }

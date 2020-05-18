@@ -1,3 +1,8 @@
+///////////////////////////////////////
+// Soubor: src/bpmnRunner/plugins/FinishProcess.ts
+// Projekt: MWEServer
+// Autor: Miroslav Válka
+///////////////////////////////////////
 import { ServiceImplementation } from '../pluginsImplementation'
 
 //#region FinishRegister
@@ -5,6 +10,7 @@ import { ServiceImplementation } from '../pluginsImplementation'
 export interface FinishProcessDone {
   (data:{finished: boolean, forced: boolean, type?: string}): void
 }
+/** Jednoduchy modul pro detekci oznameni o ukonceni. */
 export class FinishProcess implements ServiceImplementation {
   done?: FinishProcessDone
   name = 'finishProcess'

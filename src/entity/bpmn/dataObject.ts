@@ -1,3 +1,8 @@
+///////////////////////////////////////
+// Soubor: src/entity/bpmn/dataObject.ts
+// Projekt: MWEServer
+// Autor: Miroslav Válka
+///////////////////////////////////////
 import { BeforeInsert, Column, Entity, ManyToOne, OneToMany, PrimaryGeneratedColumn } from 'typeorm'
 import { v4 as uuid } from 'uuid'
 
@@ -6,6 +11,9 @@ import { objectFiller, OptionsConstructor } from '../../utils/objectFiller'
 import { FlowElementInstance, FlowElementTemplate } from './flowElement'
 import { ProcessInstance, ProcessTemplate } from './process'
 
+/**
+ * Sablona datoveho objektu
+ */
 @Entity()
 export class DataObjectTemplate implements FlowElementTemplate {
   @PrimaryGeneratedColumn()
@@ -54,7 +62,7 @@ export class DataObjectTemplate implements FlowElementTemplate {
       this.bpmnId = uuid()
   }
 }
-
+/** Instance datoveho objektu */
 @Entity()
 export class DataObjectInstance implements FlowElementInstance {
   @PrimaryGeneratedColumn()

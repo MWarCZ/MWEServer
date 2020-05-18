@@ -1,3 +1,8 @@
+///////////////////////////////////////
+// Soubor: src/graphql/resolvers/index.ts
+// Projekt: MWEServer
+// Autor: Miroslav Válka
+///////////////////////////////////////
 import { GQLTypes } from '../generated/types'
 import { Mutation as AuthMutation } from './auth'
 import {

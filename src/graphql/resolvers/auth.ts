@@ -1,3 +1,8 @@
+///////////////////////////////////////
+// Soubor: src/graphql/resolvers/auth.ts
+// Projekt: MWEServer
+// Autor: Miroslav Válka
+///////////////////////////////////////
 import * as ApiAuth from '../../api/auth'
 import { GQLTypes } from '../generated/types'
 
