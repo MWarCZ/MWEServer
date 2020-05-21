@@ -2,6 +2,9 @@
 # MWEServer
 > My Workflow Engine Server
 
+## Manuál
+Manuál k systému MWE je k nalezení [zde](./doc/README.md).
+
 ## Zprovoznění
 
 ### Prerekvizity
@@ -10,6 +13,8 @@
   - _WSL_ či _WSL 2_ pro Windows 10
 - Node.js verze 11 a vyšší
   - Testováno na verzích: _v11.15.0_, _v12.16.1_
+- Databáze s podporou _MySQL_
+  - Testováno na verzích:  _MariaDB 10.1.43_, _MariaDB 10.1.45_
 - Yarn
   - Je doporučeno používat Yarn
   - _Yarn_ byl aktivně využíván při vývoji

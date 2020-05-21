@@ -1,8 +1,7 @@
 
-# Příloha A
 # Jak vytvořit BPMN soubor
 
-## Uvodni seznameni
+## Úvodní seznámení
 
 Prozatím existuje jediný způsob, jak vytvořit/nahrát šablonu procesu do serverové aplikace MWEServer.
 MWEServer je schopen zpracovat textový soubor obsahující definici procesu dle specifikace BPMN.
