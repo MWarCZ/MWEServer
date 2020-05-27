@@ -4,11 +4,11 @@ Toto je manuál k workflow systemu s názvem systém MWE.
 > Návod na vytvoření souboru BPMN naleznete [zde](./create_bpmn_file.md).
 
 ## Obsah
-- [Manuál](#manu%c3%a1l)
+- [Manuál](#manuál)
 	- [Obsah](#obsah)
-	- [Výchozí účty a přihlašovací údaje](#v%c3%bdchoz%c3%ad-%c3%ba%c4%8dty-a-p%c5%99ihla%c5%a1ovac%c3%ad-%c3%badaje)
-	- [Chráněné skupiny a role](#chr%c3%a1n%c4%9bn%c3%a9-skupiny-a-role)
-	- [Podporované elementy BPMN](#podporovan%c3%a9-elementy-bpmn)
+	- [Výchozí účty a přihlašovací údaje](#výchozí-účty-a-přihlašovací-údaje)
+	- [Chráněné skupiny a role](#chráněné-skupiny-a-role)
+	- [Podporované elementy BPMN](#podporované-elementy-bpmn)
 		- [Definitions](#definitions)
 		- [Process](#process)
 		- [Colaboration](#colaboration)
@@ -27,7 +27,8 @@ Toto je manuál k workflow systemu s názvem systém MWE.
 		- [Parallel Gateway](#parallel-gateway)
 		- [Inclusive Gateway](#inclusive-gateway)
 		- [Exclusive Gateway](#exclusive-gateway)
-	- [Kontext dostupný uzlům při zpracování](#kontext-dostupn%c3%bd-uzl%c5%afm-p%c5%99i-zpracov%c3%a1n%c3%ad)
+	- [Kontext dostupný uzlům při zpracování](#kontext-dostupný-uzlům-při-zpracování)
+	- [Ukázky použití skriptů a výrazů](#ukázky-použití-skriptů-a-výrazů)
 
 ## Výchozí účty a přihlašovací údaje
 
@@ -678,6 +679,8 @@ Pokud neexistuje žádný sekvenční tok s pozitivním výsledkem, tak budou vy
 
 
 ## Kontext dostupný uzlům při zpracování
+Položky kontextu jsou dostupné během provádění instancí uzlů a mnohé elementy umožňují jejich použití.
+V současnosti je lze využívat ve skriptech pro ScriptTask nebo ve výrazech u podmíněných sekvenčních toků.
 
 Obsah kontextu a význam jednotlivých položek:
 - `$GLOBAL`: JsonMap,
@@ -747,3 +750,94 @@ Obsah kontextu a význam jednotlivých položek:
     - Název implementace, která bude obstarávat zpracování uzlu.
   - `data`: JsonMap
     - Výchozí data, která budou obsahem lokálního registru instancí vycházejících ze šablony uzlu.
+
+## Ukázky použití skriptů a výrazů
+
+Následující ukázka zobrazuje různé možnosti využití výrazu v podmíněných sekvenčních tocích:
+```xml
+<dataObject id="qwert0" name="Moje data">
+	<extensionElements>
+		<mwe:json>
+			{ "A": 101, "B": 1 }
+		</mwe:json>
+	</extensionElements>
+</dataObject>
+<!-- Jednořádková varianta, která nebere v úvahu možné problémy s existencí datového objektu. -->
+<sequenceFlow id="qwert3" sourceRef="qwert1" targetRef="qwert2">
+	<conditionExpression xsi:type="bpmn2:tFormalExpression">
+		$INPUT['Moje data'].A > 10
+	</conditionExpression>
+</sequenceFlow>
+<!-- Jednořádková bezpečná varianta 1, která počítá i s možnou neexistencí datového objektu. -->
+<sequenceFlow id="qwert4" sourceRef="qwert1" targetRef="qwert2">
+	<conditionExpression xsi:type="bpmn2:tFormalExpression">
+		$INPUT && $INPUT['Moje data'] && ($INPUT['Moje data'].A > 10)
+	</conditionExpression>
+</sequenceFlow>
+<!-- Jednořádková bezpečná varianta 2, která počítá i s možnou neexistencí datového objektu. -->
+<sequenceFlow id="qwert5" sourceRef="qwert1" targetRef="qwert2">
+	<conditionExpression xsi:type="bpmn2:tFormalExpression">
+		try { $INPUT['Moje data'].A > 10 } catch { false }
+	</conditionExpression>
+</sequenceFlow>
+<!-- 
+  Víceřádková varianta, která nebere v úvahu možné problémy s existencí datového objektu.
+  Vyhodnocená hodnota posledního prováděného řádku skriptu určuje pravdivostní hodnotu výrazu. 
+-->
+<sequenceFlow id="qwert6" sourceRef="qwert1" targetRef="qwert2">
+	<conditionExpression xsi:type="bpmn2:tFormalExpression">
+		let data = $INPUT['Moje data']
+    data.A > 10 // => (true | false)
+	</conditionExpression>
+</sequenceFlow>
+<!-- 
+  Víceřádková bezpečná varianta, která počítá i s možnou neexistencí datového objektu. 
+  Vyhodnocená hodnota posledního prováděného řádku skriptu určuje pravdivostní hodnotu výrazu. 
+-->
+<sequenceFlow id="qwert7" sourceRef="qwert1" targetRef="qwert2">
+	<conditionExpression xsi:type="bpmn2:tFormalExpression">
+		try {
+      let data = $INPUT['Moje data'];
+      data.A > 10 // => (true | false)
+    } catch { 
+      false; // => false
+    }
+	</conditionExpression>
+</sequenceFlow>
+<!-- ... -->
+```
+
+Ukázka využití ScriptTask ke generování formuláře pro UserTask:
+```xml
+<!-- Prázdný datový objekt pro uložení formuláře -->
+<dataObject id="asd1" name="Formulář Alfa"/>
+<!-- SkriptTask pro pomocné generovaní formulře pro UserTask. -->
+<scriptTask id="asd2" name="Generovani formuláře Alfa" scriptFormat="js">
+	<dataOutputAssociation>
+		<targetRef>asd1</targetRef>
+	</dataOutputAssociation>
+	<script>
+		// Vytvoření objektu formuláře.
+		let formA = {
+    		Trojúhelník: { 
+				type: 'select', 
+				possibilities: ['obecný', 'pravoúhlý', 'rovnoramenný', 'rovnostranný'],
+				hints: 'Vyber typ svého trojúhelníku.',
+			},
+    		'Strana a': { type: 'number', hints: 'Velikost strany a.' },
+    		'Strana b': { type: 'number', hints: 'Velikost strany b.' },
+    		'Strana c': { type: 'number', hints: 'Velikost strany c.' },
+  		}
+		// Uložení formuláře do datového objektu s názvem 'Formulář Alfa'.
+		$OUTPUT['Formulář Alfa'] = { $form: formA }
+	</script>
+</scriptTask>
+<!-- ... -->
+<userTask id="asd3" name="Vyplnění rozměrů trojúhelníku">
+	<dataInputAssociation>
+		<sourceRef>asd1</sourceRef>
+	</dataInputAssociation>
+</userTask>
+<!-- ... -->
+```
+
