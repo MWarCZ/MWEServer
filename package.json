@@ -90,7 +90,7 @@
     "passport-local": "^1.0.0",
     "typeorm": "^0.2.22",
     "uuid": "^3.4.0",
-    "vm2": "^3.8.4"
+    "vm2": "^3.9.4"
   },
   "gitHooks": {
     "pre-commit": "lint-staged"
